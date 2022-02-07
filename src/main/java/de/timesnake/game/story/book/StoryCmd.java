@@ -4,8 +4,8 @@ import de.timesnake.basic.bukkit.util.chat.Argument;
 import de.timesnake.basic.bukkit.util.chat.CommandListener;
 import de.timesnake.basic.bukkit.util.chat.Sender;
 import de.timesnake.game.story.user.StoryUser;
-import de.timesnake.library.basic.util.cmd.Arguments;
-import de.timesnake.library.basic.util.cmd.ExCommand;
+import de.timesnake.library.extension.util.cmd.Arguments;
+import de.timesnake.library.extension.util.cmd.ExCommand;
 
 import java.util.HashSet;
 import java.util.List;
