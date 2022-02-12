@@ -12,8 +12,8 @@ public abstract class StoryAction implements Iterator<StoryAction> {
 
     public static final String DIARY = "diary";
 
-    protected StoryUser reader;
 
+    protected StoryUser reader;
     protected Set<StoryUser> listeners = new HashSet<>();
 
     protected final int id;
@@ -70,8 +70,6 @@ public abstract class StoryAction implements Iterator<StoryAction> {
     public void startNext() {
         this.active = false;
 
-        System.out.println("next");
-
         this.reader.getDiary().addPage(this.diaryPage);
         this.reader.updateDiary();
 
@@ -89,6 +87,14 @@ public abstract class StoryAction implements Iterator<StoryAction> {
 
     public boolean isActive() {
         return active;
+    }
+
+    public StoryUser getReader() {
+        return reader;
+    }
+
+    public Set<StoryUser> getListeners() {
+        return listeners;
     }
 
     public void setSection(StorySection section) {

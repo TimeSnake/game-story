@@ -5,12 +5,14 @@ import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.basic.bukkit.util.world.HoloDisplay;
 import de.timesnake.basic.packets.util.packet.ExPacketPlayOutEntityHeadRotation;
 import de.timesnake.basic.packets.util.packet.ExPacketPlayOutEntityLook;
+import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.elements.CharacterNotFoundException;
 import de.timesnake.game.story.elements.StoryCharacter;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.ChapterFile;
 import de.timesnake.game.story.user.StoryUser;
+import de.timesnake.library.basic.util.Tuple;
 import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
@@ -18,19 +20,31 @@ import org.bukkit.event.player.PlayerToggleSneakEvent;
 import java.time.Duration;
 import java.util.*;
 
-public class TalkAction extends RadiusAction implements EntityAction {
+public class TalkAction extends LocationAction implements EntityAction {
 
     public static final String NAME = "talk";
 
     private static final String CHARACTER = "character";
     private static final String MESSAGES = "messages";
 
+    private static final String MESSAGE_PLAYER = "p:";
+    private static final String MESSAGE_CHARACTER = "c.";
+
     private static final String CHARACTER_LOOK_DIRECTION = "character_look_direction";
     private static final String YAW = "yaw";
     private static final String PITCH = "pitch";
+    private final LinkedList<Tuple<Speaker, String>> messages;
 
     private final StoryCharacter<?> entity;
-    private final List<String> messages;
+
+    public TalkAction(int id, BaseComponent[] diaryPage, StoryAction next, StoryCharacter<?> entity, LinkedList<Tuple<Speaker, String>> messages, ExLocation location, float yaw, float pitch) {
+        super(id, diaryPage, next, location);
+        this.messages = messages;
+        this.entity = entity;
+        this.yaw = yaw;
+        this.pitch = pitch;
+    }
+
     private HashMap<StoryUser, Integer> messageIndexbyUser = new HashMap<>();
 
     private final float yaw;
@@ -40,20 +54,24 @@ public class TalkAction extends RadiusAction implements EntityAction {
 
     private HoloDisplay display;
 
-    public TalkAction(int id, BaseComponent[] diaryPage, StoryAction next, ExLocation location, double radius, StoryCharacter<?> entity, List<String> messages, float yaw, float pitch) {
-        super(id, diaryPage, next, location, radius);
-        this.messages = messages;
-        this.entity = entity;
-        this.yaw = yaw;
-        this.pitch = pitch;
-    }
-
     public TalkAction(int id, BaseComponent[] diaryPage, ChapterFile file, String actionPath) throws CharacterNotFoundException {
         super(id, diaryPage, false, file, actionPath);
 
         int charId = file.getActionValueInteger(actionPath, CHARACTER);
         this.entity = StoryServer.getCharater(charId);
-        this.messages = file.getActionValueStringList(actionPath, MESSAGES);
+
+        this.messages = new LinkedList<>();
+        List<String> messageTexts = file.getActionValueStringList(actionPath, MESSAGES);
+
+        for (String message : messageTexts) {
+            if (message.toLowerCase().startsWith(MESSAGE_PLAYER)) {
+                this.messages.addLast(new Tuple<>(Speaker.PLAYER, message));
+            } else if (message.toLowerCase().startsWith(MESSAGE_CHARACTER)) {
+                this.messages.addLast(new Tuple<>(Speaker.CHARACTER, message));
+            } else {
+                Server.printWarning(Plugin.STORY, "Unknown speaker in " + actionPath, "Action");
+            }
+        }
 
         this.yaw = file.getActionValueDouble(actionPath, CHARACTER_LOOK_DIRECTION + "." + YAW).floatValue();
         this.pitch = file.getActionValueDouble(actionPath, CHARACTER_LOOK_DIRECTION + "." + PITCH).floatValue();
@@ -61,11 +79,11 @@ public class TalkAction extends RadiusAction implements EntityAction {
 
     @Override
     public StoryAction clone(StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
-        return new TalkAction(this.id, this.diaryPage, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()), this.radius, this.entity.clone(reader, listeners), this.messages, this.yaw, this.pitch);
+        return new TalkAction(this.id, this.diaryPage, clonedNext, this.entity.clone(reader, listeners), this.messages, this.location.clone().setExWorld(reader.getStoryWorld()), this.yaw, this.pitch);
     }
 
     @Override
-    protected void onUserNearby(StoryUser user) {
+    public void trigger(StoryUser user) {
         if (this.messageIndexbyUser.get(user) == null) {
             this.messageIndexbyUser.put(user, 0);
             this.nextMessage(user);
@@ -90,12 +108,18 @@ public class TalkAction extends RadiusAction implements EntityAction {
             return;
         }
 
-        if (index % 2 == 0) {
-            this.sendMessage(user, this.messages.get(index));
+        Tuple<Speaker, String> messageBySpeaker = this.messages.get(index);
+
+        if (messageBySpeaker.getA().equals(Speaker.CHARACTER)) {
+            this.sendMessage(user, messageBySpeaker.getB());
         } else {
-            this.sendSelfMessage(user, this.messages.get(index));
+            this.sendSelfMessage(user, messageBySpeaker.getB());
         }
         this.messageIndexbyUser.put(user, index + 1);
+    }
+
+    private enum Speaker {
+        PLAYER, CHARACTER
     }
 
     private void sendMessageNothingToTell(StoryUser user) {
@@ -189,10 +213,6 @@ public class TalkAction extends RadiusAction implements EntityAction {
         }
 
         if (!this.reader.equals(user) && !this.listeners.contains(user)) {
-            return;
-        }
-
-        if (user.getLocation().distance(this.location) > this.radius) {
             return;
         }
 

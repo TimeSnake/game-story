@@ -5,6 +5,7 @@ import de.timesnake.game.story.action.*;
 import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.elements.CharacterNotFoundException;
 import de.timesnake.game.story.elements.ItemNotFoundException;
+import de.timesnake.game.story.event.AreaEvent;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 
@@ -100,43 +101,68 @@ public class StoryChapter {
 
         BaseComponent[] diaryPage = diaryComponents.toArray(new BaseComponent[0]);
 
+        StoryAction action = null;
+
         switch (type.toLowerCase()) {
             case TalkAction.NAME:
                 try {
-                    return new TalkAction(actionId, diaryPage, this.file, actionPath);
+                    action = new TalkAction(actionId, diaryPage, this.file, actionPath);
                 } catch (CharacterNotFoundException e) {
                     Server.printWarning(Plugin.STORY, e.getMessage(), "Chapter " + this.id, "Part " + partId, "Section " + sectionId, "Action " + actionId);
                 }
                 break;
             case ItemSearchAction.NAME:
                 try {
-                    return new ItemSearchAction(actionId, diaryPage, this.file, actionPath);
+                    action = new ItemSearchAction(actionId, diaryPage, this.file, actionPath);
                 } catch (ItemNotFoundException e) {
                     Server.printWarning(Plugin.STORY, e.getMessage(), "Chapter " + this.id, "Part " + partId, "Section " + sectionId, "Action " + actionId);
                 }
                 break;
             case ItemTradeAction.NAME:
                 try {
-                    return new ItemTradeAction(actionId, diaryPage, this.file, actionPath);
+                    action = new ItemTradeAction(actionId, diaryPage, this.file, actionPath);
                 } catch (ItemNotFoundException | CharacterNotFoundException e) {
                     Server.printWarning(Plugin.STORY, e.getMessage(), "Chapter " + this.id, "Part " + partId, "Section " + sectionId, "Action " + actionId);
                 }
                 break;
             case ItemGiveAction.NAME:
                 try {
-                    return new ItemGiveAction(actionId, diaryPage, this.file, actionPath);
+                    action = new ItemGiveAction(actionId, diaryPage, this.file, actionPath);
                 } catch (CharacterNotFoundException | ItemNotFoundException e) {
                     Server.printWarning(Plugin.STORY, e.getMessage(), "Chapter " + this.id, "Part " + partId, "Section " + sectionId, "Action " + actionId);
                 }
                 break;
             case ThoughtAction.NAME:
-                return new ThoughtAction(actionId, diaryPage, this.file, actionPath);
-            case LocationSearchAction.NAME:
-                return new LocationSearchAction(actionId, diaryPage, this.file, actionPath);
+                action = new ThoughtAction(actionId, diaryPage, this.file, actionPath);
+                break;
+            default:
+                action = new TriggerAction(actionId);
 
         }
 
-        return null;
+        if (!(action instanceof TriggeredAction)) {
+            return action;
+        }
+
+        String triggerPath = ChapterFile.getTriggerPath(partId, sectionId, actionId);
+
+        if (!file.contains(triggerPath)) {
+            return action;
+        }
+
+        TriggeredAction triggeredAction = ((TriggeredAction) action);
+
+        String triggerType = file.getTriggerType(partId, sectionId, actionId);
+
+        switch (triggerType.toLowerCase()) {
+            case AreaEvent.NAME:
+                triggeredAction.setTriggerEvent(new AreaEvent(triggeredAction, file, triggerPath));
+                break;
+            default:
+                Server.printWarning(Plugin.STORY, "Unknown trigger type: " + triggerType, "Chapter " + this.id, "Part " + partId, "Section " + sectionId, "Action " + actionId);
+        }
+
+        return action;
     }
 
     public StoryPart getPart(int id) {

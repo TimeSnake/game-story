@@ -19,7 +19,7 @@ import org.bukkit.util.EulerAngle;
 import java.util.List;
 import java.util.Set;
 
-public class ItemSearchAction extends RadiusAction implements EntityAction {
+public class ItemSearchAction extends LocationAction implements EntityAction {
 
     public static final String NAME = "item_search";
 
@@ -31,8 +31,8 @@ public class ItemSearchAction extends RadiusAction implements EntityAction {
 
     private ExArmorStand entity;
 
-    public ItemSearchAction(int id, BaseComponent[] diaryPage, StoryAction next, ExLocation location, Double radius, StoryItem item, double itemAngle) {
-        super(id, diaryPage, next, location, radius);
+    public ItemSearchAction(int id, BaseComponent[] diaryPage, StoryAction next, ExLocation location, StoryItem item, double itemAngle) {
+        super(id, diaryPage, next, location);
         this.item = item;
         this.itemAngle = itemAngle;
     }
@@ -47,11 +47,11 @@ public class ItemSearchAction extends RadiusAction implements EntityAction {
 
     @Override
     public ItemSearchAction clone(StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
-        return new ItemSearchAction(this.id, this.diaryPage, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()), this.radius, this.item.clone(reader), this.itemAngle);
+        return new ItemSearchAction(this.id, this.diaryPage, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()), this.item.clone(reader), this.itemAngle);
     }
 
     @Override
-    protected void onUserNearby(StoryUser user) {
+    public void trigger(StoryUser user) {
         if (!user.equals(this.reader)) {
             return;
         }
