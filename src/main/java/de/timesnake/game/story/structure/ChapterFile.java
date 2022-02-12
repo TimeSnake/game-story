@@ -19,6 +19,11 @@ public class ChapterFile extends ExFile {
     private static final String SECTIONS = "sections";
 
     private static final String ACTIONS = "actions";
+
+    private static final String TRIGGER = "trigger";
+    private static final String TRIGGER_TYPE = "type";
+
+    private static final String ACTION = "action";
     private static final String ACTION_TYPE = "type";
 
     public ChapterFile(String chapter) {
@@ -57,16 +62,36 @@ public class ChapterFile extends ExFile {
         return super.getString(getActionPath(partId, sectionId, actionId) + "." + ACTION_TYPE);
     }
 
+    public static String getActionPath(int partId, int sectionId, int actionId) {
+        return getSectionPath(partId, sectionId) + "." + ACTIONS + "." + actionId + "." + ACTION;
+    }
+
     public String getActionValueString(String actionPath, String subPath) {
         return super.getString(actionPath + "." + subPath);
+    }
+
+    public static String getTriggerPath(int partId, int sectionId, int actionId) {
+        return getSectionPath(partId, sectionId) + "." + ACTIONS + "." + actionId + "." + TRIGGER;
     }
 
     public Integer getActionValueInteger(String actionPath, String subPath) {
         return super.getInt(actionPath + "." + subPath);
     }
 
+    public String getTriggerType(int partId, int sectionId, int actionId) {
+        return super.getString(getTriggerPath(partId, sectionId, actionId) + "." + TRIGGER_TYPE);
+    }
+
     public Double getActionValueDouble(String actionPath, String subPath) {
         return super.getDouble(actionPath + "." + subPath);
+    }
+
+    public String getTriggerValueString(String triggerPath, String subPath) {
+        return super.getString(triggerPath + "." + subPath);
+    }
+
+    public Integer getTriggerValueInteger(String triggerPath, String subPath) {
+        return super.getInt(triggerPath + "." + subPath);
     }
 
     public ExLocation getActionValueExLocation(String actionPath, String subPath) throws WorldNotExistException {
@@ -81,6 +106,10 @@ public class ChapterFile extends ExFile {
         return super.getDoubleTriple(actionPath + "." + subPath, a, b, c);
     }
 
+    public Double getTriggerValueDouble(String triggerPath, String subPath) {
+        return super.getDouble(triggerPath + "." + subPath);
+    }
+
     public static String getPartPath(int id) {
         return PARTS + "." + id;
     }
@@ -89,7 +118,11 @@ public class ChapterFile extends ExFile {
         return getPartPath(partId) + "." + SECTIONS + "." + sectionId;
     }
 
-    public static String getActionPath(int partId, int sectionId, int actionId) {
-        return getSectionPath(partId, sectionId) + "." + ACTIONS + "." + actionId;
+    public Boolean getTriggerValueBoolean(String triggerPath, String subPath) {
+        return super.getBoolean(triggerPath + "." + subPath);
+    }
+
+    public Triple<Double, Double, Double> getTriggerValueDoubleTriple(String triggerPath, String subPath, String a, String b, String c) {
+        return super.getDoubleTriple(triggerPath + "." + subPath, a, b, c);
     }
 }

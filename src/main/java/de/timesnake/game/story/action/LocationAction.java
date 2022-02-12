@@ -4,7 +4,7 @@ import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.structure.ChapterFile;
 import net.md_5.bungee.api.chat.BaseComponent;
 
-public abstract class LocationAction extends StoryAction {
+public abstract class LocationAction extends TriggeredAction {
 
     private static final String LOCATION = "location";
     private static final String X = "x";
