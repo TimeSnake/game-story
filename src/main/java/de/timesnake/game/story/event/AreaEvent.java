@@ -1,16 +1,22 @@
 package de.timesnake.game.story.event;
 
 import de.timesnake.basic.bukkit.util.Server;
+import de.timesnake.basic.bukkit.util.file.ExFile;
 import de.timesnake.basic.bukkit.util.user.event.UserMoveEvent;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.action.TriggeredAction;
+import de.timesnake.game.story.elements.CharacterNotFoundException;
+import de.timesnake.game.story.elements.StoryCharacter;
+import de.timesnake.game.story.elements.UnknownLocationException;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.ChapterFile;
 import de.timesnake.game.story.user.StoryUser;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
-public class AreaEvent extends LocationEvent implements Listener {
+import java.util.Set;
+
+public class AreaEvent<Action extends TriggeredAction> extends LocationEvent<Action> implements Listener {
 
     public static final String NAME = "area";
 
@@ -18,17 +24,22 @@ public class AreaEvent extends LocationEvent implements Listener {
 
     protected final double radius;
 
-    protected AreaEvent(ExLocation location, double radius) {
-        super(location);
+    protected AreaEvent(ExLocation location, StoryCharacter<?> character, double radius) {
+        super(location, character);
         this.radius = radius;
 
         Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public AreaEvent(TriggeredAction action, ChapterFile file, String triggerPath) {
+    public AreaEvent(Action action, ChapterFile file, String triggerPath) throws CharacterNotFoundException, UnknownLocationException {
         super(action, file, triggerPath);
 
-        this.radius = file.getTriggerValueDouble(triggerPath, RADIUS);
+        this.radius = file.getDouble(ExFile.toPath(triggerPath, RADIUS));
+    }
+
+    public AreaEvent(Action action, ChapterFile file, String triggerPath, double radius) throws CharacterNotFoundException, UnknownLocationException {
+        super(action, file, triggerPath);
+        this.radius = radius;
     }
 
     @EventHandler
@@ -49,8 +60,8 @@ public class AreaEvent extends LocationEvent implements Listener {
     }
 
     @Override
-    protected TriggerEvent clone(StoryUser reader) {
-        return new AreaEvent(this.location.clone().setExWorld(reader.getStoryWorld()), this.radius);
+    protected AreaEvent<Action> clone(StoryUser reader, Set<StoryUser> listeners) {
+        return new AreaEvent<>(this.location.clone().setExWorld(reader.getStoryWorld()), this.character != null ? this.character.clone(reader, listeners) : null, this.radius);
     }
 
     @Override

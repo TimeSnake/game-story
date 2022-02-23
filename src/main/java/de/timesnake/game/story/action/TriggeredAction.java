@@ -8,7 +8,7 @@ import java.util.Set;
 
 public abstract class TriggeredAction extends StoryAction {
 
-    protected TriggerEvent triggerEvent;
+    protected TriggerEvent<TriggeredAction> triggerEvent;
 
     protected TriggeredAction(int id, BaseComponent[] diaryPage) {
         super(id, diaryPage);
@@ -18,7 +18,7 @@ public abstract class TriggeredAction extends StoryAction {
         super(id, diaryPage, next);
     }
 
-    public void setTriggerEvent(TriggerEvent triggerEvent) {
+    public void setTriggerEvent(TriggerEvent<TriggeredAction> triggerEvent) {
         this.triggerEvent = triggerEvent;
     }
 
@@ -26,11 +26,20 @@ public abstract class TriggeredAction extends StoryAction {
     public TriggeredAction clone(StoryUser reader, Set<StoryUser> listeners) {
         TriggeredAction cloned = (TriggeredAction) super.clone(reader, listeners);
         if (this.triggerEvent != null) {
-            cloned.triggerEvent = this.triggerEvent.clone(reader, cloned);
+            cloned.triggerEvent = this.triggerEvent.clone(reader, listeners, cloned);
         }
         return cloned;
     }
 
-    public abstract boolean trigger(TriggerEvent.Type type, StoryUser user);
+    @Override
+    public void start() {
+        super.start();
+
+        if (this.triggerEvent == null) {
+            this.trigger(TriggerEvent.Type.START, this.reader);
+        }
+    }
+
+    public abstract void trigger(TriggerEvent.Type type, StoryUser user);
 
 }

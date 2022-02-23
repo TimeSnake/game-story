@@ -1,13 +1,14 @@
 package de.timesnake.game.story.action;
 
+import de.timesnake.basic.bukkit.util.file.ExFile;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.basic.entities.entity.bukkit.ExArmorStand;
 import de.timesnake.basic.packets.util.packet.ExPacketPlayOutEntityDestroy;
 import de.timesnake.basic.packets.util.packet.ExPacketPlayOutEntityEquipment;
 import de.timesnake.basic.packets.util.packet.ExPacketPlayOutEntityMetadata;
 import de.timesnake.basic.packets.util.packet.ExPacketPlayOutSpawnEntityLiving;
-import de.timesnake.game.story.elements.ItemNotFoundException;
-import de.timesnake.game.story.elements.StoryItem;
+import de.timesnake.game.story.elements.*;
+import de.timesnake.game.story.event.TriggerEvent;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.ChapterFile;
 import de.timesnake.game.story.user.StoryUser;
@@ -19,7 +20,7 @@ import org.bukkit.util.EulerAngle;
 import java.util.List;
 import java.util.Set;
 
-public class ItemSearchAction extends LocationAction implements EntityAction {
+public class ItemSearchAction extends LocationAction {
 
     public static final String NAME = "item_search";
 
@@ -31,27 +32,27 @@ public class ItemSearchAction extends LocationAction implements EntityAction {
 
     private ExArmorStand entity;
 
-    public ItemSearchAction(int id, BaseComponent[] diaryPage, StoryAction next, ExLocation location, StoryItem item, double itemAngle) {
-        super(id, diaryPage, next, location);
+    public ItemSearchAction(int id, BaseComponent[] diaryPage, StoryAction next, ExLocation location, StoryCharacter<?> character, StoryItem item, double itemAngle) {
+        super(id, diaryPage, next, location, character);
         this.item = item;
         this.itemAngle = itemAngle;
     }
 
-    public ItemSearchAction(int id, BaseComponent[] diaryPage, ChapterFile file, String actionPath) throws ItemNotFoundException {
-        super(id, diaryPage, false, file, actionPath);
+    public ItemSearchAction(int id, BaseComponent[] diaryPage, ChapterFile file, String actionPath) throws ItemNotFoundException, CharacterNotFoundException, UnknownLocationException {
+        super(id, diaryPage, file, actionPath);
 
-        int itemId = file.getActionValueInteger(actionPath, ITEM);
+        int itemId = file.getInt(ExFile.toPath(actionPath, ITEM));
         this.item = StoryServer.getItem(itemId);
-        this.itemAngle = file.getActionValueDouble(actionPath, ANGLE);
+        this.itemAngle = file.getDouble(ExFile.toPath(actionPath, ANGLE));
     }
 
     @Override
     public ItemSearchAction clone(StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
-        return new ItemSearchAction(this.id, this.diaryPage, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()), this.item.clone(reader), this.itemAngle);
+        return new ItemSearchAction(this.id, this.diaryPage, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()), this.character != null ? this.character.clone(reader, listeners) : null, this.item.clone(reader), this.itemAngle);
     }
 
     @Override
-    public void trigger(StoryUser user) {
+    public void trigger(TriggerEvent.Type type, StoryUser user) {
         if (!user.equals(this.reader)) {
             return;
         }

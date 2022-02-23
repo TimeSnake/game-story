@@ -1,6 +1,7 @@
 package de.timesnake.game.story.action;
 
 import de.timesnake.basic.bukkit.util.Server;
+import de.timesnake.basic.bukkit.util.file.ExFile;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.basic.bukkit.util.world.HoloDisplay;
 import de.timesnake.basic.packets.util.packet.ExPacketPlayOutEntityHeadRotation;
@@ -8,6 +9,8 @@ import de.timesnake.basic.packets.util.packet.ExPacketPlayOutEntityLook;
 import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.elements.CharacterNotFoundException;
 import de.timesnake.game.story.elements.StoryCharacter;
+import de.timesnake.game.story.elements.UnknownLocationException;
+import de.timesnake.game.story.event.TriggerEvent;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.ChapterFile;
@@ -15,81 +18,79 @@ import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.library.basic.util.Tuple;
 import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 
 import java.time.Duration;
 import java.util.*;
 
-public class TalkAction extends LocationAction implements EntityAction {
+public class TalkAction extends RadiusAction implements Listener {
 
     public static final String NAME = "talk";
 
-    private static final String CHARACTER = "character";
-    private static final String MESSAGES = "messages";
-
-    private static final String MESSAGE_PLAYER = "p:";
-    private static final String MESSAGE_CHARACTER = "c.";
-
-    private static final String CHARACTER_LOOK_DIRECTION = "character_look_direction";
-    private static final String YAW = "yaw";
-    private static final String PITCH = "pitch";
     private final LinkedList<Tuple<Speaker, String>> messages;
 
-    private final StoryCharacter<?> entity;
-
-    public TalkAction(int id, BaseComponent[] diaryPage, StoryAction next, StoryCharacter<?> entity, LinkedList<Tuple<Speaker, String>> messages, ExLocation location, float yaw, float pitch) {
-        super(id, diaryPage, next, location);
-        this.messages = messages;
-        this.entity = entity;
-        this.yaw = yaw;
-        this.pitch = pitch;
-    }
-
-    private HashMap<StoryUser, Integer> messageIndexbyUser = new HashMap<>();
+    private final StoryCharacter<?> speaker;
+    private final HashMap<StoryUser, Integer> messageIndexbyUser = new HashMap<>();
+    private final Set<StoryUser> delayingByUser = new HashSet<>();
 
     private final float yaw;
     private final float pitch;
 
-    private Set<StoryUser> delayingByUser = new HashSet<>();
+    public TalkAction(int id, BaseComponent[] diaryPage, StoryAction next, StoryCharacter<?> speaker, LinkedList<Tuple<Speaker, String>> messages, ExLocation location, StoryCharacter<?> character, Double radius, float yaw, float pitch) {
+        super(id, diaryPage, next, location, character, radius);
+        this.messages = messages;
+        this.speaker = speaker;
+        this.yaw = yaw;
+        this.pitch = pitch;
+
+        Server.registerListener(this, GameStory.getPlugin());
+    }
 
     private HoloDisplay display;
 
-    public TalkAction(int id, BaseComponent[] diaryPage, ChapterFile file, String actionPath) throws CharacterNotFoundException {
-        super(id, diaryPage, false, file, actionPath);
+    public TalkAction(int id, BaseComponent[] diaryPage, ChapterFile file, String actionPath) throws CharacterNotFoundException, UnknownLocationException {
+        super(id, diaryPage, file, actionPath);
 
-        int charId = file.getActionValueInteger(actionPath, CHARACTER);
-        this.entity = StoryServer.getCharater(charId);
+        int charId = file.getInt(ExFile.toPath(actionPath, CHARACTER));
+        this.speaker = StoryServer.getCharater(charId);
 
         this.messages = new LinkedList<>();
-        List<String> messageTexts = file.getActionValueStringList(actionPath, MESSAGES);
+        List<?> messageTexts = file.getList(ExFile.toPath(actionPath, MESSAGES));
 
-        for (String message : messageTexts) {
-            if (message.toLowerCase().startsWith(MESSAGE_PLAYER)) {
-                this.messages.addLast(new Tuple<>(Speaker.PLAYER, message));
-            } else if (message.toLowerCase().startsWith(MESSAGE_CHARACTER)) {
-                this.messages.addLast(new Tuple<>(Speaker.CHARACTER, message));
-            } else {
-                Server.printWarning(Plugin.STORY, "Unknown speaker in " + actionPath, "Action");
+        for (Object messageText : messageTexts) {
+            try {
+                LinkedHashMap<String, String> map = (LinkedHashMap<String, String>) messageText;
+
+                if (map.containsKey(MESSAGE_PLAYER)) {
+                    this.messages.addLast(new Tuple<>(Speaker.PLAYER, map.get(MESSAGE_PLAYER)));
+                } else if (map.containsKey(MESSAGE_CHARACTER)) {
+                    this.messages.addLast(new Tuple<>(Speaker.CHARACTER, map.get(MESSAGE_CHARACTER)));
+                } else {
+                    Server.printWarning(Plugin.STORY, "Unknown speaker in " + actionPath, "Action");
+                }
+            } catch (ClassCastException e) {
+                Server.printWarning(Plugin.STORY, "Missing speaker type in " + actionPath, "Action");
             }
         }
 
-        this.yaw = file.getActionValueDouble(actionPath, CHARACTER_LOOK_DIRECTION + "." + YAW).floatValue();
-        this.pitch = file.getActionValueDouble(actionPath, CHARACTER_LOOK_DIRECTION + "." + PITCH).floatValue();
+        this.yaw = file.getDouble(ExFile.toPath(actionPath, CHARACTER_LOOK_DIRECTION, YAW)).floatValue();
+        this.pitch = file.getDouble(ExFile.toPath(actionPath, CHARACTER_LOOK_DIRECTION, PITCH)).floatValue();
     }
 
     @Override
     public StoryAction clone(StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
-        return new TalkAction(this.id, this.diaryPage, clonedNext, this.entity.clone(reader, listeners), this.messages, this.location.clone().setExWorld(reader.getStoryWorld()), this.yaw, this.pitch);
+        return new TalkAction(this.id, this.diaryPage, clonedNext, this.speaker.clone(reader, listeners), this.messages, this.location.clone().setExWorld(reader.getStoryWorld()), this.character != null ? this.character.clone(reader, listeners) : null, this.radius, this.yaw, this.pitch);
     }
 
     @Override
-    public void trigger(StoryUser user) {
-        if (this.messageIndexbyUser.get(user) == null) {
+    public void trigger(TriggerEvent.Type type, StoryUser user) {
+        if (!this.messageIndexbyUser.containsKey(user)) {
             this.messageIndexbyUser.put(user, 0);
             this.nextMessage(user);
 
             if (user.equals(this.reader)) {
-                user.sendPacket(ExPacketPlayOutEntityLook.warp(this.entity.getEntity(), this.yaw, this.pitch, true));
+                user.sendPacket(ExPacketPlayOutEntityLook.warp(this.speaker.getEntity(), this.yaw, this.pitch, true));
             }
         }
     }
@@ -124,8 +125,7 @@ public class TalkAction extends LocationAction implements EntityAction {
 
     private void sendMessageNothingToTell(StoryUser user) {
         if (this.display != null) {
-            this.display.sendRemovePacketsTo(user);
-            this.display = null;
+            this.display.remove();
         }
 
         user.resetTitle();
@@ -161,15 +161,15 @@ public class TalkAction extends LocationAction implements EntityAction {
 
         Server.runTaskTimerAsynchrony((time) -> {
             if (time % 2 == 0) {
-                user.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.entity.getEntity(), this.yaw - random.nextInt(10) + 8));
-                user.sendPacket(ExPacketPlayOutEntityLook.warp(this.entity.getEntity(), this.yaw, this.pitch + random.nextInt(5) + 3, true));
+                user.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(), this.yaw - random.nextInt(10) + 8));
+                user.sendPacket(ExPacketPlayOutEntityLook.warp(this.speaker.getEntity(), this.yaw, this.pitch + random.nextInt(5) + 3, true));
             } else {
-                user.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.entity.getEntity(), this.yaw - random.nextInt(10) + 8));
-                user.sendPacket(ExPacketPlayOutEntityLook.warp(this.entity.getEntity(), this.yaw, this.pitch - random.nextInt(5) - 3, true));
+                user.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(), this.yaw - random.nextInt(10) + 8));
+                user.sendPacket(ExPacketPlayOutEntityLook.warp(this.speaker.getEntity(), this.yaw, this.pitch - random.nextInt(5) - 3, true));
             }
 
             if (time == 0) {
-                user.sendPacket(ExPacketPlayOutEntityLook.warp(this.entity.getEntity(), this.yaw, this.pitch, true));
+                user.sendPacket(ExPacketPlayOutEntityLook.warp(this.speaker.getEntity(), this.yaw, this.pitch, true));
             }
 
         }, 8, true, 0, 7, GameStory.getPlugin());
@@ -222,12 +222,16 @@ public class TalkAction extends LocationAction implements EntityAction {
             return;
         }
 
+        if (user.getLocation().distanceSquared(this.location) > this.radius * this.radius) {
+            return;
+        }
+
         this.delayingByUser.add(user);
 
-        if (!this.isActive()) {
-            this.sendMessageNothingToTell(user);
-        } else {
-            this.nextMessage(user);
+        if (this.isActive()) {
+            if (this.messageIndexbyUser.containsKey(user)) {
+                this.nextMessage(user);
+            }
         }
 
         Server.runTaskLaterSynchrony(() -> this.delayingByUser.remove(user), 10, GameStory.getPlugin());
@@ -235,12 +239,12 @@ public class TalkAction extends LocationAction implements EntityAction {
 
     @Override
     public void spawnEntities() {
-        this.entity.spawn();
+        this.speaker.spawn();
     }
 
     @Override
     public void despawnEntities() {
-        this.entity.despawn();
+        this.speaker.despawn();
 
         if (this.display != null) {
             this.display.sendRemovePacketsTo(this.reader);

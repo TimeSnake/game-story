@@ -1,8 +1,8 @@
 package de.timesnake.game.story.structure;
 
 import de.timesnake.basic.bukkit.util.Server;
+import de.timesnake.basic.bukkit.util.file.ExFile;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
-import de.timesnake.game.story.action.EntityAction;
 import de.timesnake.game.story.action.StoryAction;
 import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.main.GameStory;
@@ -37,7 +37,7 @@ public class StorySection implements Iterable<StoryAction> {
 
     public StorySection(ChapterFile file, int partId, int id, StoryAction firstAction) {
         this.id = id;
-        this.startLocation = new ExLocation(null, file.getSectionValueDoubleTriple(ChapterFile.getSectionPath(partId, id), START_LOCATION, X, Y, Z));
+        this.startLocation = new ExLocation(null, file.getDoubleTriple(ExFile.toPath(ChapterFile.getSectionPath(partId, id), START_LOCATION), X, Y, Z));
         this.firstAction = firstAction;
         this.firstAction.setSection(this);
     }
@@ -52,25 +52,18 @@ public class StorySection implements Iterable<StoryAction> {
 
     public void start() {
         this.reader.teleport(this.startLocation);
-
-        for (StoryUser listener : this.listeners) {
-            listener.teleport(this.startLocation);
-        }
+        this.listeners.forEach(u -> u.teleport(this.startLocation));
 
         Server.runTaskLaterSynchrony(() -> {
             Server.printText(Plugin.STORY, "Starting section " + this.id);
-            for (StoryAction action : this) {
-                if (action instanceof EntityAction) {
-                    ((EntityAction) action).spawnEntities();
-                }
-            }
+            this.forEach(StoryAction::spawnEntities);
 
             this.firstAction.start();
-        }, 20, GameStory.getPlugin());
+        }, 40, GameStory.getPlugin());
     }
 
     public void stop() {
-        Server.runTaskLaterSynchrony(this::clearEntities, 200, GameStory.getPlugin());
+        Server.runTaskLaterSynchrony(this::clearEntities, 10 * 20, GameStory.getPlugin());
     }
 
     @Override
@@ -79,10 +72,6 @@ public class StorySection implements Iterable<StoryAction> {
     }
 
     public void clearEntities() {
-        for (StoryAction action : this) {
-            if (action instanceof EntityAction) {
-                ((EntityAction) action).despawnEntities();
-            }
-        }
+        this.forEach(StoryAction::despawnEntities);
     }
 }

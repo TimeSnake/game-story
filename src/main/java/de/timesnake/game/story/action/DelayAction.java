@@ -1,5 +1,6 @@
 package de.timesnake.game.story.action;
 
+import de.timesnake.basic.bukkit.util.file.ExFile;
 import de.timesnake.game.story.structure.ChapterFile;
 import de.timesnake.game.story.user.StoryUser;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -8,7 +9,7 @@ import java.util.Set;
 
 public class DelayAction extends StoryAction {
 
-    private static final String DELAY = "delay";
+    public static final String NAME = "delay";
 
     private final int delay;
 
@@ -17,10 +18,10 @@ public class DelayAction extends StoryAction {
         this.delay = delay;
     }
 
-    protected DelayAction(int id, BaseComponent[] diaryPage, ChapterFile file, String actionPath) {
+    public DelayAction(int id, BaseComponent[] diaryPage, ChapterFile file, String actionPath) {
         super(id, diaryPage);
 
-        this.delay = file.getActionValueInteger(actionPath, DELAY);
+        this.delay = file.getInt(ExFile.toPath(actionPath, DELAY));
     }
 
     @Override

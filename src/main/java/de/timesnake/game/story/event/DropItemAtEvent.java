@@ -1,31 +1,46 @@
 package de.timesnake.game.story.event;
 
 import de.timesnake.basic.bukkit.util.Server;
+import de.timesnake.basic.bukkit.util.file.ExFile;
 import de.timesnake.basic.bukkit.util.user.ExItemStack;
 import de.timesnake.basic.bukkit.util.user.User;
 import de.timesnake.basic.bukkit.util.user.event.UserDropItemEvent;
-import de.timesnake.game.story.action.ItemAction;
+import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.action.TriggeredAction;
-import de.timesnake.game.story.elements.ItemNotFoundException;
-import de.timesnake.game.story.elements.StoryItem;
+import de.timesnake.game.story.elements.*;
 import de.timesnake.game.story.main.GameStory;
+import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.ChapterFile;
 import de.timesnake.game.story.user.StoryUser;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
-public class DropItemAtEvent<Action extends TriggeredAction & ItemAction> extends LocationEvent<Action> implements Listener {
+import java.util.Set;
 
-    private static final String NAME = "drop_at";
+public class DropItemAtEvent<Action extends TriggeredAction> extends LocationEvent<Action> implements Listener {
+
+    public static final String NAME = "drop_at";
+
+    private static final String ITEM = "item";
+
+
+    private final StoryItem item;
 
     private boolean dropped = false;
 
-    protected DropItemAtEvent(StoryItem item, boolean clearItem) {
-        super(item, clearItem);
+    protected DropItemAtEvent(ExLocation location, StoryCharacter<?> character, StoryItem item) {
+        super(location, character);
+
+        this.item = item;
+
+        Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public DropItemAtEvent(Action action, ChapterFile file, String triggerPath) throws ItemNotFoundException {
+    public DropItemAtEvent(Action action, ChapterFile file, String triggerPath) throws ItemNotFoundException, CharacterNotFoundException, UnknownLocationException {
         super(action, file, triggerPath);
+
+        int itemId = file.getInt(ExFile.toPath(triggerPath, ITEM));
+        this.item = StoryServer.getItem(itemId);
     }
 
     @EventHandler
@@ -41,7 +56,7 @@ public class DropItemAtEvent<Action extends TriggeredAction & ItemAction> extend
             return;
         }
 
-        if (!this.action.getItem().getItem().equals(ExItemStack.getItem(e.getItemStack(), false))) {
+        if (!this.item.getItem().equals(ExItemStack.getItem(e.getItemStack(), false))) {
             return;
         }
 
@@ -58,7 +73,7 @@ public class DropItemAtEvent<Action extends TriggeredAction & ItemAction> extend
         Server.runTaskLaterSynchrony(() -> {
             if (this.location.distanceSquared(e.getItemDrop().getLocation()) < 2) {
                 e.getItemDrop().remove();
-                this.startNext();
+                this.triggerAction(((StoryUser) user));
             } else {
                 this.dropped = false;
             }
@@ -66,12 +81,12 @@ public class DropItemAtEvent<Action extends TriggeredAction & ItemAction> extend
     }
 
     @Override
-    protected TriggerEvent<Action> clone(StoryUser reader) {
-        return null;
+    protected DropItemAtEvent<Action> clone(StoryUser reader, Set<StoryUser> listeners) {
+        return new DropItemAtEvent<>(this.location.clone().setExWorld(reader.getStoryWorld()), this.character != null ? this.character.clone(reader, listeners) : null, this.item.clone(reader));
     }
 
     @Override
     public Type getType() {
-        return null;
+        return Type.DROP_ITEM_AT;
     }
 }
