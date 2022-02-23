@@ -1,6 +1,8 @@
 package de.timesnake.game.story.action;
 
 import de.timesnake.basic.bukkit.util.Server;
+import de.timesnake.basic.bukkit.util.file.ExFile;
+import de.timesnake.game.story.event.TriggerEvent;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.ChapterFile;
 import de.timesnake.game.story.user.StoryUser;
@@ -12,11 +14,9 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 
-public class ThoughtAction extends StoryAction {
+public class ThoughtAction extends TriggeredAction {
 
     public static final String NAME = "thought";
-
-    private static final String MESSAGES = "messages";
 
     private final List<String> messages;
     private int messageIndex = 0;
@@ -31,19 +31,12 @@ public class ThoughtAction extends StoryAction {
     public ThoughtAction(int id, BaseComponent[] diaryPage, ChapterFile file, String actionPath) {
         super(id, diaryPage);
 
-        this.messages = file.getActionValueStringList(actionPath, MESSAGES);
+        this.messages = file.getStringList(ExFile.toPath(actionPath, MESSAGES));
     }
 
     @Override
     public StoryAction clone(StoryUser reader, Set<StoryUser> listener, StoryAction clonedNext) {
         return new ThoughtAction(this.id, this.diaryPage, clonedNext, this.messages);
-    }
-
-    @Override
-    public void start() {
-        super.start();
-
-        this.nextMessage();
     }
 
     private void nextMessage() {
@@ -91,5 +84,10 @@ public class ThoughtAction extends StoryAction {
         }
 
         Server.runTaskLaterSynchrony(() -> this.delaying = false, 20, GameStory.getPlugin());
+    }
+
+    @Override
+    public void trigger(TriggerEvent.Type type, StoryUser user) {
+        this.nextMessage();
     }
 }

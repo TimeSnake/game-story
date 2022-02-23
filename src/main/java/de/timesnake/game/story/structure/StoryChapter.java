@@ -1,11 +1,15 @@
 package de.timesnake.game.story.structure;
 
 import de.timesnake.basic.bukkit.util.Server;
+import de.timesnake.basic.bukkit.util.file.ExFile;
 import de.timesnake.game.story.action.*;
 import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.elements.CharacterNotFoundException;
 import de.timesnake.game.story.elements.ItemNotFoundException;
+import de.timesnake.game.story.elements.UnknownLocationException;
 import de.timesnake.game.story.event.AreaEvent;
+import de.timesnake.game.story.event.DropItemAtEvent;
+import de.timesnake.game.story.event.DropItemEvent;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 
@@ -24,7 +28,7 @@ public class StoryChapter {
         this.id = id;
         this.file = file;
 
-        this.name = file.getName();
+        this.name = file.getChapterName();
 
         List<Integer> partIds = new ArrayList<>(this.file.getPartIds());
         partIds.sort(Integer::compareTo);
@@ -49,7 +53,12 @@ public class StoryChapter {
                     break;
                 }
 
-                StoryAction first = this.getActionFromFile(partId, sectionId, actionIds.getFirst());
+                StoryAction first = null;
+                try {
+                    first = this.getActionFromFile(partId, sectionId, actionIds.getFirst());
+                } catch (CharacterNotFoundException | ItemNotFoundException | UnknownLocationException e) {
+                    Server.printWarning(Plugin.STORY, e.getMessage(), "Chapter " + this.id, "Part " + partId, "Section " + sectionId, "Action " + actionIds.getFirst());
+                }
                 StoryAction previous = first;
 
                 StringBuilder sb = new StringBuilder();
@@ -60,7 +69,12 @@ public class StoryChapter {
                 for (Integer actionId : actionIds) {
                     sb.append(", ");
 
-                    StoryAction action = this.getActionFromFile(partId, sectionId, actionId);
+                    StoryAction action = null;
+                    try {
+                        action = this.getActionFromFile(partId, sectionId, actionId);
+                    } catch (CharacterNotFoundException | ItemNotFoundException | UnknownLocationException e) {
+                        Server.printWarning(Plugin.STORY, e.getMessage(), "Chapter " + this.id, "Part " + partId, "Section " + sectionId, "Action " + actionId);
+                    }
 
                     previous.setNext(action);
                     previous = action;
@@ -81,17 +95,17 @@ public class StoryChapter {
         }
     }
 
-    private StoryAction getActionFromFile(Integer partId, Integer sectionId, Integer actionId) {
+    private StoryAction getActionFromFile(Integer partId, Integer sectionId, Integer actionId) throws CharacterNotFoundException, ItemNotFoundException, UnknownLocationException {
         String type = this.file.getActionType(partId, sectionId, actionId);
 
         if (type == null) {
-            return null;
+            type = TriggerAction.NAME;
         }
 
         String actionPath = ChapterFile.getActionPath(partId, sectionId, actionId);
 
         List<BaseComponent> diaryComponents = new ArrayList<>();
-        List<String> diaryLines = this.file.getActionValueStringList(actionPath, StoryAction.DIARY);
+        List<String> diaryLines = this.file.getStringList(ExFile.toPath(actionPath, StoryAction.DIARY));
 
         if (diaryLines != null) {
             for (String line : diaryLines) {
@@ -101,40 +115,30 @@ public class StoryChapter {
 
         BaseComponent[] diaryPage = diaryComponents.toArray(new BaseComponent[0]);
 
-        StoryAction action = null;
+        StoryAction action;
 
         switch (type.toLowerCase()) {
             case TalkAction.NAME:
-                try {
-                    action = new TalkAction(actionId, diaryPage, this.file, actionPath);
-                } catch (CharacterNotFoundException e) {
-                    Server.printWarning(Plugin.STORY, e.getMessage(), "Chapter " + this.id, "Part " + partId, "Section " + sectionId, "Action " + actionId);
-                }
+                action = new TalkAction(actionId, diaryPage, this.file, actionPath);
                 break;
             case ItemSearchAction.NAME:
-                try {
-                    action = new ItemSearchAction(actionId, diaryPage, this.file, actionPath);
-                } catch (ItemNotFoundException e) {
-                    Server.printWarning(Plugin.STORY, e.getMessage(), "Chapter " + this.id, "Part " + partId, "Section " + sectionId, "Action " + actionId);
-                }
-                break;
-            case ItemTradeAction.NAME:
-                try {
-                    action = new ItemTradeAction(actionId, diaryPage, this.file, actionPath);
-                } catch (ItemNotFoundException | CharacterNotFoundException e) {
-                    Server.printWarning(Plugin.STORY, e.getMessage(), "Chapter " + this.id, "Part " + partId, "Section " + sectionId, "Action " + actionId);
-                }
+                action = new ItemSearchAction(actionId, diaryPage, this.file, actionPath);
                 break;
             case ItemGiveAction.NAME:
-                try {
-                    action = new ItemGiveAction(actionId, diaryPage, this.file, actionPath);
-                } catch (CharacterNotFoundException | ItemNotFoundException e) {
-                    Server.printWarning(Plugin.STORY, e.getMessage(), "Chapter " + this.id, "Part " + partId, "Section " + sectionId, "Action " + actionId);
-                }
+                action = new ItemGiveAction(actionId, diaryPage, this.file, actionPath);
+                break;
+            case DelayAction.NAME:
+                action = new DelayAction(actionId, diaryPage, this.file, actionPath);
                 break;
             case ThoughtAction.NAME:
                 action = new ThoughtAction(actionId, diaryPage, this.file, actionPath);
                 break;
+            case ClearInventoryAction.NAME:
+                action = new ClearInventoryAction(actionId, diaryPage);
+                break;
+            case ItemLootAction.NAME:
+                action = new ItemLootAction(actionId, diaryPage, this.file, actionPath);
+            case TriggerAction.NAME:
             default:
                 action = new TriggerAction(actionId);
 
@@ -154,9 +158,19 @@ public class StoryChapter {
 
         String triggerType = file.getTriggerType(partId, sectionId, actionId);
 
+        if (triggerType == null) {
+            return action;
+        }
+
         switch (triggerType.toLowerCase()) {
             case AreaEvent.NAME:
-                triggeredAction.setTriggerEvent(new AreaEvent(triggeredAction, file, triggerPath));
+                triggeredAction.setTriggerEvent(new AreaEvent<>(triggeredAction, file, triggerPath));
+                break;
+            case DropItemAtEvent.NAME:
+                triggeredAction.setTriggerEvent(new DropItemAtEvent<>(triggeredAction, file, triggerPath));
+                break;
+            case DropItemEvent.NAME:
+                triggeredAction.setTriggerEvent(new DropItemEvent<>(triggeredAction, file, triggerPath));
                 break;
             default:
                 Server.printWarning(Plugin.STORY, "Unknown trigger type: " + triggerType, "Chapter " + this.id, "Part " + partId, "Section " + sectionId, "Action " + actionId);

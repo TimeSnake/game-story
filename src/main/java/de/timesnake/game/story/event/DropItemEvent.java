@@ -1,6 +1,7 @@
 package de.timesnake.game.story.event;
 
 import de.timesnake.basic.bukkit.util.Server;
+import de.timesnake.basic.bukkit.util.file.ExFile;
 import de.timesnake.basic.bukkit.util.user.ExItemStack;
 import de.timesnake.basic.bukkit.util.user.User;
 import de.timesnake.basic.bukkit.util.user.event.UserDropItemEvent;
@@ -14,9 +15,11 @@ import de.timesnake.game.story.user.StoryUser;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
-public class DropItemEvent extends TriggerEvent implements Listener {
+import java.util.Set;
 
-    public static final String NAME = "area";
+public class DropItemEvent<Action extends TriggeredAction> extends TriggerEvent<Action> implements Listener {
+
+    public static final String NAME = "drop";
 
     private static final String ITEM = "item";
     private static final String CLEAR_ITEM = "clear";
@@ -32,18 +35,18 @@ public class DropItemEvent extends TriggerEvent implements Listener {
         Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public DropItemEvent(TriggeredAction action, ChapterFile file, String triggerPath) throws ItemNotFoundException {
+    public DropItemEvent(Action action, ChapterFile file, String triggerPath) throws ItemNotFoundException {
         super(action);
 
-        int itemId = file.getActionValueInteger(triggerPath, ITEM);
+        int itemId = file.getInt(ExFile.toPath(triggerPath, ITEM));
         this.item = StoryServer.getItem(itemId);
 
-        this.clearItem = file.getTriggerValueBoolean(triggerPath, CLEAR_ITEM);
+        this.clearItem = file.getBoolean(ExFile.toPath(triggerPath, CLEAR_ITEM));
     }
 
     @Override
-    protected TriggerEvent clone(StoryUser reader) {
-        return null;
+    protected DropItemEvent<Action> clone(StoryUser reader, Set<StoryUser> listeners) {
+        return new DropItemEvent<>(this.item.clone(reader), this.clearItem);
     }
 
     @Override
@@ -68,9 +71,9 @@ public class DropItemEvent extends TriggerEvent implements Listener {
             return;
         }
 
-        boolean successful = super.triggerAction(((StoryUser) user));
+        super.triggerAction(((StoryUser) user));
 
-        if (successful && this.clearItem) {
+        if (this.clearItem) {
             Server.runTaskLaterSynchrony(() -> e.getItemDrop().remove(), 20, GameStory.getPlugin());
         }
     }

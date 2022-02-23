@@ -12,6 +12,27 @@ public abstract class StoryAction implements Iterator<StoryAction> {
 
     public static final String DIARY = "diary";
 
+    public static final String CHARACTER = "character";
+    public static final String MESSAGES = "messages";
+
+    public static final String MESSAGE_PLAYER = "p";
+    public static final String MESSAGE_CHARACTER = "c";
+
+    public static final String CHARACTER_LOOK_DIRECTION = "character_look_direction";
+    public static final String YAW = "yaw";
+    public static final String PITCH = "pitch";
+
+    public static final String RADIUS = "radius";
+
+    public static final String LOCATION = "location";
+    public static final String X = "x";
+    public static final String Y = "y";
+    public static final String Z = "z";
+
+    public static final String DELAY = "delay";
+
+    public static final String ITEM = "item";
+
 
     protected StoryUser reader;
     protected Set<StoryUser> listeners = new HashSet<>();
@@ -73,16 +94,24 @@ public abstract class StoryAction implements Iterator<StoryAction> {
         this.reader.getDiary().addPage(this.diaryPage);
         this.reader.updateDiary();
 
-        for (StoryUser user : this.listeners) {
+        this.listeners.forEach(user -> {
             user.getDiary().addPage(this.diaryPage);
             user.updateDiary();
-        }
+        });
 
         if (this.hasNext()) {
             this.next.start();
         } else {
             this.reader.onCompletedSection(this.section, this.listeners);
         }
+    }
+
+    public void spawnEntities() {
+
+    }
+
+    public void despawnEntities() {
+
     }
 
     public boolean isActive() {
