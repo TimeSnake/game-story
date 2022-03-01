@@ -7,21 +7,23 @@ import de.timesnake.game.story.elements.StoryCharacter;
 import de.timesnake.game.story.elements.UnknownLocationException;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.ChapterFile;
-import net.md_5.bungee.api.chat.BaseComponent;
+
+import java.util.Collection;
+import java.util.List;
 
 public abstract class LocationAction extends TriggeredAction {
 
     protected final ExLocation location;
     protected final StoryCharacter<?> character;
 
-    protected LocationAction(int id, BaseComponent[] diaryPage, StoryAction next, ExLocation location, StoryCharacter<?> character) {
-        super(id, diaryPage, next);
+    protected LocationAction(int id, StoryAction next, ExLocation location, StoryCharacter<?> character) {
+        super(id, next);
         this.location = location;
         this.character = character;
     }
 
-    public LocationAction(int id, BaseComponent[] diaryPage, ChapterFile file, String actionPath) throws CharacterNotFoundException, UnknownLocationException {
-        super(id, diaryPage);
+    public LocationAction(int id, List<Integer> diaryPages, ChapterFile file, String actionPath) throws CharacterNotFoundException, UnknownLocationException {
+        super(id, diaryPages);
 
         if (file.contains(ExFile.toPath(actionPath, LOCATION))) {
             this.character = null;
@@ -35,20 +37,12 @@ public abstract class LocationAction extends TriggeredAction {
     }
 
     @Override
-    public void spawnEntities() {
+    public Collection<Integer> getCharacterIds() {
+        Collection<Integer> ids = super.getCharacterIds();
+
         if (this.character != null) {
-            this.character.spawn();
+            ids.add(this.character.getId());
         }
-
-        super.spawnEntities();
-    }
-
-    @Override
-    public void despawnEntities() {
-        if (this.character != null) {
-            this.character.despawn();
-        }
-
-        super.despawnEntities();
+        return ids;
     }
 }

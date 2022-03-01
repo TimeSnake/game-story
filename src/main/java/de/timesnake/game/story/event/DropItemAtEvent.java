@@ -11,6 +11,7 @@ import de.timesnake.game.story.elements.*;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.ChapterFile;
+import de.timesnake.game.story.structure.StorySection;
 import de.timesnake.game.story.user.StoryUser;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -81,8 +82,8 @@ public class DropItemAtEvent<Action extends TriggeredAction> extends LocationEve
     }
 
     @Override
-    protected DropItemAtEvent<Action> clone(StoryUser reader, Set<StoryUser> listeners) {
-        return new DropItemAtEvent<>(this.location.clone().setExWorld(reader.getStoryWorld()), this.character != null ? this.character.clone(reader, listeners) : null, this.item.clone(reader));
+    protected DropItemAtEvent<Action> clone(StorySection section, StoryUser reader, Set<StoryUser> listeners) {
+        return new DropItemAtEvent<>(this.location.clone().setExWorld(reader.getStoryWorld()), this.character != null ? section.getPart().getCharacter(this.character.getId()) : null, this.item.clone(reader));
     }
 
     @Override

@@ -11,9 +11,9 @@ import de.timesnake.game.story.elements.*;
 import de.timesnake.game.story.event.TriggerEvent;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.ChapterFile;
+import de.timesnake.game.story.structure.StorySection;
 import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.library.basic.util.Tuple;
-import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.util.EulerAngle;
 
@@ -32,14 +32,14 @@ public class ItemSearchAction extends LocationAction {
 
     private ExArmorStand entity;
 
-    public ItemSearchAction(int id, BaseComponent[] diaryPage, StoryAction next, ExLocation location, StoryCharacter<?> character, StoryItem item, double itemAngle) {
-        super(id, diaryPage, next, location, character);
+    public ItemSearchAction(int id, StoryAction next, ExLocation location, StoryCharacter<?> character, StoryItem item, double itemAngle) {
+        super(id, next, location, character);
         this.item = item;
         this.itemAngle = itemAngle;
     }
 
-    public ItemSearchAction(int id, BaseComponent[] diaryPage, ChapterFile file, String actionPath) throws ItemNotFoundException, CharacterNotFoundException, UnknownLocationException {
-        super(id, diaryPage, file, actionPath);
+    public ItemSearchAction(int id, List<Integer> diaryPages, ChapterFile file, String actionPath) throws ItemNotFoundException, CharacterNotFoundException, UnknownLocationException {
+        super(id, diaryPages, file, actionPath);
 
         int itemId = file.getInt(ExFile.toPath(actionPath, ITEM));
         this.item = StoryServer.getItem(itemId);
@@ -47,8 +47,8 @@ public class ItemSearchAction extends LocationAction {
     }
 
     @Override
-    public ItemSearchAction clone(StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
-        return new ItemSearchAction(this.id, this.diaryPage, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()), this.character != null ? this.character.clone(reader, listeners) : null, this.item.clone(reader), this.itemAngle);
+    public ItemSearchAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
+        return new ItemSearchAction(this.id, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()), this.character != null ? section.getPart().getCharacter(this.character.getId()) : null, this.item.clone(reader), this.itemAngle);
     }
 
     @Override

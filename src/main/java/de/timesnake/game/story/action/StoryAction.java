@@ -2,11 +2,8 @@ package de.timesnake.game.story.action;
 
 import de.timesnake.game.story.structure.StorySection;
 import de.timesnake.game.story.user.StoryUser;
-import net.md_5.bungee.api.chat.BaseComponent;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 public abstract class StoryAction implements Iterator<StoryAction> {
 
@@ -39,32 +36,33 @@ public abstract class StoryAction implements Iterator<StoryAction> {
 
     protected final int id;
 
-    protected BaseComponent[] diaryPage;
-
     protected StorySection section;
     protected StoryAction next;
 
+    private List<Integer> diaryPages;
+
     protected boolean active;
 
-    protected StoryAction(int id, BaseComponent[] diaryPage) {
+    protected StoryAction(int id, List<Integer> diaryPages) {
         this.id = id;
-        this.diaryPage = diaryPage;
+        this.diaryPages = diaryPages;
     }
 
-    protected StoryAction(int id, BaseComponent[] diaryPage, StoryAction next) {
+    protected StoryAction(int id, StoryAction next) {
         this.id = id;
-        this.diaryPage = diaryPage;
         this.next = next;
     }
 
-    public StoryAction clone(StoryUser reader, Set<StoryUser> listeners) {
-        StoryAction cloned = this.hasNext() ? this.clone(reader, listeners, this.next.clone(reader, listeners)) : this.clone(reader, listeners, null);
+    public StoryAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners) {
+        StoryAction cloned = this.hasNext() ? this.clone(section, reader, listeners, this.next.clone(section, reader, listeners)) : this.clone(section, reader, listeners, null);
         cloned.reader = reader;
         cloned.listeners = listeners;
+        cloned.diaryPages = this.diaryPages;
+        cloned.section = section;
         return cloned;
     }
 
-    public abstract StoryAction clone(StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext);
+    public abstract StoryAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext);
 
     public StoryAction getNext() {
         return next;
@@ -91,13 +89,7 @@ public abstract class StoryAction implements Iterator<StoryAction> {
     public void startNext() {
         this.active = false;
 
-        this.reader.getDiary().addPage(this.diaryPage);
-        this.reader.updateDiary();
-
-        this.listeners.forEach(user -> {
-            user.getDiary().addPage(this.diaryPage);
-            user.updateDiary();
-        });
+        this.section.getPart().getDiary().loadPage(this.diaryPages.toArray(new Integer[0]));
 
         if (this.hasNext()) {
             this.next.start();
@@ -131,6 +123,10 @@ public abstract class StoryAction implements Iterator<StoryAction> {
         if (this.hasNext()) {
             this.next.setSection(section);
         }
+    }
+
+    public Collection<Integer> getCharacterIds() {
+        return new HashSet<>();
     }
 
     public static class ActionIterator implements Iterator<StoryAction> {

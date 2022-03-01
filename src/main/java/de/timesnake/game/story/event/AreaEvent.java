@@ -10,6 +10,7 @@ import de.timesnake.game.story.elements.StoryCharacter;
 import de.timesnake.game.story.elements.UnknownLocationException;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.ChapterFile;
+import de.timesnake.game.story.structure.StorySection;
 import de.timesnake.game.story.user.StoryUser;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -60,8 +61,8 @@ public class AreaEvent<Action extends TriggeredAction> extends LocationEvent<Act
     }
 
     @Override
-    protected AreaEvent<Action> clone(StoryUser reader, Set<StoryUser> listeners) {
-        return new AreaEvent<>(this.location.clone().setExWorld(reader.getStoryWorld()), this.character != null ? this.character.clone(reader, listeners) : null, this.radius);
+    protected AreaEvent<Action> clone(StorySection section, StoryUser reader, Set<StoryUser> listeners) {
+        return new AreaEvent<>(this.location.clone().setExWorld(reader.getStoryWorld()), this.character != null ? section.getPart().getCharacter(this.character.getId()) : null, this.radius);
     }
 
     @Override

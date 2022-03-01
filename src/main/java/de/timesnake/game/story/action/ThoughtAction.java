@@ -5,16 +5,17 @@ import de.timesnake.basic.bukkit.util.file.ExFile;
 import de.timesnake.game.story.event.TriggerEvent;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.ChapterFile;
+import de.timesnake.game.story.structure.StorySection;
 import de.timesnake.game.story.user.StoryUser;
-import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 
-public class ThoughtAction extends TriggeredAction {
+public class ThoughtAction extends TriggeredAction implements Listener {
 
     public static final String NAME = "thought";
 
@@ -23,20 +24,22 @@ public class ThoughtAction extends TriggeredAction {
 
     private boolean delaying = false;
 
-    protected ThoughtAction(int id, BaseComponent[] diaryPage, StoryAction next, List<String> messages) {
-        super(id, diaryPage, next);
+    protected ThoughtAction(int id, StoryAction next, List<String> messages) {
+        super(id, next);
         this.messages = messages;
+
+        Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public ThoughtAction(int id, BaseComponent[] diaryPage, ChapterFile file, String actionPath) {
-        super(id, diaryPage);
+    public ThoughtAction(int id, List<Integer> diaryPages, ChapterFile file, String actionPath) {
+        super(id, diaryPages);
 
         this.messages = file.getStringList(ExFile.toPath(actionPath, MESSAGES));
     }
 
     @Override
-    public StoryAction clone(StoryUser reader, Set<StoryUser> listener, StoryAction clonedNext) {
-        return new ThoughtAction(this.id, this.diaryPage, clonedNext, this.messages);
+    public StoryAction clone(StorySection section, StoryUser reader, Set<StoryUser> listener, StoryAction clonedNext) {
+        return new ThoughtAction(this.id, clonedNext, this.messages);
     }
 
     private void nextMessage() {
@@ -44,6 +47,7 @@ public class ThoughtAction extends TriggeredAction {
         if (this.messageIndex >= this.messages.size()) {
             this.reader.resetTitle();
             this.startNext();
+            return;
         }
 
         this.reader.resetTitle();
@@ -51,12 +55,8 @@ public class ThoughtAction extends TriggeredAction {
             listener.resetTitle();
         }
 
-        if (this.messageIndex < this.messages.size()) {
-            this.reader.sendTitle("", this.messages.get(this.messageIndex), Duration.ofSeconds(20));
-            for (StoryUser listener : this.listeners) {
-                listener.sendTitle("", this.messages.get(this.messageIndex), Duration.ofSeconds(20));
-            }
-        }
+        this.reader.sendTitle("", this.messages.get(this.messageIndex), Duration.ofSeconds(20));
+        this.listeners.forEach((u) -> u.sendTitle("", this.messages.get(this.messageIndex), Duration.ofSeconds(20)));
 
         this.messageIndex++;
     }
@@ -79,7 +79,8 @@ public class ThoughtAction extends TriggeredAction {
 
         this.delaying = true;
 
-        if (this.isActive()) {
+
+        if (this.isActive() && this.messageIndex > 0) {
             this.nextMessage();
         }
 
@@ -88,6 +89,8 @@ public class ThoughtAction extends TriggeredAction {
 
     @Override
     public void trigger(TriggerEvent.Type type, StoryUser user) {
-        this.nextMessage();
+        if (this.messageIndex == 0) {
+            this.nextMessage();
+        }
     }
 }

@@ -2,32 +2,39 @@ package de.timesnake.game.story.user;
 
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.user.User;
+import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
 import de.timesnake.database.util.Database;
 import de.timesnake.database.util.story.DbStoryUser;
-import de.timesnake.game.story.book.Diary;
 import de.timesnake.game.story.book.StoryContentBook;
+import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.structure.StoryPart;
 import de.timesnake.game.story.structure.StorySection;
+import de.timesnake.library.basic.util.chat.ChatColor;
+import org.bukkit.GameMode;
+import org.bukkit.GameRule;
 import org.bukkit.entity.Player;
 
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class StoryUser extends User {
 
+
+    private final Map<Integer, Set<Integer>> boughtPartsByChapter = new HashMap<>();
     private final Map<Integer, Map<Integer, Integer>> sectionsByPartByChapter = new HashMap<>();
+
+    private final DbStoryUser dbStory;
 
     private StoryChapter chapter;
     private StoryPart part;
     private StorySection section;
-
-    private Diary diary;
 
     private final StoryContentBook contentBook;
 
@@ -38,7 +45,33 @@ public class StoryUser extends User {
 
         this.world = Server.getWorld(this.getUniqueId().toString());
 
-        DbStoryUser dbStory = Database.getStory().getUser(this.getUniqueId());
+        if (this.world == null) {
+            this.world = Server.getWorldManager().cloneWorld(this.getUniqueId().toString(), StoryServer.getStoryWorldTemplate());
+        }
+
+        this.world.setPVP(false);
+        this.world.allowBlockPlace(false);
+        this.world.allowBlockBreak(false);
+        this.world.allowFluidCollect(false);
+        this.world.allowFluidPlace(false);
+        this.world.allowBlockBurnUp(false);
+        this.world.allowBlockIgnite(false);
+        this.world.allowFlintAndSteel(false);
+        this.world.allowFirecampInteraction(true);
+        this.world.allowFireSpread(false);
+        this.world.allowEntityExplode(false);
+        this.world.allowEntityBlockBreak(false);
+        this.world.setExceptService(true);
+        this.world.allowDropPickItem(true);
+        this.world.allowPlaceInBlock(true);
+        this.world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
+        this.world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
+
+        this.dbStory = Database.getStory().getUser(this.getUniqueId());
+
+        for (Integer chapterId : StoryServer.getChapters().stream().map(StoryChapter::getId).collect(Collectors.toList())) {
+            this.boughtPartsByChapter.put(chapterId, this.dbStory.getBoughtParts(chapterId));
+        }
 
         for (Integer chapterId : dbStory.getChapterIds()) {
 
@@ -53,7 +86,13 @@ public class StoryUser extends User {
             this.sectionsByPartByChapter.put(chapterId, sectionIdsByPartId);
         }
 
-        this.contentBook = new StoryContentBook(this.sectionsByPartByChapter);
+        if (this.sectionsByPartByChapter.isEmpty()) {
+            HashMap<Integer, Integer> sectionsByPart = new HashMap<>();
+            sectionsByPart.put(1, 1);
+            this.sectionsByPartByChapter.put(1, sectionsByPart);
+        }
+
+        this.contentBook = new StoryContentBook(this.sectionsByPartByChapter, this.boughtPartsByChapter);
     }
 
     public void startChapterPart(Integer chapterId, Integer partId, Set<StoryUser> listeners) {
@@ -73,41 +112,58 @@ public class StoryUser extends User {
 
         this.sectionsByPartByChapter.get(chapterId).putIfAbsent(partId, 1);
 
-        this.part = chapter.getPart(partId).clone(this, listeners);
-
         Integer sectionId = this.sectionsByPartByChapter.get(chapterId).get(partId);
 
-        this.section = this.part.getSection(sectionId);
-
-        this.prepareGame();
-
-        this.section.start();
-    }
-
-    private void prepareGame() {
-        this.diary = StoryServer.getDiaryManager().getUserDiary(this.getUniqueId(), this.chapter.getId());
-
-        this.clearInventory();
-
-        this.setItem(0, this.diary.getBook());
-        this.setItem(1, UserManager.FOOD);
-    }
-
-    public void onCompletedSection(StorySection section, Set<StoryUser> listeners) {
-        this.section = this.part.nextSection(section);
-
-        section.stop();
-
-        if (this.section == null) {
-            this.onCompletedPart(this.part);
+        if (sectionId > chapter.getPart(partId).getLastSection().getId()) {
+            this.sendPluginMessage(Plugin.STORY, ChatColor.WARNING + "You already played this part");
             return;
         }
 
-        this.section.start();
+        this.part = chapter.getPart(partId).clone(this, listeners);
+
+        this.section = this.part.getSection(sectionId);
+
+        this.dbStory.setSectionId(this.chapter.getId(), this.part.getId(), this.section.getId());
+
+        this.clearInventory();
+        this.setGameMode(GameMode.SURVIVAL);
+
+        this.setItem(0, this.part.getDiary().getBook());
+        this.setItem(1, UserManager.FOOD);
+        this.setItem(2, UserManager.DRINK);
+
+        this.section.start(true);
+    }
+
+    public void onCompletedSection(StorySection section, Set<StoryUser> listeners) {
+
+        section.stop();
+
+        this.section = this.part.nextSection(section);
+
+        Server.runTaskLaterSynchrony(() -> {
+            if (this.section == null) {
+                this.sectionsByPartByChapter.get(this.chapter.getId()).put(this.part.getId(), section.getId() + 1);
+                this.dbStory.setSectionId(this.chapter.getId(), this.part.getId(), section.getId() + 1);
+                Server.printText(Plugin.STORY, "Completed part " + this.chapter.getId() + "." + this.part.getId(), this.getName());
+                this.onCompletedPart(this.part);
+            } else {
+                this.sectionsByPartByChapter.get(this.chapter.getId()).put(this.part.getId(), this.section.getId());
+                this.dbStory.setSectionId(this.chapter.getId(), this.part.getId(), this.section.getId());
+                Server.printText(Plugin.STORY, "Saved checkpoint " + this.chapter.getId() + "." + this.part.getId() + "." + this.section.getId(), this.getName());
+
+                this.section.start(false);
+            }
+        }, 5 * 20, GameStory.getPlugin());
+
     }
 
     public void onCompletedPart(StoryPart part) {
+        part.despawnCharacters();
         this.sendTitle("", part.getEndMessage(), Duration.ofSeconds(3));
+
+        this.sectionsByPartByChapter.get(this.chapter.getId()).put(part.getId() + 1, 1);
+
         Server.runTaskLaterSynchrony(this::joinStoryHub, 5 * 20, GameStory.getPlugin());
     }
 
@@ -131,11 +187,29 @@ public class StoryUser extends User {
         return contentBook;
     }
 
-    public Diary getDiary() {
-        return diary;
+    public Set<Integer> getBoughtParts(Integer chapterId) {
+        return this.boughtPartsByChapter.get(chapterId);
     }
 
-    public void updateDiary() {
-        this.setItem(0, this.diary.getBook());
+    public void buyPart(Integer chapterId, Integer partId) {
+        this.removeCoins(StoryServer.PART_PRICE, true);
+        this.boughtPartsByChapter.get(chapterId).add(partId);
+        this.dbStory.addBoughtPart(chapterId, partId);
+    }
+
+    public ExLocation getStoryRespawnLocation() {
+        return this.section.getStartLocation();
+    }
+
+    public StoryChapter getChapter() {
+        return chapter;
+    }
+
+    public StoryPart getPart() {
+        return part;
+    }
+
+    public StorySection getSection() {
+        return section;
     }
 }

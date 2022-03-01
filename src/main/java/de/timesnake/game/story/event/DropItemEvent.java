@@ -11,6 +11,7 @@ import de.timesnake.game.story.elements.StoryItem;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.ChapterFile;
+import de.timesnake.game.story.structure.StorySection;
 import de.timesnake.game.story.user.StoryUser;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -45,7 +46,7 @@ public class DropItemEvent<Action extends TriggeredAction> extends TriggerEvent<
     }
 
     @Override
-    protected DropItemEvent<Action> clone(StoryUser reader, Set<StoryUser> listeners) {
+    protected DropItemEvent<Action> clone(StorySection section, StoryUser reader, Set<StoryUser> listeners) {
         return new DropItemEvent<>(this.item.clone(reader), this.clearItem);
     }
 

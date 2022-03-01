@@ -26,6 +26,7 @@ public abstract class StoryCharacter<Entity extends EntityExtension<? extends Ex
         return null;
     }
 
+    protected final Integer id;
 
     protected StoryUser reader;
     protected Set<StoryUser> listeners;
@@ -34,13 +35,15 @@ public abstract class StoryCharacter<Entity extends EntityExtension<? extends Ex
     protected final ExLocation location;
     protected final Entity entity;
 
-    public StoryCharacter(String name, ExLocation location) {
+    public StoryCharacter(Integer id, String name, ExLocation location) {
+        this.id = id;
         this.name = name;
         this.location = location;
         this.entity = this.initEntity();
     }
 
     public StoryCharacter(CharacterFile file, int entityId) {
+        this.id = entityId;
         this.name = file.getCharacterName(entityId);
         this.location = new ExLocation(null, file.getCharacterLocation(entityId));
         this.entity = null;
@@ -66,4 +69,8 @@ public abstract class StoryCharacter<Entity extends EntityExtension<? extends Ex
     public abstract void spawn();
 
     public abstract void despawn();
+
+    public Integer getId() {
+        return this.id;
+    }
 }

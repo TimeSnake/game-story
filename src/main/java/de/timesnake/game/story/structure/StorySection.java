@@ -7,6 +7,9 @@ import de.timesnake.game.story.action.StoryAction;
 import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.user.StoryUser;
+import org.bukkit.Color;
+import org.bukkit.Particle;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -22,17 +25,19 @@ public class StorySection implements Iterable<StoryAction> {
     private Set<StoryUser> listeners;
 
     private final int id;
+    private StoryPart part;
+
     private final StoryAction firstAction;
 
     private final ExLocation startLocation;
 
-    public StorySection(int id, StoryUser reader, Set<StoryUser> listeners, ExLocation startLocation, StoryAction firstAction) {
+    public StorySection(StoryPart part, int id, StoryUser reader, Set<StoryUser> listeners, ExLocation startLocation, StoryAction firstAction) {
+        this.part = part;
         this.id = id;
         this.reader = reader;
         this.listeners = listeners;
-        this.startLocation = startLocation;
-        this.firstAction = firstAction;
-        this.firstAction.setSection(this);
+        this.startLocation = startLocation.clone().setExWorld(reader.getStoryWorld());
+        this.firstAction = firstAction.clone(this, reader, listeners);
     }
 
     public StorySection(ChapterFile file, int partId, int id, StoryAction firstAction) {
@@ -42,20 +47,44 @@ public class StorySection implements Iterable<StoryAction> {
         this.firstAction.setSection(this);
     }
 
-    public StorySection clone(StoryUser reader, Set<StoryUser> listeners) {
-        return new StorySection(this.id, reader, listeners, this.startLocation.clone().setExWorld(reader.getStoryWorld()), this.firstAction.clone(reader, listeners));
+    public StorySection clone(StoryPart part, StoryUser reader, Set<StoryUser> listeners) {
+        return new StorySection(part, this.id, reader, listeners, this.startLocation, this.firstAction);
     }
 
     public int getId() {
         return id;
     }
 
-    public void start() {
-        this.reader.teleport(this.startLocation);
-        this.listeners.forEach(u -> u.teleport(this.startLocation));
+    public StoryPart getPart() {
+        return part;
+    }
+
+    public void setPart(StoryPart part) {
+        this.part = part;
+    }
+
+    public void start(boolean teleport) {
+        if (teleport) {
+            this.reader.teleport(this.startLocation);
+            this.listeners.forEach(u -> u.teleport(this.startLocation));
+
+            this.reader.addPotionEffect(PotionEffectType.BLINDNESS, 20 * 3, 0);
+
+            Server.runTaskTimerSynchrony((t) -> {
+
+                for (int angle = 0; angle < 360; angle += 10) {
+                    double x = (Math.sin(angle)) * 0.7;
+                    double z = (Math.cos(angle)) * 0.7;
+
+                    Particle.DustOptions dust = new Particle.DustOptions(Color.fromRGB(102, 0, 102), 1.5f);
+                    this.startLocation.getWorld().spawnParticle(Particle.REDSTONE, this.startLocation.getX() + x, this.startLocation.getY(), this.startLocation.getZ() + z, 8, 0, 1.5, 0, 5, dust);
+                }
+
+            }, 4, true, 0, 10, GameStory.getPlugin());
+        }
 
         Server.runTaskLaterSynchrony(() -> {
-            Server.printText(Plugin.STORY, "Starting section " + this.id);
+            Server.printText(Plugin.STORY, "Starting section " + this.id, this.reader.getName());
             this.forEach(StoryAction::spawnEntities);
 
             this.firstAction.start();
@@ -73,5 +102,9 @@ public class StorySection implements Iterable<StoryAction> {
 
     public void clearEntities() {
         this.forEach(StoryAction::despawnEntities);
+    }
+
+    public ExLocation getStartLocation() {
+        return this.startLocation;
     }
 }

@@ -6,9 +6,10 @@ import de.timesnake.game.story.elements.*;
 import de.timesnake.game.story.event.TriggerEvent;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.ChapterFile;
+import de.timesnake.game.story.structure.StorySection;
 import de.timesnake.game.story.user.StoryUser;
-import net.md_5.bungee.api.chat.BaseComponent;
 
+import java.util.List;
 import java.util.Set;
 
 public class ItemGiveAction extends LocationAction {
@@ -17,13 +18,13 @@ public class ItemGiveAction extends LocationAction {
 
     private final StoryItem item;
 
-    public ItemGiveAction(int id, BaseComponent[] diaryPage, StoryAction next, ExLocation location, StoryCharacter<?> character, StoryItem item) {
-        super(id, diaryPage, next, location, character);
+    public ItemGiveAction(int id, StoryAction next, ExLocation location, StoryCharacter<?> character, StoryItem item) {
+        super(id, next, location, character);
         this.item = item;
     }
 
-    public ItemGiveAction(int id, BaseComponent[] diaryPage, ChapterFile file, String actionPath) throws CharacterNotFoundException, ItemNotFoundException, UnknownLocationException {
-        super(id, diaryPage, file, actionPath);
+    public ItemGiveAction(int id, List<Integer> diaryPages, ChapterFile file, String actionPath) throws CharacterNotFoundException, ItemNotFoundException, UnknownLocationException {
+        super(id, diaryPages, file, actionPath);
 
         int itemId = file.getInt(ExFile.toPath(actionPath, ITEM));
         this.item = StoryServer.getItem(itemId);
@@ -31,8 +32,8 @@ public class ItemGiveAction extends LocationAction {
 
 
     @Override
-    public ItemGiveAction clone(StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
-        return new ItemGiveAction(this.id, this.diaryPage, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()), this.character.clone(reader, listeners), this.item.clone(reader));
+    public ItemGiveAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
+        return new ItemGiveAction(this.id, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()), section.getPart().getCharacter(character.getId()), this.item.clone(reader));
     }
 
     @Override
