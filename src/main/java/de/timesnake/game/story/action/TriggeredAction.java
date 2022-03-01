@@ -1,21 +1,22 @@
 package de.timesnake.game.story.action;
 
 import de.timesnake.game.story.event.TriggerEvent;
+import de.timesnake.game.story.structure.StorySection;
 import de.timesnake.game.story.user.StoryUser;
-import net.md_5.bungee.api.chat.BaseComponent;
 
+import java.util.List;
 import java.util.Set;
 
 public abstract class TriggeredAction extends StoryAction {
 
     protected TriggerEvent<TriggeredAction> triggerEvent;
 
-    protected TriggeredAction(int id, BaseComponent[] diaryPage) {
-        super(id, diaryPage);
+    protected TriggeredAction(int id, List<Integer> diaryPages) {
+        super(id, diaryPages);
     }
 
-    protected TriggeredAction(int id, BaseComponent[] diaryPage, StoryAction next) {
-        super(id, diaryPage, next);
+    protected TriggeredAction(int id, StoryAction next) {
+        super(id, next);
     }
 
     public void setTriggerEvent(TriggerEvent<TriggeredAction> triggerEvent) {
@@ -23,10 +24,10 @@ public abstract class TriggeredAction extends StoryAction {
     }
 
     @Override
-    public TriggeredAction clone(StoryUser reader, Set<StoryUser> listeners) {
-        TriggeredAction cloned = (TriggeredAction) super.clone(reader, listeners);
+    public TriggeredAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners) {
+        TriggeredAction cloned = (TriggeredAction) super.clone(section, reader, listeners);
         if (this.triggerEvent != null) {
-            cloned.triggerEvent = this.triggerEvent.clone(reader, listeners, cloned);
+            cloned.triggerEvent = this.triggerEvent.clone(section, reader, listeners, cloned);
         }
         return cloned;
     }

@@ -3,7 +3,6 @@ package de.timesnake.game.story.server;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.ServerManager;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
-import de.timesnake.game.story.book.DiaryManager;
 import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.elements.*;
 import de.timesnake.game.story.main.GameStory;
@@ -12,6 +11,7 @@ import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.structure.StoryFile;
 import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.game.story.user.UserManager;
+import org.bukkit.GameRule;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 
@@ -37,8 +37,7 @@ public class StoryServerManager extends ServerManager implements Listener {
     private final Map<Integer, StoryItem> itemsById = new HashMap<>();
 
     private ExWorld baseWorld;
-
-    private DiaryManager diaryManager = new DiaryManager();
+    private ExWorld storyWorldTemplate;
 
     public void onStoryEnable() {
         this.userManager = new UserManager();
@@ -48,6 +47,20 @@ public class StoryServerManager extends ServerManager implements Listener {
         this.itemFile = new ItemFile();
 
         this.baseWorld = Server.getWorld("world");
+        this.storyWorldTemplate = Server.getWorld("story");
+
+        this.baseWorld.allowEntityExplode(false);
+        this.baseWorld.allowPlayerDamage(true);
+        this.baseWorld.allowFoodChange(false);
+        this.baseWorld.allowBlockBurnUp(false);
+        this.baseWorld.allowEntityBlockBreak(false);
+        this.baseWorld.allowDropPickItem(false);
+        this.baseWorld.allowBlockBreak(false);
+        this.baseWorld.setExceptService(true);
+        this.baseWorld.setPVP(false);
+        this.baseWorld.allowPlayerDamage(false);
+        this.baseWorld.setGameRule(GameRule.DO_MOB_SPAWNING, false);
+        this.baseWorld.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
 
         // load characters from file
         for (Integer id : this.characterFile.getCharacterIds()) {
@@ -118,7 +131,7 @@ public class StoryServerManager extends ServerManager implements Listener {
         return baseWorld;
     }
 
-    public DiaryManager getDiaryManager() {
-        return diaryManager;
+    public ExWorld getStoryWorldTemplate() {
+        return this.storyWorldTemplate;
     }
 }

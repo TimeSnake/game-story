@@ -1,7 +1,6 @@
 package de.timesnake.game.story.server;
 
 import de.timesnake.basic.bukkit.util.world.ExWorld;
-import de.timesnake.game.story.book.DiaryManager;
 import de.timesnake.game.story.elements.CharacterNotFoundException;
 import de.timesnake.game.story.elements.ItemNotFoundException;
 import de.timesnake.game.story.elements.StoryCharacter;
@@ -11,6 +10,8 @@ import de.timesnake.game.story.structure.StoryChapter;
 import java.util.Collection;
 
 public class StoryServer {
+
+    public static final int PART_PRICE = 200;
 
     private static final StoryServerManager server = StoryServerManager.getInstance();
 
@@ -34,7 +35,7 @@ public class StoryServer {
         return server.getBaseWorld();
     }
 
-    public static DiaryManager getDiaryManager() {
-        return server.getDiaryManager();
+    public static ExWorld getStoryWorldTemplate() {
+        return server.getStoryWorldTemplate();
     }
 }

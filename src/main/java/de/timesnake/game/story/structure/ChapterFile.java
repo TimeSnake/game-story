@@ -2,6 +2,7 @@ package de.timesnake.game.story.structure;
 
 import de.timesnake.basic.bukkit.util.file.ExFile;
 
+import java.util.List;
 import java.util.Set;
 
 public class ChapterFile extends ExFile {
@@ -13,12 +14,15 @@ public class ChapterFile extends ExFile {
     private static final String PART_END_MESSAGE = "end_message";
 
     private static final String SECTIONS = "sections";
-
     private static final String ACTIONS = "actions";
 
-    private static final String TRIGGER_TYPE = "trigger_type";
+    private static final String TRIGGER_TYPE = "trigger";
+    private static final String ACTION_TYPE = "action";
 
-    private static final String ACTION_TYPE = "action_type";
+    private static final String DIARY = "diary";
+
+    private static final String DIARY_TEXT = "text";
+    private static final String DIARY_DATE = "date";
 
     public ChapterFile(String chapter) {
         super("game-story", "chapter_" + chapter);
@@ -63,6 +67,23 @@ public class ChapterFile extends ExFile {
     public Set<Integer> getActionIdsFromSection(int partId, int sectionId) {
         return super.getPathIntegerList(ExFile.toPath(getSectionPath(partId, sectionId), ACTIONS));
     }
+
+    public String getDiaryPath(int part) {
+        return ExFile.toPath(PARTS, String.valueOf(part), DIARY);
+    }
+
+    public String getDiaryPagePath(int part, int page) {
+        return ExFile.toPath(PARTS, String.valueOf(part), DIARY, String.valueOf(page));
+    }
+
+    public List<String> getDiaryText(int part, int page) {
+        return super.getStringList(ExFile.toPath(getDiaryPagePath(part, page), DIARY_TEXT));
+    }
+
+    public String getDiaryDate(int part, int page) {
+        return super.getString(ExFile.toPath(getDiaryPagePath(part, page), DIARY_DATE));
+    }
+
 
     public String getActionType(int partId, int sectionId, int actionId) {
         return super.getString(ExFile.toPath(getActionPath(partId, sectionId, actionId), ACTION_TYPE));

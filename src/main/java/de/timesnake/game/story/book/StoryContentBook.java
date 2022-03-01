@@ -15,12 +15,13 @@ import org.bukkit.inventory.meta.BookMeta;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public class StoryContentBook {
 
     private final ExItemStack book = new ExItemStack(Material.WRITTEN_BOOK).setDropable(false);
 
-    public StoryContentBook(Map<Integer, Map<Integer, Integer>> sectionsByPartByChapter) {
+    public StoryContentBook(Map<Integer, Map<Integer, Integer>> sectionsByPartByChapter, Map<Integer, Set<Integer>> boughtPartsByChapter) {
 
         LinkedList<BaseComponent[]> pages = new LinkedList<>();
 
@@ -48,6 +49,7 @@ public class StoryContentBook {
             LinkedList<BaseComponent> partPage = new LinkedList<>();
 
             Map<Integer, Integer> sectionsByPart = sectionsByPartByChapter.get(chapter.getId());
+            Set<Integer> boughtParts = boughtPartsByChapter.get(chapter.getId());
 
             partPage.addLast(new TextComponent("§n§l" + romanChapterId + "§r§n " + chapter.getName() + "\n"));
             partPage.addLast(new TextComponent("\n"));
@@ -59,11 +61,17 @@ public class StoryContentBook {
                 TextComponent partText;
 
                 if (part.getId() <= userCurrentPart) {
-                    partText = new TextComponent(part.getId() + " " + part.getName() + "\n");
-
                     if (userCurrentPart.equals(part.getId())) {
-                        partText.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Click to start")));
+                        if (!boughtParts.contains(part.getId())) {
+                            partText = new TextComponent("§l" + part.getId() + "§r " + part.getName() + " §6(" + StoryServer.PART_PRICE + " TC) \n");
+                            partText.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Click to buy and play")));
+                        } else {
+                            partText = new TextComponent(part.getId() + " " + part.getName() + "\n");
+                            partText.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Click to play")));
+                        }
                         partText.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/story " + chapter.getId() + " " + part.getId()));
+                    } else {
+                        partText = new TextComponent(part.getId() + " " + part.getName() + "\n");
                     }
                 } else {
                     partText = new TextComponent("§8" + part.getId() + " " + part.getName() + "\n");

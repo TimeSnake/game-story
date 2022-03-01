@@ -1,25 +1,26 @@
 package de.timesnake.game.story.action;
 
 import de.timesnake.game.story.event.TriggerEvent;
+import de.timesnake.game.story.structure.StorySection;
 import de.timesnake.game.story.user.StoryUser;
-import net.md_5.bungee.api.chat.BaseComponent;
 
+import java.util.List;
 import java.util.Set;
 
 public class PlaySoundAction extends TriggeredAction {
 
     public static final String NAME = "play_sound";
 
-    protected PlaySoundAction(int id, BaseComponent[] diaryPage) {
-        super(id, diaryPage);
+    protected PlaySoundAction(int id, List<Integer> diaryPages) {
+        super(id, diaryPages);
     }
 
-    protected PlaySoundAction(int id, BaseComponent[] diaryPage, StoryAction next) {
-        super(id, diaryPage, next);
+    protected PlaySoundAction(int id, StoryAction next) {
+        super(id, next);
     }
 
     @Override
-    public StoryAction clone(StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
+    public StoryAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
         return null;
     }
 

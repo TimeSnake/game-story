@@ -20,8 +20,8 @@ public class StoryCharacterVillager extends StoryCharacter<ExVillager> {
 
     protected List<ExPathfinderGoal> walkPathfinders = new ArrayList<>();
 
-    public StoryCharacterVillager(String name, ExLocation location) {
-        super(name, location);
+    public StoryCharacterVillager(Integer id, String name, ExLocation location) {
+        super(id, name, location);
     }
 
     public StoryCharacterVillager(CharacterFile file, int entityId) {
@@ -30,7 +30,7 @@ public class StoryCharacterVillager extends StoryCharacter<ExVillager> {
 
     @Override
     public StoryCharacter<ExVillager> clone(StoryUser reader, Set<StoryUser> listeners) {
-        StoryCharacterVillager character = new StoryCharacterVillager(this.name, this.location.setExWorld(reader.getStoryWorld()));
+        StoryCharacterVillager character = new StoryCharacterVillager(this.id, this.name, this.location.setExWorld(reader.getStoryWorld()));
         character.reader = reader;
         character.listeners = listeners;
         return character;

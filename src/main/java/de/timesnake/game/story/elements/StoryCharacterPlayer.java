@@ -19,8 +19,10 @@ public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
     private final String skinValue;
     private final String skinSignature;
 
-    public StoryCharacterPlayer(String name, ExLocation location, String skinValue, String skinSignature) {
-        super(name, location);
+    private boolean spawned = false;
+
+    public StoryCharacterPlayer(Integer id, String name, ExLocation location, String skinValue, String skinSignature) {
+        super(id, name, location);
         this.skinValue = skinValue;
         this.skinSignature = skinSignature;
 
@@ -36,7 +38,7 @@ public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
 
     @Override
     public StoryCharacter<ExPlayer> clone(StoryUser reader, Set<StoryUser> listeners) {
-        StoryCharacterPlayer character = new StoryCharacterPlayer(this.name, this.location.clone().setExWorld(reader.getStoryWorld()), this.skinValue, this.skinSignature);
+        StoryCharacterPlayer character = new StoryCharacterPlayer(this.id, this.name, this.location.clone().setExWorld(reader.getStoryWorld()), this.skinValue, this.skinSignature);
         character.reader = reader;
         character.listeners = listeners;
         return character;
@@ -46,13 +48,19 @@ public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
     protected ExPlayer initEntity() {
         ExPlayer player = new ExPlayer(this.location.getWorld(), this.name);
 
-        player.setPositionRotation(this.location.getX(), this.location.getY(), this.location.getZ(), this.location.getYaw(), this.location.getPitch());
+        player.setPosition(this.location.getX(), this.location.getY(), this.location.getZ());
 
         return player;
     }
 
     @Override
     public void spawn() {
+        if (this.spawned) {
+            return;
+        }
+
+        this.spawned = true;
+
         Server.getEntityManager().spawnPlayer(this.reader, this.entity);
         Server.getEntityManager().spawnPlayer(this.listeners, this.entity);
     }

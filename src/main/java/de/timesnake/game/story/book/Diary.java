@@ -1,50 +1,46 @@
 package de.timesnake.game.story.book;
 
-import de.timesnake.basic.bukkit.util.file.ExFile;
 import de.timesnake.basic.bukkit.util.user.ExItemStack;
+import de.timesnake.game.story.structure.ChapterFile;
+import de.timesnake.game.story.user.StoryUser;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Material;
 import org.bukkit.inventory.meta.BookMeta;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Diary {
 
-    private static final String PAGES = "pages";
-
     private final ExItemStack book = new ExItemStack(Material.WRITTEN_BOOK).setDropable(false);
-    private int pageCounter = 1;
 
-    private final ExFile file;
+    private final HashMap<Integer, BaseComponent[]> pagesByNumber;
+    private StoryUser reader;
+    private Set<StoryUser> listeners;
+    private Set<Integer> writtenPages = new HashSet<>();
 
-    public Diary(ExFile diaryFile) {
-        this.file = diaryFile;
-
-        this.loadFromFile();
+    public Diary(StoryUser reader, Set<StoryUser> listeners, HashMap<Integer, BaseComponent[]> pagesByNumber) {
+        this.reader = reader;
+        this.listeners = listeners;
+        this.pagesByNumber = pagesByNumber;
     }
 
-    private void loadFromFile() {
+    public Diary(ChapterFile chapterFile, int partId) {
+        this.pagesByNumber = new HashMap<>();
 
-        List<BaseComponent[]> pages = new ArrayList<>();
+        for (Integer pageNumber : chapterFile.getPathIntegerList(chapterFile.getDiaryPath(partId))) {
+            List<String> text = chapterFile.getDiaryText(partId, pageNumber);
 
-        pages.add(new BaseComponent[]{new TextComponent("§lYour Diary")});
+            BaseComponent[] components = new BaseComponent[text.size()];
 
-        for (Integer pageNumber : this.file.getPathIntegerList(PAGES)) {
-            List<BaseComponent> components = new ArrayList<>();
-
-            for (String component : this.file.getStringList(PAGES + "." + pageNumber)) {
-                components.add(new TextComponent(component));
+            for (int i = 0; i < text.size(); i++) {
+                components[i] = new TextComponent(text.get(i) + "\n");
             }
 
-            pages.add(components.toArray(new BaseComponent[0]));
-
-            this.pageCounter++;
+            this.pagesByNumber.put(pageNumber, components);
         }
 
         BookMeta meta = ((BookMeta) this.book.getItemMeta());
-        meta.spigot().setPages(pages);
 
         if (!meta.hasPages()) {
             meta.spigot().setPages(new BaseComponent[]{});
@@ -56,29 +52,40 @@ public class Diary {
         this.book.setItemMeta(meta);
     }
 
-    public void saveToFile() {
-        file.remove(PAGES);
-
-        int i = 1;
-        for (BaseComponent[] page : ((BookMeta) book.getItemMeta()).spigot().getPages()) {
-            List<String> components = new ArrayList<>();
-            for (BaseComponent component : page) {
-                components.add(component.toLegacyText());
-            }
-
-            this.file.set(PAGES + "." + i, components);
-
-            i++;
-        }
+    public Diary clone(StoryUser reader, Set<StoryUser> listeners) {
+        return new Diary(reader, listeners, pagesByNumber);
     }
 
-    public int addPage(BaseComponent[] components) {
+    public void loadPage(Integer... pageNumbers) {
         BookMeta meta = (BookMeta) this.book.getItemMeta();
+        meta.spigot().setPages();
 
-        meta.spigot().addPage(components);
+        this.writtenPages.addAll(Arrays.asList(pageNumbers));
+
+        int pages = this.writtenPages.size() > 0 ? Collections.max(this.writtenPages) : 1;
+
+        for (int page = 1; page <= pages; page++) {
+            BaseComponent[] text = this.pagesByNumber.get(page);
+
+            if (text != null && this.writtenPages.contains(page)) {
+                meta.spigot().addPage(text);
+            } else {
+                meta.spigot().addPage(new BaseComponent[]{});
+            }
+        }
+
+        if (!meta.hasPages()) {
+            meta.spigot().setPages(new BaseComponent[]{});
+        }
+
+        meta.setAuthor("Yourself");
+        meta.setTitle("Diary");
 
         this.book.setItemMeta(meta);
-        return this.pageCounter++;
+
+        this.reader.setItem(0, this.book);
+
+        this.listeners.forEach(u -> u.setItem(0, this.book));
     }
 
     public ExItemStack getBook() {

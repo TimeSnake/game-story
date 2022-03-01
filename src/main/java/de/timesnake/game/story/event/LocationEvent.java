@@ -38,19 +38,4 @@ public abstract class LocationEvent<Action extends TriggeredAction> extends Trig
         }
     }
 
-    @Override
-    public void spawnEntities() {
-        if (this.character != null) {
-            this.character.spawn();
-        }
-        super.spawnEntities();
-    }
-
-    @Override
-    public void despawnEntities() {
-        if (this.character != null) {
-            this.character.despawn();
-        }
-        super.despawnEntities();
-    }
 }
