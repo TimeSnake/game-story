@@ -1,7 +1,10 @@
 package de.timesnake.game.story.user;
 
 import de.timesnake.basic.bukkit.util.Server;
+import de.timesnake.basic.bukkit.util.permission.Group;
 import de.timesnake.basic.bukkit.util.user.User;
+import de.timesnake.basic.bukkit.util.user.scoreboard.Tablist;
+import de.timesnake.basic.bukkit.util.user.scoreboard.TablistGroupType;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
 import de.timesnake.database.util.Database;
@@ -20,6 +23,7 @@ import org.bukkit.entity.Player;
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,6 +53,19 @@ public class StoryUser extends User {
             this.world = Server.getWorldManager().cloneWorld(this.getUniqueId().toString(), StoryServer.getStoryWorldTemplate());
         }
 
+        LinkedList<TablistGroupType> types = new LinkedList<>();
+        types.add(Group.getTablistType());
+        Tablist tablist = Server.getScoreboardManager().registerNewGroupTablist(this.getName(), Tablist.Type.DUMMY, types, (e, t) -> {
+        }, (e, t) -> {
+        });
+
+        tablist.setHeader("§6Time§2Snake§9.de");
+        tablist.setFooter("§7Server: " + Server.getName() + "\n§cSupport: /ticket or \n" + Server.SUPPORT_EMAIL);
+
+        tablist.addEntry(this);
+
+        this.setTablist(tablist);
+
         this.world.setPVP(false);
         this.world.allowBlockPlace(false);
         this.world.allowBlockBreak(false);
@@ -57,7 +74,7 @@ public class StoryUser extends User {
         this.world.allowBlockBurnUp(false);
         this.world.allowBlockIgnite(false);
         this.world.allowFlintAndSteel(false);
-        this.world.allowFirecampInteraction(true);
+        this.world.allowLightUpInteraction(true);
         this.world.allowFireSpread(false);
         this.world.allowEntityExplode(false);
         this.world.allowEntityBlockBreak(false);
@@ -131,8 +148,9 @@ public class StoryUser extends User {
         this.setItem(0, this.part.getDiary().getBook());
         this.setItem(1, UserManager.FOOD);
         this.setItem(2, UserManager.DRINK);
+        this.setItem(8, UserManager.CHECKPOINT);
 
-        this.section.start(true);
+        this.section.start(true, true);
     }
 
     public void onCompletedSection(StorySection section, Set<StoryUser> listeners) {
@@ -151,20 +169,23 @@ public class StoryUser extends User {
                 this.sectionsByPartByChapter.get(this.chapter.getId()).put(this.part.getId(), this.section.getId());
                 this.dbStory.setSectionId(this.chapter.getId(), this.part.getId(), this.section.getId());
                 Server.printText(Plugin.STORY, "Saved checkpoint " + this.chapter.getId() + "." + this.part.getId() + "." + this.section.getId(), this.getName());
+                this.sendPluginMessage(Plugin.STORY, ChatColor.PERSONAL + "Checkpoint");
 
-                this.section.start(false);
+                this.section.start(false, true);
             }
         }, 5 * 20, GameStory.getPlugin());
 
     }
 
     public void onCompletedPart(StoryPart part) {
-        part.despawnCharacters();
         this.sendTitle("", part.getEndMessage(), Duration.ofSeconds(3));
 
         this.sectionsByPartByChapter.get(this.chapter.getId()).put(part.getId() + 1, 1);
 
-        Server.runTaskLaterSynchrony(this::joinStoryHub, 5 * 20, GameStory.getPlugin());
+        Server.runTaskLaterSynchrony(() -> {
+            this.joinStoryHub();
+            part.despawnCharacters();
+        }, 5 * 20, GameStory.getPlugin());
     }
 
     public void stopStory() {

@@ -73,7 +73,7 @@ public class ItemSearchAction extends LocationAction {
         this.entity.setInvulnerable(true);
         this.entity.setInvisible(true);
         this.entity.setNoGravity(true);
-        this.entity.setPosition(this.location.getX() + 0.3, this.location.getY() - 0.7, this.location.getZ());
+        this.entity.setPosition(this.location.getX() + 0.3, this.location.getY() - 0.8, this.location.getZ());
         this.entity.setRightArmPose(new EulerAngle(this.itemAngle, 0, 0));
 
         this.reader.sendPacket(ExPacketPlayOutSpawnEntityLiving.wrap(this.entity));

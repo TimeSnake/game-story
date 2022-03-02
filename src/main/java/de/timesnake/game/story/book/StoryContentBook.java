@@ -19,7 +19,7 @@ import java.util.Set;
 
 public class StoryContentBook {
 
-    private final ExItemStack book = new ExItemStack(Material.WRITTEN_BOOK).setDropable(false);
+    private final ExItemStack book = new ExItemStack(Material.WRITTEN_BOOK).setDropable(false).setMoveable(false);
 
     public StoryContentBook(Map<Integer, Map<Integer, Integer>> sectionsByPartByChapter, Map<Integer, Set<Integer>> boughtPartsByChapter) {
 
