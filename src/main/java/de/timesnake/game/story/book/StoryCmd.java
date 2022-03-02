@@ -37,6 +37,11 @@ public class StoryCmd implements CommandListener {
         Integer partId = args.get(1).toInt();
 
         if (!user.getBoughtParts(chapterId).contains(partId)) {
+            if (user.getCoins() < StoryServer.PART_PRICE) {
+                sender.sendNotEnoughCoinsMessage(StoryServer.PART_PRICE - user.getCoins());
+                return;
+            }
+
             user.buyPart(chapterId, partId);
             sender.sendPluginMessage(ChatColor.WARNING + "Bought part for " + ChatColor.VALUE + StoryServer.PART_PRICE + " TimeCoins");
             Server.printText(Plugin.STORY, user.getName() + " bought part " + chapterId + "." + partId, "Buy");

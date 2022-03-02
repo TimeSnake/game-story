@@ -12,21 +12,24 @@ import java.util.*;
 
 public class Diary {
 
-    private final ExItemStack book = new ExItemStack(Material.WRITTEN_BOOK).setDropable(false);
+    private final ExItemStack book;
 
     private final HashMap<Integer, BaseComponent[]> pagesByNumber;
     private StoryUser reader;
     private Set<StoryUser> listeners;
-    private Set<Integer> writtenPages = new HashSet<>();
+    private final Set<Integer> writtenPages = new HashSet<>();
 
-    public Diary(StoryUser reader, Set<StoryUser> listeners, HashMap<Integer, BaseComponent[]> pagesByNumber) {
+    public Diary(StoryUser reader, Set<StoryUser> listeners, HashMap<Integer, BaseComponent[]> pagesByNumber, ExItemStack book) {
         this.reader = reader;
         this.listeners = listeners;
         this.pagesByNumber = pagesByNumber;
+        this.book = book;
     }
 
     public Diary(ChapterFile chapterFile, int partId) {
         this.pagesByNumber = new HashMap<>();
+
+        this.book = new ExItemStack(Material.WRITTEN_BOOK).setDropable(false).setMoveable(false);
 
         for (Integer pageNumber : chapterFile.getPathIntegerList(chapterFile.getDiaryPath(partId))) {
             List<String> text = chapterFile.getDiaryText(partId, pageNumber);
@@ -41,10 +44,7 @@ public class Diary {
         }
 
         BookMeta meta = ((BookMeta) this.book.getItemMeta());
-
-        if (!meta.hasPages()) {
-            meta.spigot().setPages(new BaseComponent[]{});
-        }
+        meta.spigot().setPages(new BaseComponent[]{new TextComponent()});
 
         meta.setAuthor("Yourself");
         meta.setTitle("Diary");
@@ -53,7 +53,7 @@ public class Diary {
     }
 
     public Diary clone(StoryUser reader, Set<StoryUser> listeners) {
-        return new Diary(reader, listeners, pagesByNumber);
+        return new Diary(reader, listeners, pagesByNumber, this.book.cloneWithId());
     }
 
     public void loadPage(Integer... pageNumbers) {

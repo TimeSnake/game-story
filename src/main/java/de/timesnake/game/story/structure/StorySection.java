@@ -63,7 +63,7 @@ public class StorySection implements Iterable<StoryAction> {
         this.part = part;
     }
 
-    public void start(boolean teleport) {
+    public void start(boolean teleport, boolean spawnEntities) {
         if (teleport) {
             this.reader.teleport(this.startLocation);
             this.listeners.forEach(u -> u.teleport(this.startLocation));
@@ -83,12 +83,19 @@ public class StorySection implements Iterable<StoryAction> {
             }, 4, true, 0, 10, GameStory.getPlugin());
         }
 
-        Server.runTaskLaterSynchrony(() -> {
-            Server.printText(Plugin.STORY, "Starting section " + this.id, this.reader.getName());
-            this.forEach(StoryAction::spawnEntities);
+        if (spawnEntities) {
+            Server.runTaskLaterSynchrony(() -> {
+                Server.printText(Plugin.STORY, "Starting section " + this.id, this.reader.getName());
+                int delay = 0;
+                for (StoryAction action : this) {
+                    Server.runTaskLaterSynchrony(action::spawnEntities, delay, GameStory.getPlugin());
+                    delay += 10;
+                }
 
-            this.firstAction.start();
-        }, 40, GameStory.getPlugin());
+                this.firstAction.start();
+            }, 40, GameStory.getPlugin());
+        }
+
     }
 
     public void stop() {
