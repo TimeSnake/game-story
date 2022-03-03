@@ -68,7 +68,8 @@ public class StorySection implements Iterable<StoryAction> {
             this.reader.teleport(this.startLocation);
             this.listeners.forEach(u -> u.teleport(this.startLocation));
 
-            this.reader.addPotionEffect(PotionEffectType.BLINDNESS, 20 * 3, 0);
+            this.reader.addPotionEffect(PotionEffectType.BLINDNESS, 20 * 7, 0);
+            this.reader.lockLocation(true);
 
             Server.runTaskTimerSynchrony((t) -> {
 
@@ -80,7 +81,9 @@ public class StorySection implements Iterable<StoryAction> {
                     this.startLocation.getWorld().spawnParticle(Particle.REDSTONE, this.startLocation.getX() + x, this.startLocation.getY(), this.startLocation.getZ() + z, 8, 0, 1.5, 0, 5, dust);
                 }
 
-            }, 4, true, 0, 10, GameStory.getPlugin());
+            }, 10, true, 0, 10, GameStory.getPlugin());
+
+            Server.runTaskLaterSynchrony(() -> this.reader.lockLocation(false), 20 * 6, GameStory.getPlugin());
         }
 
         if (spawnEntities) {

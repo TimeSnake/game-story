@@ -77,7 +77,7 @@ public class UserManager implements Listener, UserInventoryInteractListener {
 
         if (user.getExWorld().equals(user.getStoryWorld())) {
             if (user.getPart() != null) {
-                Server.runTaskLaterSynchrony(() -> user.getPart().spawnCharacters(), 30, GameStory.getPlugin());
+                Server.runTaskLaterSynchrony(() -> user.getPart().spawnCharacters(), 60, GameStory.getPlugin());
             }
         }
     }
@@ -107,7 +107,14 @@ public class UserManager implements Listener, UserInventoryInteractListener {
             return;
         }
 
+        if (Server.getUser(e.getPlayer()).isService()) {
+            return;
+        }
+
         if (e.getItem().getType().equals(Material.ENDER_EYE)) {
+            if (e.getClickedBlock() != null && e.getClickedBlock().getType().equals(Material.END_PORTAL_FRAME)) {
+                return;
+            }
             e.setUseItemInHand(Event.Result.DENY);
         }
     }
