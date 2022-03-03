@@ -1,7 +1,9 @@
 package de.timesnake.game.story.structure;
 
+import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.game.story.book.Diary;
 import de.timesnake.game.story.elements.StoryCharacter;
+import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.user.StoryUser;
 
 import java.util.Comparator;
@@ -93,7 +95,12 @@ public class StoryPart {
     }
 
     public void spawnCharacters() {
-        this.characterById.values().forEach(StoryCharacter::spawn);
+        int delay = 0;
+        for (StoryCharacter<?> character : this.characterById.values()) {
+            System.out.println(character.getName());
+            Server.runTaskLaterAsynchrony(character::spawn, delay, GameStory.getPlugin());
+            delay += 25;
+        }
     }
 
     public void despawnCharacters() {
