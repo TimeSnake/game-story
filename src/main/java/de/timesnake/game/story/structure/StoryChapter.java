@@ -8,10 +8,7 @@ import de.timesnake.game.story.elements.CharacterNotFoundException;
 import de.timesnake.game.story.elements.ItemNotFoundException;
 import de.timesnake.game.story.elements.StoryCharacter;
 import de.timesnake.game.story.elements.UnknownLocationException;
-import de.timesnake.game.story.event.AreaEvent;
-import de.timesnake.game.story.event.DropItemAtEvent;
-import de.timesnake.game.story.event.DropItemEvent;
-import de.timesnake.game.story.event.SleepEvent;
+import de.timesnake.game.story.event.*;
 import de.timesnake.game.story.server.StoryServer;
 
 import java.util.*;
@@ -64,7 +61,8 @@ public class StoryChapter {
                 try {
                     first = this.getActionFromFile(file, partId, sectionId, actionIds.getFirst());
                 } catch (CharacterNotFoundException | ItemNotFoundException | UnknownLocationException e) {
-                    Server.printWarning(Plugin.STORY, e.getMessage(), "Chapter " + this.id, "Part " + partId, "Section " + sectionId, "Action " + actionIds.getFirst());
+                    Server.printWarning(Plugin.STORY, e.getMessage(), "Chapter " + this.id,
+                            "Part " + partId, "Section " + sectionId, "Action " + actionIds.getFirst());
                 }
 
                 characterIds.addAll(first.getCharacterIds());
@@ -83,7 +81,8 @@ public class StoryChapter {
                     try {
                         action = this.getActionFromFile(file, partId, sectionId, actionId);
                     } catch (CharacterNotFoundException | ItemNotFoundException | UnknownLocationException e) {
-                        Server.printWarning(Plugin.STORY, e.getMessage(), "Chapter " + this.id, "Part " + partId, "Section " + sectionId, "Action " + actionId);
+                        Server.printWarning(Plugin.STORY, e.getMessage(), "Chapter " + this.id,
+                                "Part " + partId, "Section " + sectionId, "Action " + actionId);
                     }
 
                     characterIds.addAll(action.getCharacterIds());
@@ -114,11 +113,14 @@ public class StoryChapter {
                 }
             }
 
-            this.partsById.put(partId, new StoryPart(partId, partName, partEndMessage, diary, sectionsById, characters));
+            this.partsById.put(partId, new StoryPart(partId, partName, partEndMessage, diary, sectionsById,
+                    characters));
         }
     }
 
-    private StoryAction getActionFromFile(ChapterFile file, Integer partId, Integer sectionId, Integer actionId) throws CharacterNotFoundException, ItemNotFoundException, UnknownLocationException {
+    private StoryAction getActionFromFile(ChapterFile file, Integer partId, Integer sectionId, Integer actionId)
+            throws CharacterNotFoundException, ItemNotFoundException, UnknownLocationException {
+
         String type = this.file.getActionType(partId, sectionId, actionId);
 
         if (type == null) {
@@ -137,7 +139,6 @@ public class StoryChapter {
         }
 
         StoryAction action;
-
         switch (type.toLowerCase()) {
             case TalkAction.NAME:
                 action = new TalkAction(actionId, diaryPages, this.file, actionPath);
@@ -161,12 +162,12 @@ public class StoryChapter {
                 action = new ItemLootAction(actionId, diaryPages, this.file, actionPath);
                 break;
             case TriggerAction.NAME:
-            default:
+            case default:
                 action = new TriggerAction(actionId, diaryPages);
-
+                break;
         }
 
-        if (!(action instanceof TriggeredAction)) {
+        if (!(action instanceof TriggeredAction triggeredAction)) {
             return action;
         }
 
@@ -175,8 +176,6 @@ public class StoryChapter {
         if (!file.contains(triggerPath)) {
             return action;
         }
-
-        TriggeredAction triggeredAction = ((TriggeredAction) action);
 
         String triggerType = file.getTriggerType(partId, sectionId, actionId);
 
@@ -197,8 +196,13 @@ public class StoryChapter {
             case SleepEvent.NAME:
                 triggeredAction.setTriggerEvent(new SleepEvent<>(triggeredAction));
                 break;
+            case ChatEvent.NAME:
+                triggeredAction.setTriggerEvent(new ChatEvent<>(triggeredAction, file, triggerPath));
+                break;
             default:
-                Server.printWarning(Plugin.STORY, "Unknown trigger type: " + triggerType, "Chapter " + this.id, "Part " + partId, "Section " + sectionId, "Action " + actionId);
+                Server.printWarning(Plugin.STORY, "Unknown trigger type: " + triggerType,
+                        "Chapter " + this.id, "Part " + partId, "Section " + sectionId, "Action " + actionId);
+                break;
         }
 
         return action;
