@@ -40,6 +40,12 @@ public abstract class TriggerEvent<Action extends TriggeredAction> {
     public abstract Type getType();
 
     public enum Type {
-        AREA, SNEAK, DROP_ITEM, DROP_ITEM_AT, START, SLEEP
+        AREA,
+        SNEAK,
+        DROP_ITEM,
+        DROP_ITEM_AT,
+        START,
+        SLEEP,
+        CHAT_CODE
     }
 }
