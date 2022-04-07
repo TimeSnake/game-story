@@ -162,14 +162,16 @@ public class StoryChapter {
                 action = new ItemLootAction(actionId, diaryPages, this.file, actionPath);
                 break;
             case TriggerAction.NAME:
-            case default:
+            default:
                 action = new TriggerAction(actionId, diaryPages);
                 break;
         }
 
-        if (!(action instanceof TriggeredAction triggeredAction)) {
+        if (!(action instanceof TriggeredAction)) {
             return action;
         }
+
+        TriggeredAction triggeredAction = ((TriggeredAction) action);
 
         String triggerPath = ChapterFile.getTriggerPath(partId, sectionId, actionId);
 

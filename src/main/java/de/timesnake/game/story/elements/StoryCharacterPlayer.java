@@ -61,8 +61,8 @@ public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
 
         this.spawned = true;
 
-        Server.getEntityManager().spawnPlayer(this.reader, this.entity, false);
-        Server.getEntityManager().spawnPlayer(this.listeners, this.entity, false);
+        Server.getEntityManager().registerPlayer(this.reader, this.entity, false);
+        Server.getEntityManager().registerPlayer(this.listeners, this.entity, false);
     }
 
     @Override
