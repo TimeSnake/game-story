@@ -76,6 +76,7 @@ verwendet.
   `clear: <true/false>` _Entfernen des gedroppten Items_ <br>
 - Chat-Code `chat_code` <br>
   `code:` _Code_ <br>
+- Sleep `sleep` <br>
 
 #### Aktionstypen
 

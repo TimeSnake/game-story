@@ -95,12 +95,12 @@ public class StoryPart {
     }
 
     public void spawnCharacters() {
-        int delay = 0;
-        for (StoryCharacter<?> character : this.characterById.values()) {
-            System.out.println(character.getName());
-            Server.runTaskLaterAsynchrony(character::spawn, delay, GameStory.getPlugin());
-            delay += 25;
-        }
+        Server.runTaskLaterAsynchrony(() -> {
+            for (StoryCharacter<?> character : this.characterById.values()) {
+                System.out.println(character.getName());
+                character.spawn();
+            }
+        }, 10, GameStory.getPlugin());
     }
 
     public void despawnCharacters() {
