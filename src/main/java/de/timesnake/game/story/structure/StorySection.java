@@ -77,11 +77,12 @@ public class StorySection implements Iterable<StoryAction> {
                     double x = (Math.sin(angle)) * 0.7;
                     double z = (Math.cos(angle)) * 0.7;
 
-                    Particle.DustOptions dust = new Particle.DustOptions(Color.fromRGB(102, 0, 102), 1.5f);
-                    this.startLocation.getWorld().spawnParticle(Particle.REDSTONE, this.startLocation.getX() + x, this.startLocation.getY(), this.startLocation.getZ() + z, 8, 0, 1.5, 0, 5, dust);
+                    Particle.DustOptions dust = new Particle.DustOptions(Color.fromRGB(102, 0, 102), 1.2f);
+                    this.startLocation.getWorld().spawnParticle(Particle.REDSTONE, this.startLocation.getX() + x,
+                            this.startLocation.getY(), this.startLocation.getZ() + z, 8, 0, 1.5, 0, 5, dust);
                 }
 
-            }, 10, true, 0, 10, GameStory.getPlugin());
+            }, 8, true, 0, 10, GameStory.getPlugin());
 
             Server.runTaskLaterSynchrony(() -> this.reader.lockLocation(false), 20 * 6, GameStory.getPlugin());
         }
