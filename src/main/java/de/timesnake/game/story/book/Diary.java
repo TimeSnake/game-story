@@ -70,7 +70,7 @@ public class Diary {
             if (text != null && this.writtenPages.contains(page)) {
                 meta.spigot().addPage(text);
             } else {
-                meta.spigot().addPage(new BaseComponent[]{});
+                meta.spigot().setPage(page, this.pagesByNumber.get(page));
             }
         }
 

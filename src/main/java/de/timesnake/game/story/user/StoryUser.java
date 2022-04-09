@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class StoryUser extends User {
 
@@ -78,6 +77,7 @@ public class StoryUser extends User {
         this.world.allowFireSpread(false);
         this.world.allowEntityExplode(false);
         this.world.allowEntityBlockBreak(false);
+        this.world.allowItemFrameRotate(true);
         this.world.setExceptService(true);
         this.world.allowDropPickItem(true);
         this.world.allowPlaceInBlock(true);
@@ -86,7 +86,7 @@ public class StoryUser extends User {
 
         this.dbStory = Database.getStory().getUser(this.getUniqueId());
 
-        for (Integer chapterId : StoryServer.getChapters().stream().map(StoryChapter::getId).collect(Collectors.toList())) {
+        for (Integer chapterId : StoryServer.getChapters().stream().map(StoryChapter::getId).toList()) {
             this.boughtPartsByChapter.put(chapterId, this.dbStory.getBoughtParts(chapterId));
         }
 

@@ -53,10 +53,12 @@ public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Acti
         if (!this.code.equals(event.getMessage())) {
             event.removeLisener(false);
             event.setCancelled(true);
+            event.getUser().sendMessage(Server.getChat().getSenderMember(event.getUser()) + "§7" + event.getMessage());
             event.getUser().sendPluginMessage(Plugin.STORY, "§cLeider falsch");
             return;
         }
 
+        event.getUser().sendPluginMessage(Plugin.STORY, "§2Richtig");
         this.triggerAction((StoryUser) event.getUser());
 
         event.removeLisener(true);
