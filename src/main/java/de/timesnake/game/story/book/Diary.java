@@ -67,7 +67,15 @@ public class Diary {
         for (int page = 1; page <= pages; page++) {
             BaseComponent[] text = this.pagesByNumber.get(page);
 
-            if (text != null && this.writtenPages.contains(page)) {
+            boolean exists = true;
+
+            try {
+                meta.getPage(page);
+            } catch (IllegalArgumentException e) {
+                exists = false;
+            }
+
+            if (text != null && (this.writtenPages.contains(page) || !exists)) {
                 meta.spigot().addPage(text);
             } else {
                 meta.spigot().setPage(page, this.pagesByNumber.get(page));
@@ -78,14 +86,19 @@ public class Diary {
             meta.spigot().setPages(new BaseComponent[]{});
         }
 
-        meta.setAuthor("Yourself");
-        meta.setTitle("Diary");
+        meta.setAuthor(this.reader.getName());
+        meta.setTitle("Tagebuch");
 
         this.book.setItemMeta(meta);
 
         this.reader.setItem(0, this.book);
 
         this.listeners.forEach(u -> u.setItem(0, this.book));
+
+        if (pageNumbers.length > 0) {
+            this.reader.sendActionBarText("§6Ich mache mir Notizen...");
+            this.listeners.forEach(u -> u.sendActionBarText("§6Ich mache mir Notizen..."));
+        }
     }
 
     public ExItemStack getBook() {
