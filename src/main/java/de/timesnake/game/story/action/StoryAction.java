@@ -98,6 +98,10 @@ public abstract class StoryAction implements Iterator<StoryAction> {
         }
     }
 
+    public List<Integer> getDiaryPages() {
+        return diaryPages;
+    }
+
     public void spawnEntities() {
 
     }

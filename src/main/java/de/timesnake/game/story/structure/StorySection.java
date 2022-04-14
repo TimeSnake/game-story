@@ -68,6 +68,12 @@ public class StorySection implements Iterable<StoryAction> {
             this.reader.teleport(this.startLocation);
             this.listeners.forEach(u -> u.teleport(this.startLocation));
 
+            StorySection previous = this.getPart().getSection(this.id - 1);
+
+            if (previous != null) {
+                this.getPart().getDiary().loadPage(previous.firstAction.getDiaryPages().toArray(new Integer[0]));
+            }
+
             this.reader.addPotionEffect(PotionEffectType.BLINDNESS, 20 * 7, 0);
             this.reader.lockLocation(true);
 

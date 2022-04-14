@@ -19,13 +19,11 @@ import de.timesnake.game.story.structure.StorySection;
 import de.timesnake.library.basic.util.chat.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.GameRule;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class StoryUser extends User {
 
@@ -81,8 +79,11 @@ public class StoryUser extends User {
         this.world.setExceptService(true);
         this.world.allowDropPickItem(true);
         this.world.allowPlaceInBlock(true);
+        this.world.allowCakeEat(false);
+        this.world.setLockedBlockInventories(List.of(Material.DISPENSER, Material.DROPPER, Material.HOPPER));
         this.world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
         this.world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
+        this.world.setGameRule(GameRule.RANDOM_TICK_SPEED, 0);
 
         this.dbStory = Database.getStory().getUser(this.getUniqueId());
 

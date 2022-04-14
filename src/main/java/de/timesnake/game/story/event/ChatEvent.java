@@ -50,6 +50,8 @@ public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Acti
             return;
         }
 
+        Server.printText(Plugin.STORY, Server.getChatManager().getSenderMember(event.getUser()) + event.getMessage());
+
         if (!this.code.equals(event.getMessage())) {
             event.removeLisener(false);
             event.setCancelled(true);
