@@ -2,6 +2,7 @@ package de.timesnake.game.story.elements;
 
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
+import de.timesnake.basic.bukkit.util.world.entity.PacketPlayer;
 import de.timesnake.basic.entities.entity.bukkit.ExPlayer;
 import de.timesnake.game.story.user.StoryUser;
 
@@ -20,6 +21,8 @@ public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
     private final String skinSignature;
 
     private boolean spawned = false;
+
+    private PacketPlayer packetPlayer;
 
     public StoryCharacterPlayer(Integer id, String name, ExLocation location, String skinValue, String skinSignature) {
         super(id, name, location);
@@ -61,13 +64,16 @@ public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
 
         this.spawned = true;
 
-        Server.getEntityManager().registerPlayer(this.reader, this.entity, false);
-        Server.getEntityManager().registerPlayer(this.listeners, this.entity, false);
+        this.packetPlayer = new PacketPlayer(this.entity, new ExLocation(Server.getWorld(this.entity.getWorld()),
+                this.entity.getLocation()));
+
+        Server.getEntityManager().registerEntity(packetPlayer, this.reader);
+        Server.getEntityManager().registerEntity(packetPlayer, this.listeners);
     }
 
     @Override
     public void despawn() {
-        Server.getEntityManager().removePlayer(this.reader, this.entity);
-        Server.getEntityManager().removePlayer(this.listeners, this.entity);
+        Server.getEntityManager().unregisterEntity(this.packetPlayer);
+        Server.getEntityManager().unregisterEntity(this.packetPlayer);
     }
 }

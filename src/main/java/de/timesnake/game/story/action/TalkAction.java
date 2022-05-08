@@ -3,7 +3,7 @@ package de.timesnake.game.story.action;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.file.ExFile;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
-import de.timesnake.basic.bukkit.util.world.HoloDisplay;
+import de.timesnake.basic.bukkit.util.world.entity.HoloDisplay;
 import de.timesnake.basic.packets.util.packet.ExPacketPlayOutEntityHeadRotation;
 import de.timesnake.basic.packets.util.packet.ExPacketPlayOutEntityLook;
 import de.timesnake.game.story.chat.Plugin;
@@ -37,7 +37,8 @@ public class TalkAction extends RadiusAction implements Listener {
     private final float yaw;
     private final float pitch;
 
-    public TalkAction(int id, StoryAction next, StoryCharacter<?> speaker, LinkedList<Tuple<Speaker, String>> messages, ExLocation location, StoryCharacter<?> character, Double radius, float yaw, float pitch) {
+    public TalkAction(int id, StoryAction next, StoryCharacter<?> speaker, LinkedList<Tuple<Speaker, String>> messages,
+                      ExLocation location, StoryCharacter<?> character, Double radius, float yaw, float pitch) {
         super(id, next, location, character, radius);
         this.messages = messages;
         this.speaker = speaker;
@@ -49,7 +50,8 @@ public class TalkAction extends RadiusAction implements Listener {
 
     private HoloDisplay display;
 
-    public TalkAction(int id, List<Integer> diaryPages, ChapterFile file, String actionPath) throws CharacterNotFoundException, UnknownLocationException {
+    public TalkAction(int id, List<Integer> diaryPages, ChapterFile file, String actionPath) throws
+            CharacterNotFoundException, UnknownLocationException {
         super(id, diaryPages, file, actionPath);
 
         int charId = file.getInt(ExFile.toPath(actionPath, CHARACTER));
@@ -80,14 +82,18 @@ public class TalkAction extends RadiusAction implements Listener {
 
     @Override
     public StoryAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
-        return new TalkAction(this.id, clonedNext, section.getPart().getCharacter(this.speaker.getId()), this.messages, this.location.clone().setExWorld(reader.getStoryWorld()), this.character != null ? section.getPart().getCharacter(this.character.getId()) : null, this.radius, this.yaw, this.pitch);
+        return new TalkAction(this.id, clonedNext, section.getPart().getCharacter(this.speaker.getId()), this.messages,
+                this.location.clone().setExWorld(reader.getStoryWorld()),
+                this.character != null ? section.getPart().getCharacter(this.character.getId()) : null,
+                this.radius, this.yaw, this.pitch);
     }
 
     @Override
     public void start() {
         super.start();
         this.reader.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(), this.yaw));
-        this.reader.sendPacket(ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(), this.yaw >= 0 ? this.yaw + 44f : this.yaw - 44f, this.pitch, true));
+        this.reader.sendPacket(ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(),
+                this.yaw >= 0 ? this.yaw + 44f : this.yaw - 44f, this.pitch, true));
     }
 
     @Override
@@ -100,7 +106,7 @@ public class TalkAction extends RadiusAction implements Listener {
 
     private void nextMessage(StoryUser user) {
         if (this.display != null) {
-            this.display.remove();
+            Server.getEntityManager().unregisterEntity(this.display);
         }
 
         user.resetTitle();
@@ -141,11 +147,15 @@ public class TalkAction extends RadiusAction implements Listener {
 
         Server.runTaskTimerAsynchrony((time) -> {
             if (time % 2 == 0) {
-                user.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(), this.yaw - random.nextInt(10) + 8));
-                user.sendPacket(ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(), this.yaw, this.pitch + random.nextInt(5) + 3, true));
+                user.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(),
+                        this.yaw - random.nextInt(10) + 8));
+                user.sendPacket(ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(), this.yaw,
+                        this.pitch + random.nextInt(5) + 3, true));
             } else {
-                user.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(), this.yaw - random.nextInt(10) + 8));
-                user.sendPacket(ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(), this.yaw, this.pitch - random.nextInt(5) - 3, true));
+                user.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(),
+                        this.yaw - random.nextInt(10) + 8));
+                user.sendPacket(ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(), this.yaw,
+                        this.pitch - random.nextInt(5) - 3, true));
             }
 
             if (time == 0) {
@@ -226,8 +236,7 @@ public class TalkAction extends RadiusAction implements Listener {
     public void despawnEntities() {
 
         if (this.display != null) {
-            this.display.sendRemovePacketsTo(this.reader);
-            this.display.sendRemovePacketsTo(this.listeners);
+            Server.getEntityManager().unregisterEntity(this.display);
             this.display = null;
         }
 
