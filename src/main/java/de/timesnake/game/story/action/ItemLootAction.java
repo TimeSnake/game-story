@@ -26,7 +26,8 @@ public class ItemLootAction extends LocationAction {
 
     private final List<StoryItem> items;
 
-    protected ItemLootAction(int id, StoryAction next, ExLocation location, StoryCharacter<?> character, List<StoryItem> items) {
+    protected ItemLootAction(int id, StoryAction next, ExLocation location, StoryCharacter<?> character,
+                             List<StoryItem> items) {
         super(id, next, location, character);
         this.items = items;
 
@@ -52,7 +53,9 @@ public class ItemLootAction extends LocationAction {
 
     @Override
     public StoryAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
-        return new ItemLootAction(this.id, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()), this.character != null ? section.getPart().getCharacter(this.character.getId()) : null, this.items.stream().map(i -> i.clone(this.reader)).collect(Collectors.toList()));
+        return new ItemLootAction(this.id, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()),
+                this.character != null ? section.getPart().getCharacter(this.character.getId()) : null,
+                this.items.stream().map(i -> i.clone(this.reader)).collect(Collectors.toList()));
     }
 
     @Override

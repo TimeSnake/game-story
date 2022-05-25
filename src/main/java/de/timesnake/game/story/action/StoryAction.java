@@ -54,7 +54,8 @@ public abstract class StoryAction implements Iterator<StoryAction> {
     }
 
     public StoryAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners) {
-        StoryAction cloned = this.hasNext() ? this.clone(section, reader, listeners, this.next.clone(section, reader, listeners)) : this.clone(section, reader, listeners, null);
+        StoryAction cloned = this.hasNext() ? this.clone(section, reader, listeners, this.next.clone(section, reader,
+                listeners)) : this.clone(section, reader, listeners, null);
         cloned.reader = reader;
         cloned.listeners = listeners;
         cloned.diaryPages = this.diaryPages;
@@ -62,7 +63,8 @@ public abstract class StoryAction implements Iterator<StoryAction> {
         return cloned;
     }
 
-    public abstract StoryAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext);
+    public abstract StoryAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners,
+                                      StoryAction clonedNext);
 
     public StoryAction getNext() {
         return next;

@@ -21,7 +21,8 @@ public class StoryContentBook {
 
     private final ExItemStack book = new ExItemStack(Material.WRITTEN_BOOK).setDropable(false).setMoveable(false);
 
-    public StoryContentBook(Map<Integer, Map<Integer, Integer>> sectionsByPartByChapter, Map<Integer, Set<Integer>> boughtPartsByChapter) {
+    public StoryContentBook(Map<Integer, Map<Integer, Integer>> sectionsByPartByChapter,
+                            Map<Integer, Set<Integer>> boughtPartsByChapter) {
 
         LinkedList<BaseComponent[]> pages = new LinkedList<>();
 
@@ -34,7 +35,8 @@ public class StoryContentBook {
 
             TextComponent text;
 
-            String romanChapterId = "I".repeat(chapter.getId()).replace("IIIII", "V").replace("IIII", "IV").replace("VV", "X").replace("VIV", "IX");
+            String romanChapterId = "I".repeat(chapter.getId()).replace("IIIII", "V").replace("IIII", "IV").replace(
+                    "VV", "X").replace("VIV", "IX");
 
             if (sectionsByPartByChapter.get(chapter.getId()) != null) {
                 text = new TextComponent(romanChapterId + ". " + chapter.getName() + "\n");
@@ -63,13 +65,17 @@ public class StoryContentBook {
                 if (part.getId() <= userCurrentPart) {
                     if (userCurrentPart.equals(part.getId())) {
                         if (!boughtParts.contains(part.getId())) {
-                            partText = new TextComponent("§l" + part.getId() + "§r " + part.getName() + " §6(" + StoryServer.PART_PRICE + " TC) \n");
-                            partText.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Click to buy and play")));
+                            partText =
+                                    new TextComponent("§l" + part.getId() + "§r " + part.getName() + " §6(" + StoryServer.PART_PRICE + " TC) \n");
+                            partText.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Click to buy" +
+                                    " and play")));
                         } else {
                             partText = new TextComponent(part.getId() + " " + part.getName() + "\n");
-                            partText.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Click to play")));
+                            partText.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Click to " +
+                                    "play")));
                         }
-                        partText.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/story " + chapter.getId() + " " + part.getId()));
+                        partText.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
+                                "/story " + chapter.getId() + " " + part.getId()));
                     } else {
                         partText = new TextComponent(part.getId() + " " + part.getName() + "\n");
                     }

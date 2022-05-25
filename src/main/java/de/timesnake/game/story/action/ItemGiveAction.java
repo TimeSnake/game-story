@@ -32,8 +32,10 @@ public class ItemGiveAction extends LocationAction {
 
 
     @Override
-    public ItemGiveAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
-        return new ItemGiveAction(this.id, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()), section.getPart().getCharacter(character.getId()), this.item.clone(reader));
+    public ItemGiveAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners,
+                                StoryAction clonedNext) {
+        return new ItemGiveAction(this.id, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()),
+                section.getPart().getCharacter(character.getId()), this.item.clone(reader));
     }
 
     @Override

@@ -29,7 +29,8 @@ public abstract class TriggerEvent<Action extends TriggeredAction> {
         this.action.trigger(this.getType(), user);
     }
 
-    public TriggerEvent<Action> clone(StorySection section, StoryUser reader, Set<StoryUser> listeners, Action clonedAction) {
+    public TriggerEvent<Action> clone(StorySection section, StoryUser reader, Set<StoryUser> listeners,
+                                      Action clonedAction) {
         TriggerEvent<Action> cloned = this.clone(section, reader, listeners);
         cloned.action = clonedAction;
         return cloned;

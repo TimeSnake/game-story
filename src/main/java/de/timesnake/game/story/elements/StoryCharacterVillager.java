@@ -30,7 +30,8 @@ public class StoryCharacterVillager extends StoryCharacter<ExVillager> {
 
     @Override
     public StoryCharacter<ExVillager> clone(StoryUser reader, Set<StoryUser> listeners) {
-        StoryCharacterVillager character = new StoryCharacterVillager(this.id, this.name, this.location.setExWorld(reader.getStoryWorld()));
+        StoryCharacterVillager character = new StoryCharacterVillager(this.id, this.name,
+                this.location.setExWorld(reader.getStoryWorld()));
         character.reader = reader;
         character.listeners = listeners;
         return character;
@@ -44,7 +45,8 @@ public class StoryCharacterVillager extends StoryCharacter<ExVillager> {
         entity.setPersistent(true);
 
         entity.addPathfinderGoal(1, new ExPathfinderGoalLookAtPlayer(EntityClass.EntityHuman, 1));
-        entity.addPathfinderGoal(1, new ExPathfinderGoalLocation(this.location.getX(), this.location.getY(), this.location.getZ(), 1, 16, 0.1));
+        entity.addPathfinderGoal(1, new ExPathfinderGoalLocation(this.location.getX(), this.location.getY(),
+                this.location.getZ(), 1, 16, 0.1));
 
         return entity;
     }

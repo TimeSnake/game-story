@@ -41,7 +41,8 @@ public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
 
     @Override
     public StoryCharacter<ExPlayer> clone(StoryUser reader, Set<StoryUser> listeners) {
-        StoryCharacterPlayer character = new StoryCharacterPlayer(this.id, this.name, this.location.clone().setExWorld(reader.getStoryWorld()), this.skinValue, this.skinSignature);
+        StoryCharacterPlayer character = new StoryCharacterPlayer(this.id, this.name,
+                this.location.clone().setExWorld(reader.getStoryWorld()), this.skinValue, this.skinSignature);
         character.reader = reader;
         character.listeners = listeners;
         return character;

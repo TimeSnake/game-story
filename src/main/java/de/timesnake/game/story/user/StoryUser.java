@@ -32,13 +32,10 @@ public class StoryUser extends User {
     private final Map<Integer, Map<Integer, Integer>> sectionsByPartByChapter = new HashMap<>();
 
     private final DbStoryUser dbStory;
-
+    private final StoryContentBook contentBook;
     private StoryChapter chapter;
     private StoryPart part;
     private StorySection section;
-
-    private final StoryContentBook contentBook;
-
     private ExWorld world;
 
     public StoryUser(Player player) {
@@ -47,14 +44,16 @@ public class StoryUser extends User {
         this.world = Server.getWorld(this.getUniqueId().toString());
 
         if (this.world == null) {
-            this.world = Server.getWorldManager().cloneWorld(this.getUniqueId().toString(), StoryServer.getStoryWorldTemplate());
+            this.world = Server.getWorldManager().cloneWorld(this.getUniqueId().toString(),
+                    StoryServer.getStoryWorldTemplate());
         }
 
         LinkedList<TablistGroupType> types = new LinkedList<>();
         types.add(Group.getTablistType());
-        Tablist tablist = Server.getScoreboardManager().registerNewGroupTablist(this.getName(), Tablist.Type.DUMMY, types, (e, t) -> {
-        }, (e, t) -> {
-        });
+        Tablist tablist = Server.getScoreboardManager().registerNewGroupTablist(this.getName(), Tablist.Type.DUMMY,
+                types, (e, t) -> {
+                }, (e, t) -> {
+                });
 
         tablist.setHeader("§6Time§2Snake§9.de");
         tablist.setFooter("§7Server: " + Server.getName() + "\n§cSupport: /ticket or \n" + Server.SUPPORT_EMAIL);
@@ -164,12 +163,14 @@ public class StoryUser extends User {
             if (this.section == null) {
                 this.sectionsByPartByChapter.get(this.chapter.getId()).put(this.part.getId(), section.getId() + 1);
                 this.dbStory.setSectionId(this.chapter.getId(), this.part.getId(), section.getId() + 1);
-                Server.printText(Plugin.STORY, "Completed part " + this.chapter.getId() + "." + this.part.getId(), this.getName());
+                Server.printText(Plugin.STORY, "Completed part " + this.chapter.getId() + "." + this.part.getId(),
+                        this.getName());
                 this.onCompletedPart(this.part);
             } else {
                 this.sectionsByPartByChapter.get(this.chapter.getId()).put(this.part.getId(), this.section.getId());
                 this.dbStory.setSectionId(this.chapter.getId(), this.part.getId(), this.section.getId());
-                Server.printText(Plugin.STORY, "Saved checkpoint " + this.chapter.getId() + "." + this.part.getId() + "." + this.section.getId(), this.getName());
+                Server.printText(Plugin.STORY,
+                        "Saved checkpoint " + this.chapter.getId() + "." + this.part.getId() + "." + this.section.getId(), this.getName());
                 this.sendPluginMessage(Plugin.STORY, ChatColor.PERSONAL + "Checkpoint");
 
                 this.section.start(false, true);

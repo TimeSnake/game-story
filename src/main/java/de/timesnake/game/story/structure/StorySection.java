@@ -31,7 +31,8 @@ public class StorySection implements Iterable<StoryAction> {
 
     private final ExLocation startLocation;
 
-    public StorySection(StoryPart part, int id, StoryUser reader, Set<StoryUser> listeners, ExLocation startLocation, StoryAction firstAction) {
+    public StorySection(StoryPart part, int id, StoryUser reader, Set<StoryUser> listeners, ExLocation startLocation,
+                        StoryAction firstAction) {
         this.part = part;
         this.id = id;
         this.reader = reader;
@@ -42,7 +43,8 @@ public class StorySection implements Iterable<StoryAction> {
 
     public StorySection(ChapterFile file, int partId, int id, StoryAction firstAction) {
         this.id = id;
-        this.startLocation = new ExLocation(null, file.getDoubleTriple(ExFile.toPath(ChapterFile.getSectionPath(partId, id), START_LOCATION), X, Y, Z));
+        this.startLocation = new ExLocation(null,
+                file.getDoubleTriple(ExFile.toPath(ChapterFile.getSectionPath(partId, id), START_LOCATION), X, Y, Z));
         this.firstAction = firstAction;
         this.firstAction.setSection(this);
     }

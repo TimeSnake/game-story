@@ -32,7 +32,8 @@ public class AreaEvent<Action extends TriggeredAction> extends LocationEvent<Act
         Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public AreaEvent(Action action, ChapterFile file, String triggerPath) throws CharacterNotFoundException, UnknownLocationException {
+    public AreaEvent(Action action, ChapterFile file, String triggerPath) throws CharacterNotFoundException,
+            UnknownLocationException {
         super(action, file, triggerPath);
 
         this.radius = file.getDouble(ExFile.toPath(triggerPath, RADIUS));
@@ -62,7 +63,8 @@ public class AreaEvent<Action extends TriggeredAction> extends LocationEvent<Act
 
     @Override
     protected AreaEvent<Action> clone(StorySection section, StoryUser reader, Set<StoryUser> listeners) {
-        return new AreaEvent<>(this.location.clone().setExWorld(reader.getStoryWorld()), this.character != null ? section.getPart().getCharacter(this.character.getId()) : null, this.radius);
+        return new AreaEvent<>(this.location.clone().setExWorld(reader.getStoryWorld()), this.character != null ?
+                section.getPart().getCharacter(this.character.getId()) : null, this.radius);
     }
 
     @Override

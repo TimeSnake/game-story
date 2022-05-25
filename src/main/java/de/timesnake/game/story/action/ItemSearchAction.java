@@ -32,7 +32,8 @@ public class ItemSearchAction extends LocationAction {
 
     private ExArmorStand entity;
 
-    public ItemSearchAction(int id, StoryAction next, ExLocation location, StoryCharacter<?> character, StoryItem item, double itemAngle) {
+    public ItemSearchAction(int id, StoryAction next, ExLocation location, StoryCharacter<?> character,
+                            StoryItem item, double itemAngle) {
         super(id, next, location, character);
         this.item = item;
         this.itemAngle = itemAngle;
@@ -47,8 +48,11 @@ public class ItemSearchAction extends LocationAction {
     }
 
     @Override
-    public ItemSearchAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
-        return new ItemSearchAction(this.id, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()), this.character != null ? section.getPart().getCharacter(this.character.getId()) : null, this.item.clone(reader), this.itemAngle);
+    public ItemSearchAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners,
+                                  StoryAction clonedNext) {
+        return new ItemSearchAction(this.id, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()),
+                this.character != null ? section.getPart().getCharacter(this.character.getId()) : null,
+                this.item.clone(reader), this.itemAngle);
     }
 
     @Override
@@ -77,13 +81,17 @@ public class ItemSearchAction extends LocationAction {
         this.entity.setRightArmPose(new EulerAngle(this.itemAngle, 0, 0));
 
         this.reader.sendPacket(ExPacketPlayOutSpawnEntityLiving.wrap(this.entity));
-        this.reader.sendPacket(ExPacketPlayOutEntityMetadata.wrap(this.entity, ExPacketPlayOutEntityMetadata.DataType.UPDATE));
-        this.reader.sendPacket(ExPacketPlayOutEntityEquipment.wrap(this.entity, List.of(new Tuple<>(EquipmentSlot.HAND, this.item.getItem()))));
+        this.reader.sendPacket(ExPacketPlayOutEntityMetadata.wrap(this.entity,
+                ExPacketPlayOutEntityMetadata.DataType.UPDATE));
+        this.reader.sendPacket(ExPacketPlayOutEntityEquipment.wrap(this.entity,
+                List.of(new Tuple<>(EquipmentSlot.HAND, this.item.getItem()))));
 
         for (StoryUser listener : this.listeners) {
             listener.sendPacket(ExPacketPlayOutSpawnEntityLiving.wrap(this.entity));
-            listener.sendPacket(ExPacketPlayOutEntityMetadata.wrap(this.entity, ExPacketPlayOutEntityMetadata.DataType.UPDATE));
-            listener.sendPacket(ExPacketPlayOutEntityEquipment.wrap(this.entity, List.of(new Tuple<>(EquipmentSlot.HAND, this.item.getItem()))));
+            listener.sendPacket(ExPacketPlayOutEntityMetadata.wrap(this.entity,
+                    ExPacketPlayOutEntityMetadata.DataType.UPDATE));
+            listener.sendPacket(ExPacketPlayOutEntityEquipment.wrap(this.entity,
+                    List.of(new Tuple<>(EquipmentSlot.HAND, this.item.getItem()))));
         }
     }
 

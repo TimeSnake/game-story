@@ -129,7 +129,8 @@ public class TalkAction extends RadiusAction implements Listener {
     }
 
     private enum Speaker {
-        PLAYER, CHARACTER
+        PLAYER,
+        CHARACTER
     }
 
     private void sendSelfMessage(StoryUser user, String message) {
