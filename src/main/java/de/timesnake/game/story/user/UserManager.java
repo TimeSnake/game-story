@@ -23,8 +23,10 @@ import java.util.Set;
 public class UserManager implements Listener, UserInventoryInteractListener {
 
     public static final ExItemStack FOOD = new ExItemStack(Material.COOKED_BEEF, "§6Cooked Beef").setDropable(false);
-    public static final ExItemStack DRINK = new ExItemStack(Material.SPLASH_POTION, PotionType.WATER, false, false).setDisplayName("§6Water Bottle").hideAll().setDropable(false);
-    public static final ExItemStack CHECKPOINT = new ExItemStack(Material.RED_DYE, "§cTeleport to last checkpoint").setDropable(false).setMoveable(false);
+    public static final ExItemStack DRINK =
+            new ExItemStack(Material.SPLASH_POTION, PotionType.WATER, false, false).setDisplayName("§6Water Bottle").hideAll().setDropable(false);
+    public static final ExItemStack CHECKPOINT =
+            new ExItemStack(Material.RED_DYE, "§cTeleport to last checkpoint").setDropable(false).setMoveable(false);
 
     private final Set<StoryUser> checkpointUsers = new HashSet<>();
 
@@ -129,6 +131,7 @@ public class UserManager implements Listener, UserInventoryInteractListener {
 
         ((StoryUser) event.getUser()).getSection().start(true, false);
 
-        Server.runTaskLaterSynchrony(() -> this.checkpointUsers.remove(((StoryUser) event.getUser())), 2 * 20, GameStory.getPlugin());
+        Server.runTaskLaterSynchrony(() -> this.checkpointUsers.remove(((StoryUser) event.getUser())), 2 * 20,
+                GameStory.getPlugin());
     }
 }

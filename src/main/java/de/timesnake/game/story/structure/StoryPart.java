@@ -23,7 +23,8 @@ public class StoryPart {
 
     private final Diary diary;
 
-    public StoryPart(Integer id, String name, String endMessage, Diary diary, Map<Integer, StorySection> sectionsById, Set<StoryCharacter<?>> characters) {
+    public StoryPart(Integer id, String name, String endMessage, Diary diary, Map<Integer, StorySection> sectionsById
+            , Set<StoryCharacter<?>> characters) {
         this.id = id;
         this.name = name;
         this.endMessage = endMessage;
@@ -40,7 +41,9 @@ public class StoryPart {
 
     }
 
-    private StoryPart(StoryUser reader, Set<StoryUser> listeners, Integer id, String name, String endMessage, Diary diary, Map<Integer, StorySection> sectionsById, LinkedHashMap<Integer, StoryCharacter<?>> characterById) {
+    private StoryPart(StoryUser reader, Set<StoryUser> listeners, Integer id, String name, String endMessage,
+                      Diary diary, Map<Integer, StorySection> sectionsById,
+                      LinkedHashMap<Integer, StoryCharacter<?>> characterById) {
         this.id = id;
         this.name = name;
         this.endMessage = endMessage;
@@ -59,7 +62,8 @@ public class StoryPart {
     }
 
     public StoryPart clone(StoryUser reader, Set<StoryUser> listeners) {
-        return new StoryPart(reader, listeners, this.id, this.name, this.endMessage, this.diary, this.sectionsById, this.characterById);
+        return new StoryPart(reader, listeners, this.id, this.name, this.endMessage, this.diary, this.sectionsById,
+                this.characterById);
     }
 
     public Integer getId() {

@@ -19,7 +19,8 @@ public class Diary {
     private Set<StoryUser> listeners;
     private final Set<Integer> writtenPages = new HashSet<>();
 
-    public Diary(StoryUser reader, Set<StoryUser> listeners, HashMap<Integer, BaseComponent[]> pagesByNumber, ExItemStack book) {
+    public Diary(StoryUser reader, Set<StoryUser> listeners, HashMap<Integer, BaseComponent[]> pagesByNumber,
+                 ExItemStack book) {
         this.reader = reader;
         this.listeners = listeners;
         this.pagesByNumber = pagesByNumber;

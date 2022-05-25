@@ -37,7 +37,8 @@ public class DropItemAtEvent<Action extends TriggeredAction> extends LocationEve
         Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public DropItemAtEvent(Action action, ChapterFile file, String triggerPath) throws ItemNotFoundException, CharacterNotFoundException, UnknownLocationException {
+    public DropItemAtEvent(Action action, ChapterFile file, String triggerPath) throws ItemNotFoundException,
+            CharacterNotFoundException, UnknownLocationException {
         super(action, file, triggerPath);
 
         int itemId = file.getInt(ExFile.toPath(triggerPath, ITEM));
@@ -83,7 +84,9 @@ public class DropItemAtEvent<Action extends TriggeredAction> extends LocationEve
 
     @Override
     protected DropItemAtEvent<Action> clone(StorySection section, StoryUser reader, Set<StoryUser> listeners) {
-        return new DropItemAtEvent<>(this.location.clone().setExWorld(reader.getStoryWorld()), this.character != null ? section.getPart().getCharacter(this.character.getId()) : null, this.item.clone(reader));
+        return new DropItemAtEvent<>(this.location.clone().setExWorld(reader.getStoryWorld()),
+                this.character != null ? section.getPart().getCharacter(this.character.getId()) : null,
+                this.item.clone(reader));
     }
 
     @Override

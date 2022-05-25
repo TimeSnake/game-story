@@ -20,7 +20,8 @@ public abstract class LocationEvent<Action extends TriggeredAction> extends Trig
         this.character = character;
     }
 
-    public LocationEvent(Action action, ChapterFile file, String triggerPath) throws CharacterNotFoundException, UnknownLocationException {
+    public LocationEvent(Action action, ChapterFile file, String triggerPath) throws CharacterNotFoundException,
+            UnknownLocationException {
         super(action);
 
         if (file.contains(triggerPath + "." + CHARACTER)) {

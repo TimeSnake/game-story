@@ -94,7 +94,8 @@ public class StoryChapter {
 
                 }
 
-                Server.printText(Plugin.STORY, sb.toString(), "Chapter " + this.id, "Part " + partId, "Section " + sectionId);
+                Server.printText(Plugin.STORY, sb.toString(), "Chapter " + this.id, "Part " + partId,
+                        "Section " + sectionId);
 
                 sectionsById.put(sectionId, new StorySection(file, partId, sectionId, first));
             }
