@@ -1,9 +1,9 @@
 package de.timesnake.game.story.elements;
 
 import de.timesnake.basic.bukkit.util.world.ExLocation;
-import de.timesnake.basic.entities.entity.extension.EntityExtension;
-import de.timesnake.basic.entities.entity.extension.ExEntity;
 import de.timesnake.game.story.user.StoryUser;
+import de.timesnake.library.entities.entity.extension.EntityExtension;
+import de.timesnake.library.entities.entity.extension.ExEntity;
 import org.bukkit.entity.LivingEntity;
 
 import java.util.Set;
@@ -27,13 +27,11 @@ public abstract class StoryCharacter<Entity extends EntityExtension<? extends Ex
     }
 
     protected final Integer id;
-
-    protected StoryUser reader;
-    protected Set<StoryUser> listeners;
-
     protected final String name;
     protected final ExLocation location;
     protected final Entity entity;
+    protected StoryUser reader;
+    protected Set<StoryUser> listeners;
 
     public StoryCharacter(Integer id, String name, ExLocation location) {
         this.id = id;

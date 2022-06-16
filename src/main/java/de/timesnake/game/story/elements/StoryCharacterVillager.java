@@ -1,13 +1,13 @@
 package de.timesnake.game.story.elements;
 
 import de.timesnake.basic.bukkit.util.world.ExLocation;
-import de.timesnake.basic.entities.EntityManager;
-import de.timesnake.basic.entities.entity.bukkit.ExVillager;
-import de.timesnake.basic.entities.pathfinder.ExPathfinderGoal;
-import de.timesnake.basic.entities.pathfinder.ExPathfinderGoalLocation;
-import de.timesnake.basic.entities.pathfinder.ExPathfinderGoalLookAtPlayer;
-import de.timesnake.basic.entities.wrapper.EntityClass;
 import de.timesnake.game.story.user.StoryUser;
+import de.timesnake.library.entities.EntityManager;
+import de.timesnake.library.entities.entity.bukkit.ExVillager;
+import de.timesnake.library.entities.pathfinder.ExPathfinderGoal;
+import de.timesnake.library.entities.pathfinder.ExPathfinderGoalLocation;
+import de.timesnake.library.entities.pathfinder.ExPathfinderGoalLookAtPlayer;
+import de.timesnake.library.entities.wrapper.EntityClass;
 
 import java.util.ArrayList;
 import java.util.Arrays;

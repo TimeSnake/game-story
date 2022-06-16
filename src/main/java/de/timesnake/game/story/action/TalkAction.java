@@ -4,8 +4,6 @@ import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.file.ExFile;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.basic.bukkit.util.world.entity.HoloDisplay;
-import de.timesnake.basic.packets.util.packet.ExPacketPlayOutEntityHeadRotation;
-import de.timesnake.basic.packets.util.packet.ExPacketPlayOutEntityLook;
 import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.elements.CharacterNotFoundException;
 import de.timesnake.game.story.elements.StoryCharacter;
@@ -17,6 +15,8 @@ import de.timesnake.game.story.structure.ChapterFile;
 import de.timesnake.game.story.structure.StorySection;
 import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.library.basic.util.Tuple;
+import de.timesnake.library.packets.util.packet.ExPacketPlayOutEntityHeadRotation;
+import de.timesnake.library.packets.util.packet.ExPacketPlayOutEntityLook;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
@@ -36,6 +36,7 @@ public class TalkAction extends RadiusAction implements Listener {
 
     private final float yaw;
     private final float pitch;
+    private HoloDisplay display;
 
     public TalkAction(int id, StoryAction next, StoryCharacter<?> speaker, LinkedList<Tuple<Speaker, String>> messages,
                       ExLocation location, StoryCharacter<?> character, Double radius, float yaw, float pitch) {
@@ -47,8 +48,6 @@ public class TalkAction extends RadiusAction implements Listener {
 
         Server.registerListener(this, GameStory.getPlugin());
     }
-
-    private HoloDisplay display;
 
     public TalkAction(int id, List<Integer> diaryPages, ChapterFile file, String actionPath) throws
             CharacterNotFoundException, UnknownLocationException {
@@ -126,11 +125,6 @@ public class TalkAction extends RadiusAction implements Listener {
             this.sendSelfMessage(user, messageBySpeaker.getB());
         }
         this.messageIndexByUser.put(user, index + 1);
-    }
-
-    private enum Speaker {
-        PLAYER,
-        CHARACTER
     }
 
     private void sendSelfMessage(StoryUser user, String message) {
@@ -253,5 +247,10 @@ public class TalkAction extends RadiusAction implements Listener {
         Collection<Integer> ids = super.getCharacterIds();
         ids.add(this.speaker.getId());
         return ids;
+    }
+
+    private enum Speaker {
+        PLAYER,
+        CHARACTER
     }
 }

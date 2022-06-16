@@ -2,11 +2,6 @@ package de.timesnake.game.story.action;
 
 import de.timesnake.basic.bukkit.util.file.ExFile;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
-import de.timesnake.basic.entities.entity.bukkit.ExArmorStand;
-import de.timesnake.basic.packets.util.packet.ExPacketPlayOutEntityDestroy;
-import de.timesnake.basic.packets.util.packet.ExPacketPlayOutEntityEquipment;
-import de.timesnake.basic.packets.util.packet.ExPacketPlayOutEntityMetadata;
-import de.timesnake.basic.packets.util.packet.ExPacketPlayOutSpawnEntityLiving;
 import de.timesnake.game.story.elements.*;
 import de.timesnake.game.story.event.TriggerEvent;
 import de.timesnake.game.story.server.StoryServer;
@@ -14,6 +9,11 @@ import de.timesnake.game.story.structure.ChapterFile;
 import de.timesnake.game.story.structure.StorySection;
 import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.library.basic.util.Tuple;
+import de.timesnake.library.entities.entity.bukkit.ExArmorStand;
+import de.timesnake.library.packets.util.packet.ExPacketPlayOutEntityDestroy;
+import de.timesnake.library.packets.util.packet.ExPacketPlayOutEntityEquipment;
+import de.timesnake.library.packets.util.packet.ExPacketPlayOutEntityMetadata;
+import de.timesnake.library.packets.util.packet.ExPacketPlayOutSpawnEntityLiving;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.util.EulerAngle;
 
