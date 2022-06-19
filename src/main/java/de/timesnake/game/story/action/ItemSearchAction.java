@@ -13,7 +13,7 @@ import de.timesnake.library.entities.entity.bukkit.ExArmorStand;
 import de.timesnake.library.packets.util.packet.ExPacketPlayOutEntityDestroy;
 import de.timesnake.library.packets.util.packet.ExPacketPlayOutEntityEquipment;
 import de.timesnake.library.packets.util.packet.ExPacketPlayOutEntityMetadata;
-import de.timesnake.library.packets.util.packet.ExPacketPlayOutSpawnEntityLiving;
+import de.timesnake.library.packets.util.packet.ExPacketPlayOutSpawnEntity;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.util.EulerAngle;
 
@@ -80,14 +80,14 @@ public class ItemSearchAction extends LocationAction {
         this.entity.setPosition(this.location.getX() + 0.3, this.location.getY() - 0.8, this.location.getZ());
         this.entity.setRightArmPose(new EulerAngle(this.itemAngle, 0, 0));
 
-        this.reader.sendPacket(ExPacketPlayOutSpawnEntityLiving.wrap(this.entity));
+        this.reader.sendPacket(ExPacketPlayOutSpawnEntity.wrap(this.entity));
         this.reader.sendPacket(ExPacketPlayOutEntityMetadata.wrap(this.entity,
                 ExPacketPlayOutEntityMetadata.DataType.UPDATE));
         this.reader.sendPacket(ExPacketPlayOutEntityEquipment.wrap(this.entity,
                 List.of(new Tuple<>(EquipmentSlot.HAND, this.item.getItem()))));
 
         for (StoryUser listener : this.listeners) {
-            listener.sendPacket(ExPacketPlayOutSpawnEntityLiving.wrap(this.entity));
+            listener.sendPacket(ExPacketPlayOutSpawnEntity.wrap(this.entity));
             listener.sendPacket(ExPacketPlayOutEntityMetadata.wrap(this.entity,
                     ExPacketPlayOutEntityMetadata.DataType.UPDATE));
             listener.sendPacket(ExPacketPlayOutEntityEquipment.wrap(this.entity,
