@@ -93,10 +93,11 @@ public class StoryUser extends User {
         for (Integer chapterId : dbStory.getChapterIds()) {
 
             HashMap<Integer, Integer> sectionIdsByPartId = new HashMap<>();
-
+            System.out.println(chapterId);
             for (Integer partId : dbStory.getPartIds(chapterId)) {
+                System.out.println(partId);
                 Integer sectionId = dbStory.getSectionId(chapterId, partId);
-
+                System.out.println(sectionId);
                 sectionIdsByPartId.put(partId, sectionId);
             }
 
@@ -235,4 +236,5 @@ public class StoryUser extends User {
     public StorySection getSection() {
         return section;
     }
+
 }

@@ -2,13 +2,13 @@ package de.timesnake.game.story.elements;
 
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.user.StoryUser;
-import de.timesnake.library.entities.entity.extension.EntityExtension;
+import de.timesnake.library.entities.entity.ExtendedCraftEntity;
 import de.timesnake.library.entities.entity.extension.ExEntity;
 import org.bukkit.entity.LivingEntity;
 
 import java.util.Set;
 
-public abstract class StoryCharacter<Entity extends EntityExtension<? extends ExEntity> & LivingEntity> {
+public abstract class StoryCharacter<Entity extends ExtendedCraftEntity<? extends ExEntity> & LivingEntity> {
 
     public static StoryCharacter<?> initCharacter(CharacterFile characterFile, Integer id) {
         String type = characterFile.getCharacterType(id);
