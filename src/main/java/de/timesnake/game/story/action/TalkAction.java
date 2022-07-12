@@ -136,7 +136,7 @@ public class TalkAction extends RadiusAction implements Listener {
 
         this.display = new HoloDisplay(this.location.clone().add(0, 0.8, 0), lines);
 
-        this.display.addWatcher(user);
+        Server.getEntityManager().registerEntity(this.display, user);
 
         Random random = new Random();
 
