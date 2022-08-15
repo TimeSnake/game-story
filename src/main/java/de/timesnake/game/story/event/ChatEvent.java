@@ -9,6 +9,8 @@ import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.structure.ChapterFile;
 import de.timesnake.game.story.structure.StorySection;
 import de.timesnake.game.story.user.StoryUser;
+import de.timesnake.library.basic.util.chat.ExTextColor;
+import net.kyori.adventure.text.Component;
 
 import java.util.Set;
 
@@ -56,11 +58,11 @@ public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Acti
             event.removeLisener(false);
             event.setCancelled(true);
             event.getUser().sendMessage(Server.getChat().getSenderMember(event.getUser()) + "§7" + event.getMessage());
-            event.getUser().sendPluginMessage(Plugin.STORY, "§cLeider falsch");
+            event.getUser().sendPluginMessage(Plugin.STORY, Component.text("Leider falsch", ExTextColor.WARNING));
             return;
         }
 
-        event.getUser().sendPluginMessage(Plugin.STORY, "§2Richtig");
+        event.getUser().sendPluginMessage(Plugin.STORY, Component.text("Richtig", ExTextColor.GREEN));
         this.triggerAction((StoryUser) event.getUser());
 
         event.removeLisener(true);

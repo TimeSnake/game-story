@@ -7,9 +7,10 @@ import de.timesnake.basic.bukkit.util.chat.Sender;
 import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.user.StoryUser;
-import de.timesnake.library.basic.util.chat.ChatColor;
+import de.timesnake.library.basic.util.chat.ExTextColor;
 import de.timesnake.library.extension.util.cmd.Arguments;
 import de.timesnake.library.extension.util.cmd.ExCommand;
+import net.kyori.adventure.text.Component;
 
 import java.util.HashSet;
 import java.util.List;
@@ -43,7 +44,8 @@ public class StoryCmd implements CommandListener {
             }
 
             user.buyPart(chapterId, partId);
-            sender.sendPluginMessage(ChatColor.WARNING + "Bought part for " + ChatColor.VALUE + StoryServer.PART_PRICE + " TimeCoins");
+            sender.sendPluginMessage(Component.text("Bought part for ", ExTextColor.PERSONAL)
+                    .append(Component.text(StoryServer.PART_PRICE + " TimeCoins", ExTextColor.VALUE)));
             Server.printText(Plugin.STORY, user.getName() + " bought part " + chapterId + "." + partId, "Buy");
         }
 
