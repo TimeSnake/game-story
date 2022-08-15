@@ -7,6 +7,7 @@ import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.ChapterFile;
 import de.timesnake.game.story.structure.StorySection;
 import de.timesnake.game.story.user.StoryUser;
+import net.kyori.adventure.text.Component;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
@@ -55,8 +56,8 @@ public class ThoughtAction extends TriggeredAction implements Listener {
             listener.resetTitle();
         }
 
-        this.reader.sendTitle("", this.messages.get(this.messageIndex), Duration.ofSeconds(20));
-        this.listeners.forEach((u) -> u.sendTitle("", this.messages.get(this.messageIndex), Duration.ofSeconds(20)));
+        this.reader.showTitle(Component.empty(), Component.text(this.messages.get(this.messageIndex)), Duration.ofSeconds(20));
+        this.listeners.forEach((u) -> u.showTitle(Component.empty(), Component.text(this.messages.get(this.messageIndex)), Duration.ofSeconds(20)));
 
         this.messageIndex++;
     }

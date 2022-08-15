@@ -17,6 +17,7 @@ import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.library.basic.util.Tuple;
 import de.timesnake.library.packets.util.packet.ExPacketPlayOutEntityHeadRotation;
 import de.timesnake.library.packets.util.packet.ExPacketPlayOutEntityLook;
+import net.kyori.adventure.text.Component;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
@@ -128,7 +129,7 @@ public class TalkAction extends RadiusAction implements Listener {
     }
 
     private void sendSelfMessage(StoryUser user, String message) {
-        user.sendTitle("", message, Duration.ofSeconds(20));
+        user.showTitle(Component.empty(), Component.text(message), Duration.ofSeconds(20));
     }
 
     private void sendMessage(StoryUser user, String message) {

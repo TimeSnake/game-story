@@ -1,10 +1,9 @@
 package de.timesnake.game.story.user;
 
 import de.timesnake.basic.bukkit.util.Server;
-import de.timesnake.basic.bukkit.util.permission.Group;
+import de.timesnake.basic.bukkit.util.chat.DisplayGroup;
 import de.timesnake.basic.bukkit.util.user.User;
 import de.timesnake.basic.bukkit.util.user.scoreboard.Tablist;
-import de.timesnake.basic.bukkit.util.user.scoreboard.TablistGroupType;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
 import de.timesnake.database.util.Database;
@@ -16,14 +15,18 @@ import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.structure.StoryPart;
 import de.timesnake.game.story.structure.StorySection;
-import de.timesnake.library.basic.util.chat.ChatColor;
+import de.timesnake.library.basic.util.chat.ExTextColor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.GameMode;
 import org.bukkit.GameRule;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class StoryUser extends User {
 
@@ -48,10 +51,8 @@ public class StoryUser extends User {
                     StoryServer.getStoryWorldTemplate());
         }
 
-        LinkedList<TablistGroupType> types = new LinkedList<>();
-        types.add(Group.getTablistType());
         Tablist tablist = Server.getScoreboardManager().registerNewGroupTablist(this.getName(), Tablist.Type.DUMMY,
-                types, (e, t) -> {
+                DisplayGroup.MAIN_TABLIST_GROUPS, (e, t) -> {
                 }, (e, t) -> {
                 });
 
@@ -133,7 +134,7 @@ public class StoryUser extends User {
         Integer sectionId = this.sectionsByPartByChapter.get(chapterId).get(partId);
 
         if (sectionId > chapter.getPart(partId).getLastSection().getId()) {
-            this.sendPluginMessage(Plugin.STORY, ChatColor.WARNING + "You already played this part");
+            this.sendPluginMessage(Plugin.STORY, Component.text("You already played this part", ExTextColor.WARNING));
             return;
         }
 
@@ -172,7 +173,7 @@ public class StoryUser extends User {
                 this.dbStory.setSectionId(this.chapter.getId(), this.part.getId(), this.section.getId());
                 Server.printText(Plugin.STORY,
                         "Saved checkpoint " + this.chapter.getId() + "." + this.part.getId() + "." + this.section.getId(), this.getName());
-                this.sendPluginMessage(Plugin.STORY, ChatColor.PERSONAL + "Checkpoint");
+                this.sendPluginMessage(Plugin.STORY, Component.text("Checkpoint", ExTextColor.PERSONAL));
 
                 this.section.start(false, true);
             }
@@ -181,7 +182,7 @@ public class StoryUser extends User {
     }
 
     public void onCompletedPart(StoryPart part) {
-        this.sendTitle("", part.getEndMessage(), Duration.ofSeconds(3));
+        this.showTitle(Component.empty(), Component.text(part.getEndMessage()), Duration.ofSeconds(3));
 
         this.sectionsByPartByChapter.get(this.chapter.getId()).put(part.getId() + 1, 1);
 

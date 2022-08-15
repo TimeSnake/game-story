@@ -3,6 +3,8 @@ package de.timesnake.game.story.book;
 import de.timesnake.basic.bukkit.util.user.ExItemStack;
 import de.timesnake.game.story.structure.ChapterFile;
 import de.timesnake.game.story.user.StoryUser;
+import de.timesnake.library.basic.util.chat.ExTextColor;
+import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Material;
@@ -15,9 +17,9 @@ public class Diary {
     private final ExItemStack book;
 
     private final HashMap<Integer, BaseComponent[]> pagesByNumber;
+    private final Set<Integer> writtenPages = new HashSet<>();
     private StoryUser reader;
     private Set<StoryUser> listeners;
-    private final Set<Integer> writtenPages = new HashSet<>();
 
     public Diary(StoryUser reader, Set<StoryUser> listeners, HashMap<Integer, BaseComponent[]> pagesByNumber,
                  ExItemStack book) {
@@ -97,8 +99,8 @@ public class Diary {
         this.listeners.forEach(u -> u.setItem(0, this.book));
 
         if (pageNumbers.length > 0) {
-            this.reader.sendActionBarText("§6Ich mache mir Notizen...");
-            this.listeners.forEach(u -> u.sendActionBarText("§6Ich mache mir Notizen..."));
+            this.reader.sendActionBarText(Component.text(" mache mir Notizen...", ExTextColor.GOLD));
+            this.listeners.forEach(u -> u.sendActionBarText(Component.text("Ich mache mir Notizen...", ExTextColor.GOLD)));
         }
     }
 
