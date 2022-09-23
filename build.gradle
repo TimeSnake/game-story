@@ -45,7 +45,8 @@ dependencies {
 group = 'de.timesnake'
 version = '1.0-SNAPSHOT'
 description = 'game-story'
-java.sourceCompatibility = JavaVersion.VERSION_17
+java.sourceCompatibility = 17
+java.targetCompatibility = 17
 
 task sourceJar(type: Jar) {
     from sourceSets.main.allJava
