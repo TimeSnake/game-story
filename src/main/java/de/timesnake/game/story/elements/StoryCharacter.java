@@ -1,56 +1,58 @@
 package de.timesnake.game.story.elements;
 
+import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
-import de.timesnake.game.story.user.StoryUser;
+import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.library.entities.entity.ExtendedCraftEntity;
 import de.timesnake.library.entities.entity.extension.ExEntity;
 import org.bukkit.entity.LivingEntity;
 
-import java.util.Set;
-
 public abstract class StoryCharacter<Entity extends ExtendedCraftEntity<? extends ExEntity> & LivingEntity> {
 
-    public static StoryCharacter<?> initCharacter(CharacterFile characterFile, Integer id) {
-        String type = characterFile.getCharacterType(id);
+    public static StoryCharacter<?> initCharacter(String name, Toml character) {
+        String type = character.getString(TYPE);
         if (type == null) {
             return null;
         }
 
         switch (type.toLowerCase()) {
             case StoryCharacterVillager.NAME:
-                return new StoryCharacterVillager(characterFile, id);
+                return new StoryCharacterVillager(name, character);
             case StoryCharacterPlayer.NAME:
-                return new StoryCharacterPlayer(characterFile, id);
+                return new StoryCharacterPlayer(name, character);
         }
 
         return null;
     }
 
-    protected final Integer id;
+    private static final String NAME = "name";
+    private static final String TYPE = "type";
+    private static final String LOCATION = "location";
     protected final String name;
+    protected final String displayName;
     protected final ExLocation location;
     protected final Entity entity;
-    protected StoryUser reader;
-    protected Set<StoryUser> listeners;
+    protected StoryReader reader;
 
-    public StoryCharacter(Integer id, String name, ExLocation location) {
-        this.id = id;
+    public StoryCharacter(String name, String displayName, ExLocation location) {
         this.name = name;
+        this.displayName = displayName;
         this.location = location;
         this.entity = this.initEntity();
     }
 
-    public StoryCharacter(CharacterFile file, int entityId) {
-        this.id = entityId;
-        this.name = file.getCharacterName(entityId);
-        this.location = new ExLocation(null, file.getCharacterLocation(entityId));
+    public StoryCharacter(String name, Toml character) {
+        this.name = name;
+        this.displayName = character.getString(NAME);
+        this.location = ExLocation.fromList(character.getList(LOCATION));
         this.entity = null;
     }
 
-    public abstract StoryCharacter<Entity> clone(StoryUser reader, Set<StoryUser> listeners);
+    public abstract StoryCharacter<Entity> clone(StoryReader reader, StoryChapter chapter);
 
-    public String getName() {
-        return name;
+    public String getDisplayName() {
+        return displayName;
     }
 
     public LivingEntity getEntity() {
@@ -68,7 +70,7 @@ public abstract class StoryCharacter<Entity extends ExtendedCraftEntity<? extend
 
     public abstract void despawn();
 
-    public Integer getId() {
-        return this.id;
+    public String getName() {
+        return this.name;
     }
 }

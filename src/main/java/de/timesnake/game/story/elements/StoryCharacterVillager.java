@@ -1,7 +1,9 @@
 package de.timesnake.game.story.elements;
 
+import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
-import de.timesnake.game.story.user.StoryUser;
+import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.library.entities.EntityManager;
 import de.timesnake.library.entities.entity.bukkit.ExVillager;
 import de.timesnake.library.entities.pathfinder.ExPathfinderGoal;
@@ -12,7 +14,6 @@ import de.timesnake.library.entities.wrapper.EntityClass;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 public class StoryCharacterVillager extends StoryCharacter<ExVillager> {
 
@@ -20,20 +21,19 @@ public class StoryCharacterVillager extends StoryCharacter<ExVillager> {
 
     protected List<ExPathfinderGoal> walkPathfinders = new ArrayList<>();
 
-    public StoryCharacterVillager(Integer id, String name, ExLocation location) {
-        super(id, name, location);
+    public StoryCharacterVillager(String name, String displayName, ExLocation location) {
+        super(name, displayName, location);
     }
 
-    public StoryCharacterVillager(CharacterFile file, int entityId) {
-        super(file, entityId);
+    public StoryCharacterVillager(String name, Toml character) {
+        super(name, character);
     }
 
     @Override
-    public StoryCharacter<ExVillager> clone(StoryUser reader, Set<StoryUser> listeners) {
-        StoryCharacterVillager character = new StoryCharacterVillager(this.id, this.name,
-                this.location.setExWorld(reader.getStoryWorld()));
+    public StoryCharacter<ExVillager> clone(StoryReader reader, StoryChapter chapter) {
+        StoryCharacterVillager character = new StoryCharacterVillager(this.name, this.displayName,
+                this.location.setExWorld(chapter.getWorld()));
         character.reader = reader;
-        character.listeners = listeners;
         return character;
     }
 

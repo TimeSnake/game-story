@@ -1,16 +1,16 @@
 package de.timesnake.game.story.action;
 
-import de.timesnake.basic.bukkit.util.file.ExFile;
+import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.elements.*;
 import de.timesnake.game.story.event.TriggerEvent;
 import de.timesnake.game.story.server.StoryServer;
-import de.timesnake.game.story.structure.ChapterFile;
-import de.timesnake.game.story.structure.StorySection;
+import de.timesnake.game.story.structure.Quest;
+import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 
 import java.util.List;
-import java.util.Set;
 
 public class ItemGiveAction extends LocationAction {
 
@@ -23,19 +23,18 @@ public class ItemGiveAction extends LocationAction {
         this.item = item;
     }
 
-    public ItemGiveAction(int id, List<Integer> diaryPages, ChapterFile file, String actionPath) throws CharacterNotFoundException, ItemNotFoundException, UnknownLocationException {
-        super(id, diaryPages, file, actionPath);
+    public ItemGiveAction(Toml action, int id, List<Integer> diaryPages)
+            throws CharacterNotFoundException, ItemNotFoundException, UnknownLocationException {
+        super(action, id, diaryPages);
 
-        int itemId = file.getInt(ExFile.toPath(actionPath, ITEM));
-        this.item = StoryServer.getItem(itemId);
+        this.item = StoryServer.getItem(action.getString("item"));
     }
 
 
     @Override
-    public ItemGiveAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners,
-                                StoryAction clonedNext) {
-        return new ItemGiveAction(this.id, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()),
-                section.getPart().getCharacter(character.getId()), this.item.clone(reader));
+    public ItemGiveAction clone(Quest quest, StoryReader reader, StoryAction clonedNext, StoryChapter chapter) {
+        return new ItemGiveAction(this.id, clonedNext, this.location.clone().setExWorld(chapter.getWorld()),
+                quest.getChapter().getCharacter(character.getName()), this.item.clone(reader));
     }
 
     @Override

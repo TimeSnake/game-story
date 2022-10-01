@@ -1,12 +1,11 @@
 package de.timesnake.game.story.action;
 
-import de.timesnake.basic.bukkit.util.file.ExFile;
-import de.timesnake.game.story.structure.ChapterFile;
-import de.timesnake.game.story.structure.StorySection;
-import de.timesnake.game.story.user.StoryUser;
+import com.moandjiezana.toml.Toml;
+import de.timesnake.game.story.structure.Quest;
+import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.game.story.user.StoryReader;
 
 import java.util.List;
-import java.util.Set;
 
 public class DelayAction extends StoryAction {
 
@@ -19,14 +18,14 @@ public class DelayAction extends StoryAction {
         this.delay = delay;
     }
 
-    public DelayAction(int id, List<Integer> diaryPages, ChapterFile file, String actionPath) {
+    public DelayAction(Toml action, int id, List<Integer> diaryPages) {
         super(id, diaryPages);
 
-        this.delay = file.getInt(ExFile.toPath(actionPath, DELAY));
+        this.delay = action.getLong("delay", 0L).intValue();
     }
 
     @Override
-    public StoryAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
+    public StoryAction clone(Quest quest, StoryReader reader, StoryAction clonedNext, StoryChapter chapter) {
         return new DelayAction(this.id, clonedNext, this.delay);
     }
 }

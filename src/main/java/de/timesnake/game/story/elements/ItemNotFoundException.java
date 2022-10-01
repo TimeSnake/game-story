@@ -2,14 +2,14 @@ package de.timesnake.game.story.elements;
 
 public class ItemNotFoundException extends Exception {
 
-    private final int id;
+    private final String name;
 
-    public ItemNotFoundException(int id) {
-        this.id = id;
+    public ItemNotFoundException(String name) {
+        this.name = name;
     }
 
     @Override
     public String getMessage() {
-        return "Can not find item " + this.id;
+        return "Can not find item " + this.name;
     }
 }

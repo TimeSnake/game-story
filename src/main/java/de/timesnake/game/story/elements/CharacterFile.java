@@ -1,46 +1,27 @@
 package de.timesnake.game.story.elements;
 
-import de.timesnake.basic.bukkit.util.file.ExFile;
-import de.timesnake.library.basic.util.Triple;
+import com.moandjiezana.toml.Toml;
+import de.timesnake.basic.bukkit.util.file.ExToml;
 
-import java.util.Set;
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
-public class CharacterFile extends ExFile {
+public class CharacterFile {
 
-    private static final String CHARACTERS = "characters";
-    private static final String NAME = "name";
-    private static final String TYPE = "type";
-    private static final String LOCATION = "location";
-    private static final String X = "x";
-    private static final String Y = "y";
-    private static final String Z = "z";
+    private static final String CHARACTER = "character";
 
+    private final ExToml file;
 
-    public CharacterFile() {
-        super("game-story", "characters");
+    public CharacterFile(File file) {
+        this.file = new ExToml(file);
     }
 
-    public Set<Integer> getCharacterIds() {
-        return super.getPathIntegerList(CHARACTERS);
-    }
-
-    public String getCharacterName(int id) {
-        return super.getString(getCharacterPath(id) + "." + NAME);
-    }
-
-    public String getCharacterType(int id) {
-        return super.getString(getCharacterPath(id) + "." + TYPE);
-    }
-
-    public Triple<Double, Double, Double> getCharacterLocation(int id) {
-        return super.getDoubleTriple(getCharacterPath(id) + "." + LOCATION, X, Y, Z);
-    }
-
-    public String getCharacterValue(int id, String value) {
-        return super.getString(getCharacterPath(id) + "." + value);
-    }
-
-    public static String getCharacterPath(int id) {
-        return CHARACTERS + "." + id;
+    public Map<String, Toml> getCharacterTables() {
+        Map<String, Toml> map = new HashMap<>();
+        for (String name : this.file.getTable(CHARACTER).toMap().keySet()) {
+            map.put(name, this.file.getTable(CHARACTER).getTable(name));
+        }
+        return map;
     }
 }

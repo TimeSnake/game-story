@@ -1,8 +1,8 @@
 package de.timesnake.game.story.book;
 
+import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.user.ExItemStack;
-import de.timesnake.game.story.structure.ChapterFile;
-import de.timesnake.game.story.user.StoryUser;
+import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.library.basic.util.chat.ExTextColor;
 import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -18,24 +18,23 @@ public class Diary {
 
     private final HashMap<Integer, BaseComponent[]> pagesByNumber;
     private final Set<Integer> writtenPages = new HashSet<>();
-    private StoryUser reader;
-    private Set<StoryUser> listeners;
+    private StoryReader reader;
 
-    public Diary(StoryUser reader, Set<StoryUser> listeners, HashMap<Integer, BaseComponent[]> pagesByNumber,
+    public Diary(StoryReader reader, HashMap<Integer, BaseComponent[]> pagesByNumber,
                  ExItemStack book) {
         this.reader = reader;
-        this.listeners = listeners;
         this.pagesByNumber = pagesByNumber;
         this.book = book;
     }
 
-    public Diary(ChapterFile chapterFile, int partId) {
+    public Diary(Toml toml, int chapterId) {
         this.pagesByNumber = new HashMap<>();
 
         this.book = new ExItemStack(Material.WRITTEN_BOOK).setDropable(false).setMoveable(false);
 
-        for (Integer pageNumber : chapterFile.getPathIntegerList(chapterFile.getDiaryPath(partId))) {
-            List<String> text = chapterFile.getDiaryText(partId, pageNumber);
+        for (Map.Entry<String, Object> entry : toml.entrySet()) {
+            int pageNumber = Integer.parseInt(entry.getKey());
+            List<String> text = (List<String>) entry.getValue();
 
             BaseComponent[] components = new BaseComponent[text.size()];
 
@@ -55,8 +54,8 @@ public class Diary {
         this.book.setItemMeta(meta);
     }
 
-    public Diary clone(StoryUser reader, Set<StoryUser> listeners) {
-        return new Diary(reader, listeners, pagesByNumber, this.book.cloneWithId());
+    public Diary clone(StoryReader reader) {
+        return new Diary(reader, pagesByNumber, this.book.cloneWithId());
     }
 
     public void loadPage(Integer... pageNumbers) {
@@ -89,18 +88,15 @@ public class Diary {
             meta.spigot().setPages(new BaseComponent[]{});
         }
 
-        meta.setAuthor(this.reader.getName());
+        meta.setAuthor("Yourself");
         meta.setTitle("Tagebuch");
 
         this.book.setItemMeta(meta);
 
-        this.reader.setItem(0, this.book);
-
-        this.listeners.forEach(u -> u.setItem(0, this.book));
+        this.reader.forEach(u -> u.setItem(0, this.book));
 
         if (pageNumbers.length > 0) {
-            this.reader.sendActionBarText(Component.text(" mache mir Notizen...", ExTextColor.GOLD));
-            this.listeners.forEach(u -> u.sendActionBarText(Component.text("Ich mache mir Notizen...", ExTextColor.GOLD)));
+            this.reader.forEach(u -> u.sendActionBarText(Component.text("Ich mache mir Notizen...", ExTextColor.GOLD)));
         }
     }
 

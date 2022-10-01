@@ -1,37 +1,27 @@
 package de.timesnake.game.story.elements;
 
-import de.timesnake.basic.bukkit.util.file.ExFile;
+import com.moandjiezana.toml.Toml;
+import de.timesnake.basic.bukkit.util.file.ExToml;
 
-import java.util.Set;
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
-public class ItemFile extends ExFile {
+public class ItemFile {
 
-    private static final String ITEMS = "items";
-    private static final String TYPE = "type";
-    private static final String NAME = "name";
-    private static final String ENCHANT = "enchant";
+    private static final String ITEM = "item";
 
-    public ItemFile() {
-        super("game-story", "items");
+    private final ExToml file;
+
+    public ItemFile(File file) {
+        this.file = new ExToml(file);
     }
 
-    public Set<Integer> getItemIds() {
-        return super.getPathIntegerList(ITEMS);
-    }
-
-    public String getItemName(int id) {
-        return super.getString(getItemPath(id) + "." + NAME);
-    }
-
-    public String getItemType(int id) {
-        return super.getString(getItemPath(id) + "." + TYPE);
-    }
-
-    public boolean isItemEnchanted(int id) {
-        return super.getBoolean(getItemPath(id) + "." + ENCHANT);
-    }
-
-    public static String getItemPath(int id) {
-        return ITEMS + "." + id;
+    public Map<String, Toml> getItemTables() {
+        Map<String, Toml> map = new HashMap<>();
+        for (String name : this.file.getTable(ITEM).toMap().keySet()) {
+            map.put(name, this.file.getTable(ITEM).getTable(name));
+        }
+        return map;
     }
 }

@@ -1,11 +1,13 @@
 package de.timesnake.game.story.action;
 
+import com.moandjiezana.toml.Toml;
+import de.timesnake.basic.bukkit.core.user.UserPlayerDelegation;
 import de.timesnake.basic.bukkit.util.Server;
-import de.timesnake.basic.bukkit.util.file.ExFile;
 import de.timesnake.game.story.event.TriggerEvent;
 import de.timesnake.game.story.main.GameStory;
-import de.timesnake.game.story.structure.ChapterFile;
-import de.timesnake.game.story.structure.StorySection;
+import de.timesnake.game.story.structure.Quest;
+import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 import net.kyori.adventure.text.Component;
 import org.bukkit.event.EventHandler;
@@ -14,7 +16,6 @@ import org.bukkit.event.player.PlayerToggleSneakEvent;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Set;
 
 public class ThoughtAction extends TriggeredAction implements Listener {
 
@@ -32,32 +33,26 @@ public class ThoughtAction extends TriggeredAction implements Listener {
         Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public ThoughtAction(int id, List<Integer> diaryPages, ChapterFile file, String actionPath) {
+    public ThoughtAction(Toml action, int id, List<Integer> diaryPages) {
         super(id, diaryPages);
 
-        this.messages = file.getStringList(ExFile.toPath(actionPath, MESSAGES));
+        this.messages = action.getList(MESSAGES);
     }
 
     @Override
-    public StoryAction clone(StorySection section, StoryUser reader, Set<StoryUser> listener, StoryAction clonedNext) {
+    public StoryAction clone(Quest section, StoryReader reader, StoryAction clonedNext, StoryChapter chapter) {
         return new ThoughtAction(this.id, clonedNext, this.messages);
     }
 
     private void nextMessage() {
-
         if (this.messageIndex >= this.messages.size()) {
-            this.reader.resetTitle();
+            this.reader.forEach(UserPlayerDelegation::resetTitle);
             this.startNext();
             return;
         }
 
-        this.reader.resetTitle();
-        for (StoryUser listener : this.listeners) {
-            listener.resetTitle();
-        }
-
-        this.reader.showTitle(Component.empty(), Component.text(this.messages.get(this.messageIndex)), Duration.ofSeconds(20));
-        this.listeners.forEach((u) -> u.showTitle(Component.empty(), Component.text(this.messages.get(this.messageIndex)), Duration.ofSeconds(20)));
+        this.reader.forEach(UserPlayerDelegation::resetTitle);
+        this.reader.forEach(u -> u.showTitle(Component.empty(), Component.text(this.messages.get(this.messageIndex)), Duration.ofSeconds(20)));
 
         this.messageIndex++;
     }
@@ -70,7 +65,7 @@ public class ThoughtAction extends TriggeredAction implements Listener {
             return;
         }
 
-        if (!this.reader.equals(user)) {
+        if (!this.reader.containsUser(user)) {
             return;
         }
 

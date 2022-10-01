@@ -12,7 +12,6 @@ import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ProjectileHitEvent;
-import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.potion.PotionType;
@@ -74,17 +73,6 @@ public class UserManager implements Listener, UserInventoryInteractListener {
     }
 
     @EventHandler
-    public void onPlayerChangedWorld(PlayerChangedWorldEvent e) {
-        StoryUser user = (StoryUser) Server.getUser(e.getPlayer());
-
-        if (user.getExWorld().equals(user.getStoryWorld())) {
-            if (user.getPart() != null) {
-                Server.runTaskLaterSynchrony(() -> user.getPart().spawnCharacters(), 60, GameStory.getPlugin());
-            }
-        }
-    }
-
-    @EventHandler
     public void onProjectileHit(ProjectileHitEvent e) {
         if (!(e.getEntity() instanceof ThrownPotion)) {
             return;
@@ -129,7 +117,7 @@ public class UserManager implements Listener, UserInventoryInteractListener {
 
         this.checkpointUsers.add(((StoryUser) event.getUser()));
 
-        ((StoryUser) event.getUser()).getSection().start(true, false);
+        ((StoryUser) event.getUser()).getReaderGroup().getQuest().start(true, false);
 
         Server.runTaskLaterSynchrony(() -> this.checkpointUsers.remove(((StoryUser) event.getUser())), 2 * 20,
                 GameStory.getPlugin());

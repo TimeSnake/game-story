@@ -1,11 +1,12 @@
 package de.timesnake.game.story.action;
 
 import de.timesnake.game.story.event.TriggerEvent;
-import de.timesnake.game.story.structure.StorySection;
+import de.timesnake.game.story.structure.Quest;
+import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 
 import java.util.List;
-import java.util.Set;
 
 public class PlaySoundAction extends TriggeredAction {
 
@@ -20,7 +21,7 @@ public class PlaySoundAction extends TriggeredAction {
     }
 
     @Override
-    public StoryAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
+    public StoryAction clone(Quest quest, StoryReader reader, StoryAction clonedNext, StoryChapter chapter) {
         return null;
     }
 

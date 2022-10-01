@@ -1,18 +1,19 @@
 package de.timesnake.game.story.event;
 
+import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.Server;
-import de.timesnake.basic.bukkit.util.file.ExFile;
 import de.timesnake.basic.bukkit.util.user.UserChatCommandListener;
 import de.timesnake.basic.bukkit.util.user.event.UserChatCommandEvent;
 import de.timesnake.game.story.action.TriggeredAction;
 import de.timesnake.game.story.chat.Plugin;
-import de.timesnake.game.story.structure.ChapterFile;
-import de.timesnake.game.story.structure.StorySection;
+import de.timesnake.game.story.structure.Quest;
+import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.library.basic.util.chat.ExTextColor;
 import net.kyori.adventure.text.Component;
 
-import java.util.Set;
+import java.util.List;
 
 public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Action> implements UserChatCommandListener {
 
@@ -20,23 +21,29 @@ public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Acti
 
     private static final String CODE = "code";
 
-    private final String code;
+    private final List<String> codes;
+    private StoryReader reader;
 
-    protected ChatEvent(StoryUser reader, String code) {
+    protected ChatEvent(StoryReader reader, List<String> codes) {
         super();
-        this.code = code;
+        this.codes = codes;
+        this.reader = reader;
 
-        Server.getUserEventManager().addUserChatCommand(reader, this);
+        this.reader.forEach(u -> Server.getUserEventManager().addUserChatCommand(u, this));
     }
 
-    public ChatEvent(Action action, ChapterFile file, String triggerPath) {
+    public ChatEvent(Action action, Toml trigger) {
         super(action);
-        this.code = file.getString(ExFile.toPath(triggerPath, CODE));
+        if (trigger.containsPrimitive(CODE)) {
+            this.codes = List.of(trigger.getString(CODE));
+        } else {
+            this.codes = trigger.getList(CODE);
+        }
     }
 
     @Override
-    protected TriggerEvent<Action> clone(StorySection section, StoryUser reader, Set<StoryUser> listeners) {
-        return new ChatEvent<>(reader, this.code);
+    protected TriggerEvent<Action> clone(Quest section, StoryReader reader, StoryChapter chapter) {
+        return new ChatEvent<>(reader, this.codes);
     }
 
     @Override
@@ -54,7 +61,7 @@ public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Acti
 
         Server.printText(Plugin.STORY, Server.getChatManager().getSenderMember(event.getUser()) + event.getMessage());
 
-        if (!this.code.equals(event.getMessage())) {
+        if (!this.codes.contains(event.getMessage())) {
             event.removeLisener(false);
             event.setCancelled(true);
             event.getUser().sendMessage(Server.getChat().getSenderMember(event.getUser()) + "§7" + event.getMessage());
@@ -67,5 +74,7 @@ public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Acti
 
         event.removeLisener(true);
         event.setCancelled(true);
+
+        this.reader.forEach(u -> Server.getUserEventManager().removeUserChatCommand(u, this));
     }
 }

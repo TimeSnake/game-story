@@ -1,13 +1,14 @@
 package de.timesnake.game.story.action;
 
-import de.timesnake.basic.bukkit.util.file.ExFile;
+import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.elements.*;
 import de.timesnake.game.story.event.AreaEvent;
 import de.timesnake.game.story.event.TriggerEvent;
 import de.timesnake.game.story.server.StoryServer;
-import de.timesnake.game.story.structure.ChapterFile;
-import de.timesnake.game.story.structure.StorySection;
+import de.timesnake.game.story.structure.Quest;
+import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -15,7 +16,6 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ItemLootAction extends LocationAction {
@@ -40,21 +40,22 @@ public class ItemLootAction extends LocationAction {
 
     }
 
-    public ItemLootAction(int id, List<Integer> diaryPages, ChapterFile file, String actionPath) throws CharacterNotFoundException, UnknownLocationException, ItemNotFoundException {
-        super(id, diaryPages, file, actionPath);
+    public ItemLootAction(Toml action, int id, List<Integer> diaryPages)
+            throws CharacterNotFoundException, UnknownLocationException, ItemNotFoundException {
+        super(action, id, diaryPages);
 
         this.items = new LinkedList<>();
-        for (int itemId : file.getIntegerList(ExFile.toPath(actionPath, ITEM))) {
-            this.items.add(StoryServer.getItem(itemId));
+        for (String name : action.getList("items", new LinkedList<String>())) {
+            this.items.add(StoryServer.getItem(name));
         }
 
-        this.triggerEvent = new AreaEvent<>(this, file, actionPath, RADIUS);
+        this.triggerEvent = new AreaEvent<>(this, action, RADIUS);
     }
 
     @Override
-    public StoryAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
-        return new ItemLootAction(this.id, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()),
-                this.character != null ? section.getPart().getCharacter(this.character.getId()) : null,
+    public StoryAction clone(Quest quest, StoryReader reader, StoryAction clonedNext, StoryChapter chapter) {
+        return new ItemLootAction(this.id, clonedNext, this.location.clone().setExWorld(chapter.getWorld()),
+                this.character != null ? quest.getChapter().getCharacter(this.character.getName()) : null,
                 this.items.stream().map(i -> i.clone(this.reader)).collect(Collectors.toList()));
     }
 

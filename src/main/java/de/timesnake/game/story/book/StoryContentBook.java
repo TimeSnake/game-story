@@ -2,107 +2,79 @@ package de.timesnake.game.story.book;
 
 import de.timesnake.basic.bukkit.util.user.ExItemStack;
 import de.timesnake.game.story.server.StoryServer;
+import de.timesnake.game.story.structure.StoryBook;
 import de.timesnake.game.story.structure.StoryChapter;
-import de.timesnake.game.story.structure.StoryPart;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
-import net.md_5.bungee.api.chat.hover.content.Text;
+import de.timesnake.game.story.user.UserProgress;
+import de.timesnake.library.basic.util.chat.ExTextColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.inventory.meta.BookMeta;
 
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 public class StoryContentBook {
 
-    private final ExItemStack book = new ExItemStack(Material.WRITTEN_BOOK).setDropable(false).setMoveable(false);
+    private final ExItemStack item = new ExItemStack(Material.WRITTEN_BOOK).setDropable(false).setMoveable(false);
 
-    public StoryContentBook(Map<Integer, Map<Integer, Integer>> sectionsByPartByChapter,
-                            Map<Integer, Set<Integer>> boughtPartsByChapter) {
+    public StoryContentBook(UserProgress progress, StoryBook book) {
+        Set<Integer> boughtChapters = progress.getBoughtChaptersByBook().get(book.getId());
+        Map<Integer, String> questByChapter = progress.getQuestsByChaptersByBook().get(book.getId());
 
-        LinkedList<BaseComponent[]> pages = new LinkedList<>();
+        Component chapterPage = Component.text(book.getName(), Style.style(TextDecoration.BOLD))
+                .append(Component.newline());
 
-        LinkedList<BaseComponent> chapterPage = new LinkedList<>();
+        BookMeta meta = ((BookMeta) this.item.getItemMeta());
 
+        for (StoryChapter chapter : book.getChapters()) {
+            chapterPage = chapterPage.append(Component.newline()).append(Component.empty());
 
-        BookMeta meta = ((BookMeta) this.book.getItemMeta());
+            String romanChapterId = "I".repeat(chapter.getId()).replace("IIIII", "V")
+                    .replace("IIII", "IV").replace("VV", "X")
+                    .replace("VIV", "IX");
 
-        for (StoryChapter chapter : StoryServer.getChapters()) {
+            Optional<Integer> userMaxPartId = questByChapter.keySet().stream().max(Integer::compareTo);
+            Integer userCurrentChapter = userMaxPartId.orElse(1);
 
-            TextComponent text;
-
-            String romanChapterId = "I".repeat(chapter.getId()).replace("IIIII", "V").replace("IIII", "IV").replace(
-                    "VV", "X").replace("VIV", "IX");
-
-            if (sectionsByPartByChapter.get(chapter.getId()) != null) {
-                text = new TextComponent(romanChapterId + ". " + chapter.getName() + "\n");
-                text.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Click to open chapter")));
-                text.setClickEvent(new ClickEvent(ClickEvent.Action.CHANGE_PAGE, String.valueOf(chapter.getId() + 1)));
-            } else {
-                text = new TextComponent("§8" + romanChapterId + ". " + chapter.getName() + "\n");
-            }
-
-            chapterPage.addLast(text);
-
-            LinkedList<BaseComponent> partPage = new LinkedList<>();
-
-            Map<Integer, Integer> sectionsByPart = sectionsByPartByChapter.get(chapter.getId());
-            Set<Integer> boughtParts = boughtPartsByChapter.get(chapter.getId());
-
-            partPage.addLast(new TextComponent("§n§l" + romanChapterId + "§r§n " + chapter.getName() + "\n"));
-            partPage.addLast(new TextComponent("\n"));
-
-            Optional<Integer> userMaxPartId = sectionsByPart.keySet().stream().max(Integer::compareTo);
-            Integer userCurrentPart = userMaxPartId.orElse(1);
-
-            for (StoryPart part : chapter.getParts()) {
-                TextComponent partText;
-
-                if (part.getId() <= userCurrentPart) {
-                    if (userCurrentPart.equals(part.getId())) {
-                        if (!boughtParts.contains(part.getId())) {
-                            partText =
-                                    new TextComponent("§l" + part.getId() + "§r " + part.getName() + " §6(" + StoryServer.PART_PRICE + " TC) \n");
-                            partText.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Click to buy" +
-                                    " and play")));
-                        } else {
-                            partText = new TextComponent(part.getId() + " " + part.getName() + "\n");
-                            partText.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Click to " +
-                                    "play")));
-                        }
-                        partText.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
-                                "/story " + chapter.getId() + " " + part.getId()));
-                    } else {
-                        partText = new TextComponent(part.getId() + " " + part.getName() + "\n");
-                    }
+            if (chapter.getId() <= userCurrentChapter) {
+                if (!boughtChapters.contains(chapter.getId())) {
+                    chapterPage = chapterPage
+                            .append(Component.text(romanChapterId, Style.style(TextDecoration.BOLD))
+                                    .append(Component.text(" " + chapter.getName()))
+                                    .append(Component.text(" (" + StoryServer.PART_PRICE + " TC)", ExTextColor.GOLD))
+                                    .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
+                                            Component.text("Click to buy and play")))
+                                    .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND,
+                                            "/story " + book.getId() + " " + chapter.getId())));
                 } else {
-                    partText = new TextComponent("§8" + part.getId() + " " + part.getName() + "\n");
+                    chapterPage = chapterPage
+                            .append(Component.text(romanChapterId, Style.style(TextDecoration.BOLD))
+                                    .append(Component.text(" " + chapter.getName()))
+                                    .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
+                                            Component.text("Click to play")))
+                                    .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND,
+                                            "/story " + book.getId() + " " + chapter.getId())));
                 }
-
-                partPage.addLast(partText);
+            } else {
+                chapterPage = chapterPage
+                        .append(Component.text(romanChapterId + " " + chapter.getName(), ExTextColor.DARK_GRAY));
             }
-
-            pages.addLast(partPage.toArray(new BaseComponent[0]));
-
-
         }
 
-        pages.addFirst(chapterPage.toArray(new BaseComponent[0]));
+        meta.addPages(chapterPage);
+        meta.setAuthor("TimeSnake");
+        meta.setTitle(book.getName());
 
-
-        meta.spigot().setPages(pages);
-        meta.setAuthor("SchwertBallon, SirHoffelpoff");
-        meta.setTitle("Story: Table of contents");
-
-        this.book.setItemMeta(meta);
+        this.item.setItemMeta(meta);
 
     }
 
-    public ExItemStack getBook() {
-        return book;
+    public ExItemStack getItem() {
+        return item;
     }
 }

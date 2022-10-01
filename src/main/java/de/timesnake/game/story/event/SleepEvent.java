@@ -3,14 +3,14 @@ package de.timesnake.game.story.event;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.game.story.action.TriggeredAction;
 import de.timesnake.game.story.main.GameStory;
-import de.timesnake.game.story.structure.StorySection;
+import de.timesnake.game.story.structure.Quest;
+import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerBedEnterEvent;
-
-import java.util.Set;
 
 public class SleepEvent<Action extends TriggeredAction> extends TriggerEvent<Action> implements Listener {
 
@@ -26,7 +26,7 @@ public class SleepEvent<Action extends TriggeredAction> extends TriggerEvent<Act
     }
 
     @Override
-    protected TriggerEvent<Action> clone(StorySection section, StoryUser reader, Set<StoryUser> listeners) {
+    protected TriggerEvent<Action> clone(Quest section, StoryReader reader, StoryChapter chapter) {
         return new SleepEvent<>();
     }
 
@@ -43,7 +43,7 @@ public class SleepEvent<Action extends TriggeredAction> extends TriggerEvent<Act
 
         StoryUser user = (StoryUser) Server.getUser(e.getPlayer());
 
-        if (!this.action.getReader().equals(user)) {
+        if (!this.action.getReader().containsUser(user)) {
             return;
         }
 
