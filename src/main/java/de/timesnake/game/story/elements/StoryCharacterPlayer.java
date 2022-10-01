@@ -1,12 +1,12 @@
 package de.timesnake.game.story.elements;
 
+import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.basic.bukkit.util.world.entity.PacketPlayer;
-import de.timesnake.game.story.user.StoryUser;
+import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.library.entities.entity.bukkit.ExPlayer;
-
-import java.util.Set;
 
 public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
 
@@ -24,33 +24,32 @@ public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
 
     private PacketPlayer packetPlayer;
 
-    public StoryCharacterPlayer(Integer id, String name, ExLocation location, String skinValue, String skinSignature) {
-        super(id, name, location);
+    public StoryCharacterPlayer(String name, String displayName, ExLocation location, String skinValue, String skinSignature) {
+        super(name, displayName, location);
         this.skinValue = skinValue;
         this.skinSignature = skinSignature;
 
         this.entity.setTextures(this.skinValue, this.skinSignature);
     }
 
-    public StoryCharacterPlayer(CharacterFile file, int entityId) {
-        super(file, entityId);
+    public StoryCharacterPlayer(String name, Toml character) {
+        super(name, character);
 
-        this.skinValue = file.getCharacterValue(entityId, SKIN + "." + SKIN_VALUE);
-        this.skinSignature = file.getCharacterValue(entityId, SKIN + "." + SKIN_SIGNATURE);
+        this.skinValue = character.getString(SKIN + "_" + SKIN_VALUE);
+        this.skinSignature = character.getString(SKIN + "_" + SKIN_SIGNATURE);
     }
 
     @Override
-    public StoryCharacter<ExPlayer> clone(StoryUser reader, Set<StoryUser> listeners) {
-        StoryCharacterPlayer character = new StoryCharacterPlayer(this.id, this.name,
-                this.location.clone().setExWorld(reader.getStoryWorld()), this.skinValue, this.skinSignature);
+    public StoryCharacter<ExPlayer> clone(StoryReader reader, StoryChapter chapter) {
+        StoryCharacterPlayer character = new StoryCharacterPlayer(this.name, this.displayName,
+                this.location.clone().setExWorld(chapter.getWorld()), this.skinValue, this.skinSignature);
         character.reader = reader;
-        character.listeners = listeners;
         return character;
     }
 
     @Override
     protected ExPlayer initEntity() {
-        ExPlayer player = new ExPlayer(this.location.getWorld(), this.name);
+        ExPlayer player = new ExPlayer(this.location.getWorld(), this.displayName);
 
         player.setPosition(this.location.getX(), this.location.getY(), this.location.getZ());
 
@@ -68,8 +67,7 @@ public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
         this.packetPlayer = new PacketPlayer(this.entity, new ExLocation(Server.getWorld(this.entity.getWorld()),
                 this.entity.getLocation()));
 
-        Server.getEntityManager().registerEntity(packetPlayer, this.reader);
-        Server.getEntityManager().registerEntity(packetPlayer, this.listeners);
+        Server.getEntityManager().registerEntity(packetPlayer, this.reader.getUsers());
     }
 
     @Override

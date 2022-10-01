@@ -1,9 +1,13 @@
 package de.timesnake.game.story.action;
 
-import de.timesnake.game.story.structure.StorySection;
-import de.timesnake.game.story.user.StoryUser;
+import de.timesnake.game.story.structure.Quest;
+import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.game.story.user.StoryReader;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 
 public abstract class StoryAction implements Iterator<StoryAction> {
 
@@ -30,18 +34,13 @@ public abstract class StoryAction implements Iterator<StoryAction> {
 
     public static final String ITEM = "item";
 
-
-    protected StoryUser reader;
-    protected Set<StoryUser> listeners = new HashSet<>();
-
     protected final int id;
-
-    protected StorySection section;
+    protected Quest quest;
     protected StoryAction next;
-
-    private List<Integer> diaryPages;
-
     protected boolean active;
+    protected List<Integer> diaryPages;
+
+    protected StoryReader reader;
 
     protected StoryAction(int id, List<Integer> diaryPages) {
         this.id = id;
@@ -53,21 +52,23 @@ public abstract class StoryAction implements Iterator<StoryAction> {
         this.next = next;
     }
 
-    public StoryAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners) {
-        StoryAction cloned = this.hasNext() ? this.clone(section, reader, listeners, this.next.clone(section, reader,
-                listeners)) : this.clone(section, reader, listeners, null);
+    public StoryAction clone(Quest quest, StoryReader reader, StoryChapter chapter) {
+        StoryAction cloned = this.hasNext() ? this.clone(quest, reader, this.next.clone(quest, reader, chapter), chapter) :
+                this.clone(quest, reader, null, chapter);
         cloned.reader = reader;
-        cloned.listeners = listeners;
         cloned.diaryPages = this.diaryPages;
-        cloned.section = section;
+        cloned.quest = quest;
         return cloned;
     }
 
-    public abstract StoryAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners,
-                                      StoryAction clonedNext);
+    public abstract StoryAction clone(Quest quest, StoryReader reader, StoryAction clonedNext, StoryChapter chapter);
 
     public StoryAction getNext() {
         return next;
+    }
+
+    public void setNext(StoryAction next) {
+        this.next = next;
     }
 
     public void start() {
@@ -79,10 +80,6 @@ public abstract class StoryAction implements Iterator<StoryAction> {
         return this.next;
     }
 
-    public void setNext(StoryAction next) {
-        this.next = next;
-    }
-
     @Override
     public boolean hasNext() {
         return this.next != null;
@@ -91,12 +88,14 @@ public abstract class StoryAction implements Iterator<StoryAction> {
     public void startNext() {
         this.active = false;
 
-        this.section.getPart().getDiary().loadPage(this.diaryPages.toArray(new Integer[0]));
+        if (this.diaryPages != null) {
+            this.quest.getChapter().getDiary().loadPage(this.diaryPages.toArray(new Integer[0]));
+        }
 
         if (this.hasNext()) {
             this.next.start();
         } else {
-            this.reader.onCompletedSection(this.section, this.listeners);
+            this.reader.onCompletedQuest(this.quest);
         }
     }
 
@@ -116,22 +115,19 @@ public abstract class StoryAction implements Iterator<StoryAction> {
         return active;
     }
 
-    public StoryUser getReader() {
+    public StoryReader getReader() {
         return reader;
     }
 
-    public Set<StoryUser> getListeners() {
-        return listeners;
-    }
 
-    public void setSection(StorySection section) {
-        this.section = section;
+    public void setQuest(Quest quest) {
+        this.quest = quest;
         if (this.hasNext()) {
-            this.next.setSection(section);
+            this.next.setQuest(quest);
         }
     }
 
-    public Collection<Integer> getCharacterIds() {
+    public Collection<String> getCharacterNames() {
         return new HashSet<>();
     }
 

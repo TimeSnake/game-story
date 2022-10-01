@@ -1,12 +1,13 @@
 package de.timesnake.game.story.action;
 
-import de.timesnake.basic.bukkit.util.file.ExFile;
+import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.elements.*;
 import de.timesnake.game.story.event.TriggerEvent;
 import de.timesnake.game.story.server.StoryServer;
-import de.timesnake.game.story.structure.ChapterFile;
-import de.timesnake.game.story.structure.StorySection;
+import de.timesnake.game.story.structure.Quest;
+import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.library.basic.util.Tuple;
 import de.timesnake.library.entities.entity.bukkit.ExArmorStand;
@@ -18,7 +19,6 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.util.EulerAngle;
 
 import java.util.List;
-import java.util.Set;
 
 public class ItemSearchAction extends LocationAction {
 
@@ -39,34 +39,35 @@ public class ItemSearchAction extends LocationAction {
         this.itemAngle = itemAngle;
     }
 
-    public ItemSearchAction(int id, List<Integer> diaryPages, ChapterFile file, String actionPath) throws ItemNotFoundException, CharacterNotFoundException, UnknownLocationException {
-        super(id, diaryPages, file, actionPath);
+    public ItemSearchAction(Toml action, int id, List<Integer> diaryPages)
+            throws ItemNotFoundException, CharacterNotFoundException, UnknownLocationException {
+        super(action, id, diaryPages);
 
-        int itemId = file.getInt(ExFile.toPath(actionPath, ITEM));
-        this.item = StoryServer.getItem(itemId);
-        this.itemAngle = file.getDouble(ExFile.toPath(actionPath, ANGLE));
+        this.item = StoryServer.getItem(action.getString(ITEM));
+        double itemAngle;
+        try {
+            itemAngle = action.getDouble(ANGLE);
+        } catch (ClassCastException e) {
+            itemAngle = action.getLong(ANGLE).doubleValue();
+        }
+        this.itemAngle = itemAngle;
     }
 
     @Override
-    public ItemSearchAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners,
-                                  StoryAction clonedNext) {
-        return new ItemSearchAction(this.id, clonedNext, this.location.clone().setExWorld(reader.getStoryWorld()),
-                this.character != null ? section.getPart().getCharacter(this.character.getId()) : null,
+    public ItemSearchAction clone(Quest quest, StoryReader reader, StoryAction clonedNext, StoryChapter chapter) {
+        return new ItemSearchAction(this.id, clonedNext, this.location.clone().setExWorld(chapter.getWorld()),
+                this.character != null ? quest.getChapter().getCharacter(this.character.getName()) : null,
                 this.item.clone(reader), this.itemAngle);
     }
 
     @Override
     public void trigger(TriggerEvent.Type type, StoryUser user) {
-        if (!user.equals(this.reader)) {
-            return;
-        }
-
-        this.collectItem();
+        this.collectItem(user);
         this.startNext();
     }
 
-    private void collectItem() {
-        this.reader.addItem(this.item.getItem());
+    private void collectItem(StoryUser user) {
+        user.addItem(this.item.getItem());
         this.despawnEntities();
     }
 
@@ -80,13 +81,7 @@ public class ItemSearchAction extends LocationAction {
         this.entity.setPosition(this.location.getX() + 0.3, this.location.getY() - 0.8, this.location.getZ());
         this.entity.setRightArmPose(new EulerAngle(this.itemAngle, 0, 0));
 
-        this.reader.sendPacket(ExPacketPlayOutSpawnEntity.wrap(this.entity));
-        this.reader.sendPacket(ExPacketPlayOutEntityMetadata.wrap(this.entity,
-                ExPacketPlayOutEntityMetadata.DataType.UPDATE));
-        this.reader.sendPacket(ExPacketPlayOutEntityEquipment.wrap(this.entity,
-                List.of(new Tuple<>(EquipmentSlot.HAND, this.item.getItem()))));
-
-        for (StoryUser listener : this.listeners) {
+        for (StoryUser listener : this.reader) {
             listener.sendPacket(ExPacketPlayOutSpawnEntity.wrap(this.entity));
             listener.sendPacket(ExPacketPlayOutEntityMetadata.wrap(this.entity,
                     ExPacketPlayOutEntityMetadata.DataType.UPDATE));
@@ -98,9 +93,7 @@ public class ItemSearchAction extends LocationAction {
     @Override
     public void despawnEntities() {
         if (this.entity != null) {
-            this.reader.sendPacket(ExPacketPlayOutEntityDestroy.wrap(this.entity));
-
-            for (StoryUser listener : this.listeners) {
+            for (StoryUser listener : this.reader) {
                 listener.sendPacket(ExPacketPlayOutEntityDestroy.wrap(this.entity));
             }
         }

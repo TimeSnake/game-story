@@ -1,11 +1,12 @@
 package de.timesnake.game.story.action;
 
 import de.timesnake.game.story.event.TriggerEvent;
-import de.timesnake.game.story.structure.StorySection;
+import de.timesnake.game.story.structure.Quest;
+import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 
 import java.util.List;
-import java.util.Set;
 
 public abstract class TriggeredAction extends StoryAction {
 
@@ -24,10 +25,10 @@ public abstract class TriggeredAction extends StoryAction {
     }
 
     @Override
-    public TriggeredAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners) {
-        TriggeredAction cloned = (TriggeredAction) super.clone(section, reader, listeners);
+    public TriggeredAction clone(Quest quest, StoryReader reader, StoryChapter chapter) {
+        TriggeredAction cloned = (TriggeredAction) super.clone(quest, reader, chapter);
         if (this.triggerEvent != null) {
-            cloned.triggerEvent = this.triggerEvent.clone(section, reader, listeners, cloned);
+            cloned.triggerEvent = this.triggerEvent.clone(quest, reader, cloned, chapter);
         }
         return cloned;
     }
@@ -37,7 +38,7 @@ public abstract class TriggeredAction extends StoryAction {
         super.start();
 
         if (this.triggerEvent == null) {
-            this.trigger(TriggerEvent.Type.START, this.reader);
+            this.trigger(TriggerEvent.Type.START, this.reader.anyUser());
         }
     }
 

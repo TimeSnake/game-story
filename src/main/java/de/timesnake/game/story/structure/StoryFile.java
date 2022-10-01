@@ -1,18 +1,21 @@
 package de.timesnake.game.story.structure;
 
-import de.timesnake.basic.bukkit.util.file.ExFile;
+import de.timesnake.basic.bukkit.util.file.ExToml;
 
+import java.io.File;
 import java.util.List;
 
-public class StoryFile extends ExFile {
+public class StoryFile {
 
-    private static final String CHAPTERS = "chapters";
+    private static final String BOOKS = "books";
 
-    public StoryFile() {
-        super("game-story", "story");
+    private final ExToml file;
+
+    public StoryFile(File file) {
+        this.file = new ExToml(file);
     }
 
-    public List<Integer> getChapterIds() {
-        return super.getIntegerList(CHAPTERS);
+    public List<Long> getBookIds() {
+        return this.file.getList(BOOKS);
     }
 }

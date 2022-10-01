@@ -1,13 +1,14 @@
 package de.timesnake.game.story.server;
 
+import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.ServerManager;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
 import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.elements.*;
 import de.timesnake.game.story.main.GameStory;
-import de.timesnake.game.story.structure.ChapterFile;
-import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.game.story.structure.BookFile;
+import de.timesnake.game.story.structure.StoryBook;
 import de.timesnake.game.story.structure.StoryFile;
 import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.game.story.user.UserManager;
@@ -15,6 +16,7 @@ import org.bukkit.GameRule;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,26 +27,22 @@ public class StoryServerManager extends ServerManager implements Listener {
         return (StoryServerManager) ServerManager.getInstance();
     }
 
+    private final Map<Integer, StoryBook> bookById = new HashMap<>();
+    private final Map<String, StoryCharacter<?>> characterByName = new HashMap<>();
+    private final Map<String, StoryItem> itemByName = new HashMap<>();
     private UserManager userManager;
-
     private StoryFile file;
     private CharacterFile characterFile;
     private ItemFile itemFile;
-
-    private final Map<Integer, StoryChapter> chaptersById = new HashMap<>();
-
-    private final Map<Integer, StoryCharacter<?>> charactersById = new HashMap<>();
-    private final Map<Integer, StoryItem> itemsById = new HashMap<>();
-
     private ExWorld baseWorld;
     private ExWorld storyWorldTemplate;
 
     public void onStoryEnable() {
         this.userManager = new UserManager();
 
-        this.file = new StoryFile();
-        this.characterFile = new CharacterFile();
-        this.itemFile = new ItemFile();
+        this.file = new StoryFile(new File("plugins/game-story/story.toml"));
+        this.characterFile = new CharacterFile(new File("plugins/game-story/characters.toml"));
+        this.itemFile = new ItemFile(new File("plugins/game-story/items.toml"));
 
         this.baseWorld = Server.getWorld("world");
         this.storyWorldTemplate = Server.getWorld("story");
@@ -63,33 +61,38 @@ public class StoryServerManager extends ServerManager implements Listener {
         this.baseWorld.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
 
         // load characters from file
-        for (Integer id : this.characterFile.getCharacterIds()) {
-
-            StoryCharacter<?> character = StoryCharacter.initCharacter(this.characterFile, id);
+        for (Map.Entry<String, Toml> entry : this.characterFile.getCharacterTables().entrySet()) {
+            String characterName = entry.getKey();
+            StoryCharacter<?> character = StoryCharacter.initCharacter(characterName, entry.getValue());
 
             if (character != null) {
-                this.charactersById.put(id, character);
-                Server.printText(Plugin.STORY, "Loaded character " + id);
+                if (this.characterByName.containsKey(characterName)) {
+                    Server.printWarning(Plugin.STORY, "Duplicate character name " + characterName);
+                    continue;
+                }
+                this.characterByName.put(characterName, character);
+                Server.printText(Plugin.STORY, "Loaded character " + characterName);
             } else {
-                Server.printWarning(Plugin.STORY, "Can not load type of character " + id);
+                Server.printWarning(Plugin.STORY, "Can not load type of character " + characterName);
             }
 
         }
 
         // load items from file
-        for (Integer id : this.itemFile.getItemIds()) {
-            this.itemsById.put(id, new StoryItem(this.itemFile, id));
+        for (Map.Entry<String, Toml> entry : this.itemFile.getItemTables().entrySet()) {
+            String itemName = entry.getKey();
+            this.itemByName.put(itemName, new StoryItem(entry.getValue(), itemName));
 
-            Server.printText(Plugin.STORY, "Loaded item " + id);
+            Server.printText(Plugin.STORY, "Loaded item " + itemName);
         }
 
         // load chapters from file
-        for (Integer id : this.file.getChapterIds()) {
-            StoryChapter chapter = new StoryChapter(id, new ChapterFile(id.toString()));
+        for (Long id : this.file.getBookIds()) {
+            StoryBook book = new BookFile(id.intValue(), new File("plugins/game-story/book_" + id + ".toml")).parseToBook();
 
-            this.chaptersById.put(id, chapter);
+            this.bookById.put(id.intValue(), book);
 
-            Server.printText(Plugin.STORY, "Loaded chapter " + id);
+            Server.printText(Plugin.STORY, "Loaded book " + id);
         }
 
         Server.registerListener(this, GameStory.getPlugin());
@@ -100,31 +103,31 @@ public class StoryServerManager extends ServerManager implements Listener {
         return new StoryUser(player);
     }
 
-    public StoryChapter getChapter(Integer id) {
-        return this.chaptersById.get(id);
+    public StoryBook getBook(Integer id) {
+        return this.bookById.get(id);
     }
 
 
-    public StoryCharacter<?> getCharacter(int id) throws CharacterNotFoundException {
-        StoryCharacter<?> character = this.charactersById.get(id);
+    public StoryCharacter<?> getCharacter(String name) throws CharacterNotFoundException {
+        StoryCharacter<?> character = this.characterByName.get(name);
         if (character == null) {
-            throw new CharacterNotFoundException(id);
+            throw new CharacterNotFoundException(name);
         }
 
         return character;
     }
 
-    public StoryItem getItem(int id) throws ItemNotFoundException {
-        StoryItem item = this.itemsById.get(id);
+    public StoryItem getItem(String name) throws ItemNotFoundException {
+        StoryItem item = this.itemByName.get(name);
         if (item == null) {
-            throw new ItemNotFoundException(id);
+            throw new ItemNotFoundException(name);
         }
 
         return item;
     }
 
-    public Collection<StoryChapter> getChapters() {
-        return this.chaptersById.values();
+    public Collection<StoryBook> getBooks() {
+        return this.bookById.values();
     }
 
     public ExWorld getBaseWorld() {

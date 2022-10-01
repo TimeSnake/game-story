@@ -1,233 +1,146 @@
 package de.timesnake.game.story.structure;
 
 import de.timesnake.basic.bukkit.util.Server;
-import de.timesnake.game.story.action.*;
+import de.timesnake.basic.bukkit.util.world.ExWorld;
 import de.timesnake.game.story.book.Diary;
 import de.timesnake.game.story.chat.Plugin;
-import de.timesnake.game.story.elements.CharacterNotFoundException;
-import de.timesnake.game.story.elements.ItemNotFoundException;
 import de.timesnake.game.story.elements.StoryCharacter;
-import de.timesnake.game.story.elements.UnknownLocationException;
-import de.timesnake.game.story.event.*;
-import de.timesnake.game.story.server.StoryServer;
+import de.timesnake.game.story.main.GameStory;
+import de.timesnake.game.story.user.StoryReader;
+import org.bukkit.GameRule;
+import org.bukkit.Material;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Set;
 
 public class StoryChapter {
 
     private final Integer id;
 
     private final String name;
+    private final String endMessage;
 
-    private final ChapterFile file;
-    private final Map<Integer, StoryPart> partsById = new HashMap<>();
+    private final Quest firstQuest;
+    private final LinkedHashMap<String, StoryCharacter<?>> characterByName = new LinkedHashMap<>();
 
-    public StoryChapter(Integer id, ChapterFile file) {
+    private final Diary diary;
+
+    private final List<Long> playerSizes;
+
+    private final ExWorld world;
+
+    public StoryChapter(Integer id, String name, String endMessage, Diary diary, Quest firstQuest,
+                        List<Long> playerSizes, String worldName, Set<StoryCharacter<?>> characters) {
         this.id = id;
-        this.file = file;
+        this.name = name;
+        this.endMessage = endMessage;
+        this.diary = diary;
+        this.firstQuest = firstQuest;
+        this.firstQuest.setChapter(this);
+        this.playerSizes = playerSizes;
+        this.world = Server.getWorld(worldName);
 
-        this.name = file.getChapterName();
-
-        List<Integer> partIds = new ArrayList<>(this.file.getPartIds());
-        partIds.sort(Integer::compareTo);
-
-        for (Integer partId : partIds) {
-
-            Server.printText(Plugin.STORY, "Loading part " + partId, "Chapter " + this.id);
-
-            // load diary
-
-            Diary diary = new Diary(file, partId);
-
-            Map<Integer, StorySection> sectionsById = new HashMap<>();
-
-            List<Integer> sectionIds = new ArrayList<>(this.file.getSectionIdsFromPart(partId));
-            sectionIds.sort(Integer::compareTo);
-
-            Set<Integer> characterIds = new HashSet<>();
-
-            for (Integer sectionId : sectionIds) {
-
-                Server.printText(Plugin.STORY, "Loading section " + sectionId, "Chapter " + this.id, "Part " + partId);
-
-                LinkedList<Integer> actionIds = new LinkedList<>(this.file.getActionIdsFromSection(partId, sectionId));
-                actionIds.sort(Integer::compareTo);
-
-                if (actionIds.isEmpty()) {
-                    break;
-                }
-
-                StoryAction first = null;
-                try {
-                    first = this.getActionFromFile(file, partId, sectionId, actionIds.getFirst());
-                } catch (CharacterNotFoundException | ItemNotFoundException | UnknownLocationException e) {
-                    Server.printWarning(Plugin.STORY, e.getMessage(), "Chapter " + this.id,
-                            "Part " + partId, "Section " + sectionId, "Action " + actionIds.getFirst());
-                }
-
-                characterIds.addAll(first.getCharacterIds());
-
-                StoryAction previous = first;
-
-                StringBuilder sb = new StringBuilder();
-                sb.append("Actions: ").append(actionIds.getFirst());
-
-                actionIds.removeFirst();
-
-                for (Integer actionId : actionIds) {
-                    sb.append(", ");
-
-                    StoryAction action = null;
-                    try {
-                        action = this.getActionFromFile(file, partId, sectionId, actionId);
-                    } catch (CharacterNotFoundException | ItemNotFoundException | UnknownLocationException e) {
-                        Server.printWarning(Plugin.STORY, e.getMessage(), "Chapter " + this.id,
-                                "Part " + partId, "Section " + sectionId, "Action " + actionId);
-                    }
-
-                    characterIds.addAll(action.getCharacterIds());
-
-                    previous.setNext(action);
-                    previous = action;
-
-                    sb.append(actionId);
-
-                }
-
-                Server.printText(Plugin.STORY, sb.toString(), "Chapter " + this.id, "Part " + partId,
-                        "Section " + sectionId);
-
-                sectionsById.put(sectionId, new StorySection(file, partId, sectionId, first));
-            }
-
-            String partName = file.getPartName(partId);
-            String partEndMessage = file.getPartEndMessage(partId);
-
-            Set<StoryCharacter<?>> characters = new HashSet<>();
-
-            for (Integer characterId : characterIds) {
-                try {
-                    characters.add(StoryServer.getCharater(characterId));
-                } catch (CharacterNotFoundException e) {
-                    Server.printWarning(Plugin.STORY, e.getMessage(), "Chapter " + this.id, "Part " + partId);
-
-                }
-            }
-
-            this.partsById.put(partId, new StoryPart(partId, partName, partEndMessage, diary, sectionsById,
-                    characters));
+        if (this.world == null) {
+            Server.printWarning(Plugin.STORY, "World " + worldName + " not exists", "Part " + this.id);
         }
+
+        for (StoryCharacter<?> character : characters) {
+            this.characterByName.put(character.getName(), character);
+        }
+
+        this.world.setPVP(false);
+        this.world.allowBlockPlace(false);
+        this.world.allowBlockBreak(false);
+        this.world.allowFluidCollect(false);
+        this.world.allowFluidPlace(false);
+        this.world.allowBlockBurnUp(false);
+        this.world.allowBlockIgnite(false);
+        this.world.allowFlintAndSteel(false);
+        this.world.allowLightUpInteraction(true);
+        this.world.allowFireSpread(false);
+        this.world.allowEntityExplode(false);
+        this.world.allowEntityBlockBreak(false);
+        this.world.allowItemFrameRotate(true);
+        this.world.setExceptService(true);
+        this.world.allowDropPickItem(true);
+        this.world.allowPlaceInBlock(true);
+        this.world.allowCakeEat(false);
+        this.world.setLockedBlockInventories(List.of(Material.DISPENSER, Material.DROPPER, Material.HOPPER));
+        this.world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
+        this.world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
+        this.world.setGameRule(GameRule.RANDOM_TICK_SPEED, 0);
+
+
     }
 
-    private StoryAction getActionFromFile(ChapterFile file, Integer partId, Integer sectionId, Integer actionId)
-            throws CharacterNotFoundException, ItemNotFoundException, UnknownLocationException {
+    private StoryChapter(StoryReader reader, Integer id, String name, String endMessage,
+                         Diary diary, Quest firstQuest, List<Long> playerSizes, ExWorld world,
+                         LinkedHashMap<String, StoryCharacter<?>> characterByName) {
+        this.id = id;
+        this.name = name;
+        this.endMessage = endMessage;
+        this.world = world;
+        this.diary = diary.clone(reader);
+        this.playerSizes = playerSizes;
 
-        String type = this.file.getActionType(partId, sectionId, actionId);
-
-        if (type == null) {
-            type = TriggerAction.NAME;
+        for (StoryCharacter<?> character : characterByName.values()) {
+            this.characterByName.put(character.getName(), character.clone(reader, this));
         }
 
-        String actionPath = ChapterFile.getActionPath(partId, sectionId, actionId);
-
-        List<Integer> diaryPages = new LinkedList<>();
-
-        for (Integer pageNumber : file.getPathIntegerList(file.getDiaryPath(partId))) {
-            String[] date = file.getDiaryDate(partId, pageNumber).split("\\.");
-            if (date[0].equals(String.valueOf(sectionId)) && date[1].equals(String.valueOf(actionId))) {
-                diaryPages.add(pageNumber);
-            }
-        }
-
-        StoryAction action;
-        switch (type.toLowerCase()) {
-            case TalkAction.NAME:
-                action = new TalkAction(actionId, diaryPages, this.file, actionPath);
-                break;
-            case ItemSearchAction.NAME:
-                action = new ItemSearchAction(actionId, diaryPages, this.file, actionPath);
-                break;
-            case ItemGiveAction.NAME:
-                action = new ItemGiveAction(actionId, diaryPages, this.file, actionPath);
-                break;
-            case DelayAction.NAME:
-                action = new DelayAction(actionId, diaryPages, this.file, actionPath);
-                break;
-            case ThoughtAction.NAME:
-                action = new ThoughtAction(actionId, diaryPages, this.file, actionPath);
-                break;
-            case ClearInventoryAction.NAME:
-                action = new ClearInventoryAction(actionId, diaryPages);
-                break;
-            case ItemLootAction.NAME:
-                action = new ItemLootAction(actionId, diaryPages, this.file, actionPath);
-                break;
-            case TriggerAction.NAME:
-            default:
-                action = new TriggerAction(actionId, diaryPages);
-                break;
-        }
-
-        if (!(action instanceof TriggeredAction)) {
-            return action;
-        }
-
-        TriggeredAction triggeredAction = ((TriggeredAction) action);
-
-        String triggerPath = ChapterFile.getTriggerPath(partId, sectionId, actionId);
-
-        if (!file.contains(triggerPath)) {
-            return action;
-        }
-
-        String triggerType = file.getTriggerType(partId, sectionId, actionId);
-
-        if (triggerType == null) {
-            return action;
-        }
-
-        switch (triggerType.toLowerCase()) {
-            case AreaEvent.NAME:
-                triggeredAction.setTriggerEvent(new AreaEvent<>(triggeredAction, file, triggerPath));
-                break;
-            case DropItemAtEvent.NAME:
-                triggeredAction.setTriggerEvent(new DropItemAtEvent<>(triggeredAction, file, triggerPath));
-                break;
-            case DropItemEvent.NAME:
-                triggeredAction.setTriggerEvent(new DropItemEvent<>(triggeredAction, file, triggerPath));
-                break;
-            case SleepEvent.NAME:
-                triggeredAction.setTriggerEvent(new SleepEvent<>(triggeredAction));
-                break;
-            case ChatEvent.NAME:
-                triggeredAction.setTriggerEvent(new ChatEvent<>(triggeredAction, file, triggerPath));
-                break;
-            default:
-                Server.printWarning(Plugin.STORY, "Unknown trigger type: " + triggerType,
-                        "Chapter " + this.id, "Part " + partId, "Section " + sectionId, "Action " + actionId);
-                break;
-        }
-
-        return action;
+        this.firstQuest = firstQuest.clone(this, reader);
     }
 
-    public StoryPart getPart(int id) {
-        return this.partsById.get(id);
+    public StoryChapter clone(StoryReader reader) {
+        return new StoryChapter(reader, this.id, this.name, this.endMessage, this.diary, this.firstQuest, this.playerSizes,
+                Server.getWorldManager().cloneWorld(this.world.getName() + "_" + reader.getId(), this.world), this.characterByName);
     }
 
     public Integer getId() {
-        return this.id;
+        return id;
     }
 
     public String getName() {
         return name;
     }
 
-    public StoryPart nextPart(StoryPart part) {
-        return this.partsById.get(part.getId() + 1);
+    public String getEndMessage() {
+        return endMessage;
     }
 
-    public Collection<StoryPart> getParts() {
-        return this.partsById.values();
+    public Quest getFirstQuest() {
+        return this.firstQuest;
+    }
+
+    public Quest getLastQuest() {
+        return this.firstQuest.lastQuest();
+    }
+
+    public Diary getDiary() {
+        return diary;
+    }
+
+    public void spawnCharacters() {
+        Server.runTaskLaterAsynchrony(() -> {
+            for (StoryCharacter<?> character : this.characterByName.values()) {
+                character.spawn();
+            }
+        }, 10, GameStory.getPlugin());
+    }
+
+    public void despawnCharacters() {
+        this.characterByName.values().forEach(StoryCharacter::despawn);
+    }
+
+    public StoryCharacter<?> getCharacter(String name) {
+        return this.characterByName.get(name);
+    }
+
+    public List<Long> getPlayerSizes() {
+        return playerSizes;
+    }
+
+    public ExWorld getWorld() {
+        return world;
     }
 }

@@ -1,7 +1,8 @@
 package de.timesnake.game.story.action;
 
+import com.moandjiezana.toml.Toml;
+import de.timesnake.basic.bukkit.core.user.UserPlayerDelegation;
 import de.timesnake.basic.bukkit.util.Server;
-import de.timesnake.basic.bukkit.util.file.ExFile;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.basic.bukkit.util.world.entity.HoloDisplay;
 import de.timesnake.game.story.chat.Plugin;
@@ -11,8 +12,9 @@ import de.timesnake.game.story.elements.UnknownLocationException;
 import de.timesnake.game.story.event.TriggerEvent;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.server.StoryServer;
-import de.timesnake.game.story.structure.ChapterFile;
-import de.timesnake.game.story.structure.StorySection;
+import de.timesnake.game.story.structure.Quest;
+import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.library.basic.util.Tuple;
 import de.timesnake.library.packets.util.packet.ExPacketPlayOutEntityHeadRotation;
@@ -32,11 +34,11 @@ public class TalkAction extends RadiusAction implements Listener {
     private final LinkedList<Tuple<Speaker, String>> messages;
 
     private final StoryCharacter<?> speaker;
-    private final HashMap<StoryUser, Integer> messageIndexByUser = new HashMap<>();
     private final Set<StoryUser> delayingByUser = new HashSet<>();
-
     private final float yaw;
     private final float pitch;
+    private StoryUser partner;
+    private Integer messageIndex;
     private HoloDisplay display;
 
     public TalkAction(int id, StoryAction next, StoryCharacter<?> speaker, LinkedList<Tuple<Speaker, String>> messages,
@@ -50,56 +52,63 @@ public class TalkAction extends RadiusAction implements Listener {
         Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public TalkAction(int id, List<Integer> diaryPages, ChapterFile file, String actionPath) throws
+    public TalkAction(Toml action, int id, List<Integer> diaryPages) throws
             CharacterNotFoundException, UnknownLocationException {
-        super(id, diaryPages, file, actionPath);
+        super(action, id, diaryPages);
 
-        int charId = file.getInt(ExFile.toPath(actionPath, CHARACTER));
+        String charId = action.getString(CHARACTER);
         this.speaker = StoryServer.getCharater(charId);
 
         this.messages = new LinkedList<>();
-        List<?> messageTexts = file.getList(ExFile.toPath(actionPath, MESSAGES));
+        List<String> messageTexts = action.getList(MESSAGES);
 
-        for (Object messageText : messageTexts) {
-            try {
-                LinkedHashMap<String, String> map = (LinkedHashMap<String, String>) messageText;
-
-                if (map.containsKey(MESSAGE_PLAYER)) {
-                    this.messages.addLast(new Tuple<>(Speaker.PLAYER, map.get(MESSAGE_PLAYER)));
-                } else if (map.containsKey(MESSAGE_CHARACTER)) {
-                    this.messages.addLast(new Tuple<>(Speaker.CHARACTER, map.get(MESSAGE_CHARACTER)));
-                } else {
-                    Server.printWarning(Plugin.STORY, "Unknown speaker in " + actionPath, "Action");
+        for (String messageText : messageTexts) {
+            if (messageText.startsWith(MESSAGE_PLAYER + ":")) {
+                messageText = messageText.replaceFirst(MESSAGE_PLAYER + ":", "");
+                if (messageText.startsWith(" ")) {
+                    messageText = messageText.replaceFirst(" ", "");
                 }
-            } catch (ClassCastException e) {
-                Server.printWarning(Plugin.STORY, "Missing speaker type in " + actionPath, "Action");
+                this.messages.add(new Tuple<>(Speaker.PLAYER, messageText));
+            } else if (messageText.startsWith(MESSAGE_CHARACTER + ":")) {
+                messageText = messageText.replaceFirst(MESSAGE_CHARACTER + ":", "");
+                if (messageText.startsWith(" ")) {
+                    messageText = messageText.replaceFirst(" ", "");
+                }
+                this.messages.add(new Tuple<>(Speaker.CHARACTER, messageText));
+            } else {
+                Server.printWarning(Plugin.STORY, "Unknown speaker in " + id, "Action");
             }
         }
 
-        this.yaw = file.getDouble(ExFile.toPath(actionPath, CHARACTER_LOOK_DIRECTION, YAW)).floatValue();
-        this.pitch = file.getDouble(ExFile.toPath(actionPath, CHARACTER_LOOK_DIRECTION, PITCH)).floatValue();
+        List<Number> lookDirections = action.getList(CHARACTER_LOOK_DIRECTION);
+        if (lookDirections.size() != 2) {
+            throw new UnknownLocationException("invalid look direction");
+        }
+        this.yaw = lookDirections.get(0).floatValue();
+        this.pitch = lookDirections.get(1).floatValue();
     }
 
     @Override
-    public StoryAction clone(StorySection section, StoryUser reader, Set<StoryUser> listeners, StoryAction clonedNext) {
-        return new TalkAction(this.id, clonedNext, section.getPart().getCharacter(this.speaker.getId()), this.messages,
-                this.location.clone().setExWorld(reader.getStoryWorld()),
-                this.character != null ? section.getPart().getCharacter(this.character.getId()) : null,
+    public StoryAction clone(Quest quest, StoryReader reader, StoryAction clonedNext, StoryChapter chapter) {
+        return new TalkAction(this.id, clonedNext, quest.getChapter().getCharacter(this.speaker.getName()), this.messages,
+                this.location.clone().setExWorld(chapter.getWorld()),
+                this.character != null ? quest.getChapter().getCharacter(this.character.getName()) : null,
                 this.radius, this.yaw, this.pitch);
     }
 
     @Override
     public void start() {
         super.start();
-        this.reader.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(), this.yaw));
-        this.reader.sendPacket(ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(),
-                this.yaw >= 0 ? this.yaw + 44f : this.yaw - 44f, this.pitch, true));
+        this.reader.forEach(u -> u.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(), this.yaw)));
+        this.reader.forEach(u -> u.sendPacket(ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(),
+                this.yaw >= 0 ? this.yaw + 44f : this.yaw - 44f, this.pitch, true)));
     }
 
     @Override
     public void trigger(TriggerEvent.Type type, StoryUser user) {
-        if (!this.messageIndexByUser.containsKey(user)) {
-            this.messageIndexByUser.put(user, 0);
+        if (this.partner == null) {
+            this.partner = user;
+            this.messageIndex = 0;
             this.nextMessage(user);
         }
     }
@@ -111,21 +120,19 @@ public class TalkAction extends RadiusAction implements Listener {
 
         user.resetTitle();
 
-        Integer index = this.messageIndexByUser.get(user);
-
-        if (index >= this.messages.size() && this.reader.equals(user)) {
+        if (this.messageIndex >= this.messages.size() && this.reader.containsUser(user)) {
             this.startNext();
             return;
         }
 
-        Tuple<Speaker, String> messageBySpeaker = this.messages.get(index);
+        Tuple<Speaker, String> messageBySpeaker = this.messages.get(this.messageIndex);
 
         if (messageBySpeaker.getA().equals(Speaker.CHARACTER)) {
             this.sendMessage(user, messageBySpeaker.getB());
         } else {
             this.sendSelfMessage(user, messageBySpeaker.getB());
         }
-        this.messageIndexByUser.put(user, index + 1);
+        this.messageIndex++;
     }
 
     private void sendSelfMessage(StoryUser user, String message) {
@@ -199,7 +206,7 @@ public class TalkAction extends RadiusAction implements Listener {
             return;
         }
 
-        if (!this.reader.equals(user) && !this.listeners.contains(user)) {
+        if (!this.reader.containsUser(user)) {
             return;
         }
 
@@ -209,7 +216,7 @@ public class TalkAction extends RadiusAction implements Listener {
             return;
         }
 
-        if (!this.reader.getExWorld().equals(this.location.getExWorld())) {
+        if (!this.location.getExWorld().equals(this.reader.getWorld())) {
             return;
         }
 
@@ -220,7 +227,7 @@ public class TalkAction extends RadiusAction implements Listener {
         this.delayingByUser.add(user);
 
         if (this.isActive()) {
-            if (this.messageIndexByUser.containsKey(user)) {
+            if (this.partner.equals(user)) {
                 this.nextMessage(user);
             }
         }
@@ -236,18 +243,14 @@ public class TalkAction extends RadiusAction implements Listener {
             this.display = null;
         }
 
-        this.reader.resetTitle();
-
-        for (StoryUser listener : this.listeners) {
-            listener.resetTitle();
-        }
+        this.reader.forEach(UserPlayerDelegation::resetTitle);
     }
 
     @Override
-    public Collection<Integer> getCharacterIds() {
-        Collection<Integer> ids = super.getCharacterIds();
-        ids.add(this.speaker.getId());
-        return ids;
+    public Collection<String> getCharacterNames() {
+        Collection<String> names = super.getCharacterNames();
+        names.add(this.speaker.getName());
+        return names;
     }
 
     private enum Speaker {

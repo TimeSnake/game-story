@@ -5,7 +5,7 @@ import de.timesnake.game.story.elements.CharacterNotFoundException;
 import de.timesnake.game.story.elements.ItemNotFoundException;
 import de.timesnake.game.story.elements.StoryCharacter;
 import de.timesnake.game.story.elements.StoryItem;
-import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.game.story.structure.StoryBook;
 
 import java.util.Collection;
 
@@ -13,22 +13,20 @@ public class StoryServer {
 
     public static final int PART_PRICE = 200;
 
-    private static final StoryServerManager server = StoryServerManager.getInstance();
-
-    public static StoryChapter getChapter(Integer id) {
-        return server.getChapter(id);
+    public static StoryBook getBook(Integer id) {
+        return server.getBook(id);
     }
 
-    public static StoryCharacter<?> getCharater(int id) throws CharacterNotFoundException {
-        return server.getCharacter(id);
+    public static StoryCharacter<?> getCharater(String name) throws CharacterNotFoundException {
+        return server.getCharacter(name);
     }
 
-    public static StoryItem getItem(int id) throws ItemNotFoundException {
-        return server.getItem(id);
+    public static StoryItem getItem(String name) throws ItemNotFoundException {
+        return server.getItem(name);
     }
 
-    public static Collection<StoryChapter> getChapters() {
-        return server.getChapters();
+    public static Collection<StoryBook> getBooks() {
+        return server.getBooks();
     }
 
     public static ExWorld getBaseWorld() {
@@ -38,4 +36,6 @@ public class StoryServer {
     public static ExWorld getStoryWorldTemplate() {
         return server.getStoryWorldTemplate();
     }
+
+    private static final StoryServerManager server = StoryServerManager.getInstance();
 }
