@@ -97,4 +97,9 @@ public class StoryCmd implements CommandListener {
         }
         return List.of();
     }
+
+    @Override
+    public void loadCodes(de.timesnake.library.extension.util.chat.Plugin plugin) {
+
+    }
 }
