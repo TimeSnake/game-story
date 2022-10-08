@@ -104,4 +104,6 @@ verwendet.
   `item: [id1, id2, ...]` _IDs der Kistenitems_ <br>
 - Clear-Inventory `clear_inventory` <br>
 
-  
+## License
+
+- The source is licensed under the GNU GPLv2 license that can be found in the [LICENSE](LICENSE) file.
