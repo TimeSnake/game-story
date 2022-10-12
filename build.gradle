@@ -23,7 +23,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.moandjiezana.toml:toml4j:0.7.2'
+    compileOnly 'com.moandjiezana.toml:toml4j:0.7.2'
 
     compileOnly 'de.timesnake:basic-bukkit:1.0-SNAPSHOT'
 
