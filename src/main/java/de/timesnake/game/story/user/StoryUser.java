@@ -29,19 +29,15 @@ import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.StoryBook;
 import org.bukkit.entity.Player;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class StoryUser extends User {
 
-
     private final UserProgress progress;
     private final Map<Integer, StoryContentBook> contentBookByStoryId = new HashMap<>();
-
+    private final List<StoryUser> selectedUsers = new LinkedList<>();
+    private final List<StoryUser> joinedUsers = new LinkedList<>();
     private StoryReader readerGroup;
-
     private boolean playing = false;
 
     public StoryUser(Player player) {
@@ -116,9 +112,23 @@ public class StoryUser extends User {
         return this.readerGroup.getQuest().getStartLocation();
     }
 
-    @Deprecated
+    public List<StoryUser> getJoinedUsers() {
+        return joinedUsers;
+    }
+
+    public List<StoryUser> getSelectedUsers() {
+        return selectedUsers;
+    }
+
     public void startBookPart(int bookId, int chapterId) {
-        this.readerGroup = new StoryReader(List.of(this));
-        this.readerGroup.startBookChapter(bookId, chapterId);
+        List<StoryUser> users = new LinkedList<>(this.joinedUsers);
+        users.add(this);
+
+        this.selectedUsers.clear();
+        this.joinedUsers.clear();
+
+        StoryReader readerGroup = new StoryReader(users);
+        users.forEach(u -> u.setReaderGroup(readerGroup));
+        readerGroup.startBookChapter(bookId, chapterId);
     }
 }

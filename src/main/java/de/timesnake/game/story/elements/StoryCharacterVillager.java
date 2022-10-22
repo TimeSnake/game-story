@@ -57,7 +57,7 @@ public class StoryCharacterVillager extends StoryCharacter<ExVillager> {
 
     @Override
     protected ExVillager initEntity() {
-        ExVillager entity = new ExVillager(this.location.getWorld(), ExVillager.Type.PLAINS, false, false);
+        ExVillager entity = new ExVillager(this.location.getWorld(), ExVillager.Type.PLAINS, false, false, false);
 
         entity.setInvulnerable(true);
         entity.setPersistent(true);
