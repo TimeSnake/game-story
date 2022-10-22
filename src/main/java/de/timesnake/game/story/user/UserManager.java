@@ -22,7 +22,10 @@ import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.user.ExItemStack;
 import de.timesnake.basic.bukkit.util.user.User;
 import de.timesnake.basic.bukkit.util.user.event.*;
+import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.main.GameStory;
+import de.timesnake.library.basic.util.chat.ExTextColor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.ThrownPotion;
@@ -139,5 +142,38 @@ public class UserManager implements Listener, UserInventoryInteractListener {
 
         Server.runTaskLaterSynchrony(() -> this.checkpointUsers.remove(((StoryUser) event.getUser())), 2 * 20,
                 GameStory.getPlugin());
+    }
+
+    @EventHandler
+    public void onUserDamageByUser(UserDamageByUserEvent e) {
+        StoryUser user = ((StoryUser) e.getUser());
+        StoryUser userDamager = ((StoryUser) e.getUserDamager());
+
+        if (user.getSelectedUsers().contains(userDamager)) {
+            if (!user.getJoinedUsers().contains(userDamager)) {
+                user.getJoinedUsers().add(userDamager);
+                user.sendPluginMessage(Plugin.STORY, Component.text("Added ", ExTextColor.PERSONAL)
+                        .append(userDamager.getChatNameComponent()));
+                userDamager.sendPluginMessage(Plugin.STORY, Component.text("Joined ", ExTextColor.PERSONAL)
+                        .append(user.getChatNameComponent()));
+            } else {
+                user.getJoinedUsers().remove(userDamager);
+                user.sendPluginMessage(Plugin.STORY, Component.text("Removed ", ExTextColor.PERSONAL)
+                        .append(userDamager.getChatNameComponent()));
+            }
+
+        } else {
+            if (!userDamager.getSelectedUsers().contains(user)) {
+                userDamager.getSelectedUsers().add(user);
+                userDamager.sendPluginMessage(Plugin.STORY, Component.text("Invited ", ExTextColor.PERSONAL)
+                        .append(user.getChatNameComponent()));
+                user.sendPluginMessage(Plugin.STORY, userDamager.getChatNameComponent()
+                        .append(Component.text(" invited you. Hit to accept", ExTextColor.PERSONAL)));
+            } else {
+                userDamager.getSelectedUsers().remove(user);
+                userDamager.sendPluginMessage(Plugin.STORY, Component.text("Removed ", ExTextColor.PERSONAL)
+                        .append(user.getChatNameComponent()));
+            }
+        }
     }
 }
