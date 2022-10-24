@@ -18,9 +18,9 @@
 
 package de.timesnake.game.story.elements;
 
-public class CharacterNotFoundException extends Exception {
+public class UnknownGuardTypeException extends Exception {
 
-    public CharacterNotFoundException(String name) {
-        super("Could not find character '" + name + "'");
+    public UnknownGuardTypeException(String name) {
+        super("Unknown guard type '" + name + "'");
     }
 }

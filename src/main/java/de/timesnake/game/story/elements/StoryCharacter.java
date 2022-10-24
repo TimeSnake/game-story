@@ -22,11 +22,9 @@ import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
-import de.timesnake.library.entities.entity.ExtendedCraftEntity;
-import de.timesnake.library.entities.entity.extension.ExEntity;
 import org.bukkit.entity.LivingEntity;
 
-public abstract class StoryCharacter<Entity extends ExtendedCraftEntity<? extends ExEntity> & LivingEntity> {
+public abstract class StoryCharacter<Entity extends de.timesnake.library.entities.entity.extension.LivingEntity> {
 
     public static StoryCharacter<?> initCharacter(String name, Toml character) {
         String type = character.getString(TYPE);
@@ -34,14 +32,12 @@ public abstract class StoryCharacter<Entity extends ExtendedCraftEntity<? extend
             return null;
         }
 
-        switch (type.toLowerCase()) {
-            case StoryCharacterVillager.NAME:
-                return new StoryCharacterVillager(name, character);
-            case StoryCharacterPlayer.NAME:
-                return new StoryCharacterPlayer(name, character);
-        }
+        return switch (type.toLowerCase()) {
+            case StoryCharacterVillager.NAME -> new StoryCharacterVillager(name, character);
+            case StoryCharacterPlayer.NAME -> new StoryCharacterPlayer(name, character);
+            default -> null;
+        };
 
-        return null;
     }
 
     private static final String NAME = "name";
