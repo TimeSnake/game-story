@@ -24,10 +24,10 @@ import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.library.entities.EntityManager;
 import de.timesnake.library.entities.entity.bukkit.ExVillager;
+import de.timesnake.library.entities.entity.bukkit.HumanEntity;
 import de.timesnake.library.entities.pathfinder.ExPathfinderGoal;
 import de.timesnake.library.entities.pathfinder.custom.ExCustomPathfinderGoalLocation;
 import de.timesnake.library.entities.pathfinder.custom.ExCustomPathfinderGoalLookAtPlayer;
-import de.timesnake.library.entities.wrapper.EntityClass;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,7 +62,7 @@ public class StoryCharacterVillager extends StoryCharacter<ExVillager> {
         entity.setInvulnerable(true);
         entity.setPersistent(true);
 
-        entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLookAtPlayer(EntityClass.EntityHuman, 1));
+        entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class, 1));
         entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLocation(this.location.getX(), this.location.getY(),
                 this.location.getZ(), 1, 16, 0.1));
 

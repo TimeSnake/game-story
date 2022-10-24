@@ -24,10 +24,7 @@ import de.timesnake.basic.bukkit.util.file.ExToml;
 import de.timesnake.game.story.action.*;
 import de.timesnake.game.story.book.Diary;
 import de.timesnake.game.story.chat.Plugin;
-import de.timesnake.game.story.elements.CharacterNotFoundException;
-import de.timesnake.game.story.elements.ItemNotFoundException;
-import de.timesnake.game.story.elements.StoryCharacter;
-import de.timesnake.game.story.elements.UnknownLocationException;
+import de.timesnake.game.story.elements.*;
 import de.timesnake.game.story.event.*;
 import de.timesnake.game.story.server.StoryServer;
 
@@ -104,7 +101,8 @@ public class BookFile {
                     Toml action = quest.getTable("action_" + actionId);
                     try {
                         current = this.getActionFromFile(action, actionId);
-                    } catch (CharacterNotFoundException | ItemNotFoundException | UnknownLocationException e) {
+                    } catch (CharacterNotFoundException | ItemNotFoundException | UnknownLocationException
+                             | UnknownGuardTypeException e) {
                         Server.printWarning(Plugin.STORY, e.getMessage(), "Book " + this.id,
                                 "Chapter " + chapterId, "Quest " + questName, "Action " + actionId);
                         continue;
@@ -171,7 +169,7 @@ public class BookFile {
     }
 
     private StoryAction getActionFromFile(Toml actionTable, int id)
-            throws CharacterNotFoundException, ItemNotFoundException, UnknownLocationException {
+            throws CharacterNotFoundException, ItemNotFoundException, UnknownLocationException, UnknownGuardTypeException {
 
         String actionType = actionTable.getString("action");
 
@@ -190,6 +188,8 @@ public class BookFile {
             case ClearInventoryAction.NAME -> new ClearInventoryAction(actionTable, id, diaryPages);
             case ItemLootAction.NAME -> new ItemLootAction(actionTable, id, diaryPages);
             case TriggerAction.NAME -> new TriggerAction(actionTable, id, diaryPages);
+            case SpawnGuardAction.NAME -> new SpawnGuardAction(actionTable, id, diaryPages);
+            case BlockInteractAction.NAME -> new BlockInteractAction(actionTable, id, diaryPages);
             default -> new TriggerAction(actionTable, id, diaryPages);
         };
 
