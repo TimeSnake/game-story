@@ -26,16 +26,15 @@ import org.bukkit.entity.LivingEntity;
 
 public abstract class StoryCharacter<Entity extends de.timesnake.library.entities.entity.extension.LivingEntity> {
 
-    public static StoryCharacter<?> initCharacter(String name, Toml character) {
+    public static StoryCharacter<?> initCharacter(String name, Toml character) throws MissingArgumentException, InvalidArgumentTypeException {
         String type = character.getString(TYPE);
         if (type == null) {
             return null;
         }
 
         return switch (type.toLowerCase()) {
-            case StoryCharacterVillager.NAME -> new StoryCharacterVillager(name, character);
             case StoryCharacterPlayer.NAME -> new StoryCharacterPlayer(name, character);
-            default -> null;
+            default -> new StoryCharacterMob(name, character);
         };
 
     }

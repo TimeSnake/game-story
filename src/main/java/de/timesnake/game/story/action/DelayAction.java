@@ -19,6 +19,9 @@
 package de.timesnake.game.story.action;
 
 import com.moandjiezana.toml.Toml;
+import de.timesnake.basic.bukkit.util.Server;
+import de.timesnake.game.story.elements.MissingArgumentException;
+import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
@@ -36,10 +39,22 @@ public class DelayAction extends StoryAction {
         this.delay = delay;
     }
 
-    public DelayAction(Toml action, int id, List<Integer> diaryPages) {
+    public DelayAction(Toml action, int id, List<Integer> diaryPages) throws MissingArgumentException {
         super(id, diaryPages);
 
-        this.delay = action.getLong("delay", 0L).intValue();
+        Long delay = action.getLong("delay", 0L);
+
+        if (delay == null) {
+            throw new MissingArgumentException("delay");
+        }
+
+        this.delay = delay.intValue();
+    }
+
+    @Override
+    public void start() {
+        super.start();
+        Server.runTaskLaterSynchrony(this::startNext, 20 * this.delay, GameStory.getPlugin());
     }
 
     @Override

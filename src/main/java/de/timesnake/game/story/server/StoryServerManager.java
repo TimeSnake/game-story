@@ -53,7 +53,6 @@ public class StoryServerManager extends ServerManager implements Listener {
     private CharacterFile characterFile;
     private ItemFile itemFile;
     private ExWorld baseWorld;
-    private ExWorld storyWorldTemplate;
 
     public void onStoryEnable() {
         this.userManager = new UserManager();
@@ -63,35 +62,41 @@ public class StoryServerManager extends ServerManager implements Listener {
         this.itemFile = new ItemFile(new File("plugins/game-story/items.toml"));
 
         this.baseWorld = Server.getWorld("world");
-        this.storyWorldTemplate = Server.getWorld("story");
 
-        this.baseWorld.allowEntityExplode(false);
-        this.baseWorld.allowPlayerDamage(true);
-        this.baseWorld.allowFoodChange(false);
-        this.baseWorld.allowBlockBurnUp(false);
-        this.baseWorld.allowEntityBlockBreak(false);
-        this.baseWorld.allowDropPickItem(false);
-        this.baseWorld.allowBlockBreak(false);
+        this.baseWorld.restrict(ExWorld.Restriction.ENTITY_EXPLODE, true);
+        this.baseWorld.restrict(ExWorld.Restriction.PLAYER_DAMAGE, false);
+        this.baseWorld.restrict(ExWorld.Restriction.FOOD_CHANGE, true);
+        this.baseWorld.restrict(ExWorld.Restriction.BLOCK_BURN_UP, true);
+        this.baseWorld.restrict(ExWorld.Restriction.ENTITY_BLOCK_BREAK, true);
+        this.baseWorld.restrict(ExWorld.Restriction.DROP_PICK_ITEM, true);
+        this.baseWorld.restrict(ExWorld.Restriction.BLOCK_BREAK, true);
         this.baseWorld.setExceptService(true);
         this.baseWorld.setPVP(false);
-        this.baseWorld.allowPlayerDamage(false);
+        this.baseWorld.restrict(ExWorld.Restriction.PLAYER_DAMAGE, true);
         this.baseWorld.setGameRule(GameRule.DO_MOB_SPAWNING, false);
         this.baseWorld.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
 
         // load characters from file
         for (Map.Entry<String, Toml> entry : this.characterFile.getCharacterTables().entrySet()) {
             String characterName = entry.getKey();
-            StoryCharacter<?> character = StoryCharacter.initCharacter(characterName, entry.getValue());
+            StoryCharacter<?> character = null;
+            try {
+                character = StoryCharacter.initCharacter(characterName, entry.getValue());
+            } catch (MissingArgumentException | InvalidArgumentTypeException e) {
+                Server.printText(Plugin.STORY, e.getMessage(), "Character");
+            }
 
             if (character != null) {
                 if (this.characterByName.containsKey(characterName)) {
-                    Server.printWarning(Plugin.STORY, "Duplicate character name " + characterName);
+                    Server.printWarning(Plugin.STORY, "Duplicate character name '" +
+                            characterName + "'", "Character");
                     continue;
                 }
                 this.characterByName.put(characterName, character);
                 Server.printText(Plugin.STORY, "Loaded character " + characterName);
             } else {
-                Server.printWarning(Plugin.STORY, "Can not load type of character " + characterName);
+                Server.printWarning(Plugin.STORY, "Could not load type of character '" +
+                        characterName + "'", "Character");
             }
 
         }
@@ -101,7 +106,7 @@ public class StoryServerManager extends ServerManager implements Listener {
             String itemName = entry.getKey();
             this.itemByName.put(itemName, new StoryItem(entry.getValue(), itemName));
 
-            Server.printText(Plugin.STORY, "Loaded item " + itemName);
+            Server.printText(Plugin.STORY, "Loaded item '" + itemName + "'");
         }
 
         // load chapters from file
@@ -110,7 +115,7 @@ public class StoryServerManager extends ServerManager implements Listener {
 
             this.bookById.put(id.intValue(), book);
 
-            Server.printText(Plugin.STORY, "Loaded book " + id);
+            Server.printText(Plugin.STORY, "Loaded book '" + id + "'");
         }
 
         Server.registerListener(this, GameStory.getPlugin());
@@ -152,7 +157,4 @@ public class StoryServerManager extends ServerManager implements Listener {
         return baseWorld;
     }
 
-    public ExWorld getStoryWorldTemplate() {
-        return this.storyWorldTemplate;
-    }
 }

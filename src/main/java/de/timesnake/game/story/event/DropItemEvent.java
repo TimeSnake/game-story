@@ -23,7 +23,9 @@ import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.user.ExItemStack;
 import de.timesnake.basic.bukkit.util.user.event.UserDropItemEvent;
 import de.timesnake.game.story.action.TriggeredAction;
+import de.timesnake.game.story.elements.InvalidArgumentTypeException;
 import de.timesnake.game.story.elements.ItemNotFoundException;
+import de.timesnake.game.story.elements.MissingArgumentException;
 import de.timesnake.game.story.elements.StoryItem;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.server.StoryServer;
@@ -31,6 +33,7 @@ import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
+import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
@@ -41,28 +44,59 @@ public class DropItemEvent<Action extends TriggeredAction> extends TriggerEvent<
     private static final String ITEM = "item";
     private static final String CLEAR_ITEM = "clear";
 
-    protected final StoryItem item;
     protected final boolean clearItem;
+    private final int amount;
+    private StoryItem item;
+    private Material material;
 
-    protected DropItemEvent(StoryItem item, boolean clearItem) {
+    protected DropItemEvent(StoryItem item, Material material, int amount, boolean clearItem) {
         super();
         this.item = item;
+        this.material = material;
+        this.amount = amount;
         this.clearItem = clearItem;
 
         Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public DropItemEvent(Action action, Toml trigger) throws ItemNotFoundException {
+    public DropItemEvent(Action action, Toml trigger) throws ItemNotFoundException, MissingArgumentException,
+            InvalidArgumentTypeException {
         super(action);
 
-        this.item = StoryServer.getItem(trigger.getString(ITEM));
+        if (trigger.contains("item")) {
+            String itemName = trigger.getString("item");
+            if (itemName == null) {
+                throw new MissingArgumentException("item");
+            }
+            this.item = StoryServer.getItem(itemName);
+        } else if (trigger.contains("material")) {
+            String materialName = trigger.getString("material");
+            this.material = Material.getMaterial(materialName.toUpperCase());
+            if (material == null) {
+                throw new InvalidArgumentTypeException("invalid material '" + materialName + "'");
+            }
+        } else {
+            throw new MissingArgumentException("item", "material");
+        }
 
-        this.clearItem = trigger.getBoolean(CLEAR_ITEM);
+        if (trigger.contains("amount")) {
+            Long amount = trigger.getLong("amount");
+            if (amount == null) {
+                throw new InvalidArgumentTypeException("invalid item amount");
+            }
+
+            this.amount = amount.intValue();
+        } else {
+            this.amount = 1;
+        }
+
+        this.clearItem = trigger.getBoolean(CLEAR_ITEM).equals(Boolean.TRUE);
     }
 
     @Override
     protected DropItemEvent<Action> clone(Quest section, StoryReader reader, StoryChapter chapter) {
-        return new DropItemEvent<>(this.item.clone(reader), this.clearItem);
+        return new DropItemEvent<>(this.item != null ? this.item.clone(reader) : null,
+                this.material, this.amount, this.clearItem);
     }
 
     @Override
@@ -83,7 +117,11 @@ public class DropItemEvent<Action extends TriggeredAction> extends TriggerEvent<
             return;
         }
 
-        if (!this.item.getItem().equals(ExItemStack.getItem(e.getItemStack(), false))) {
+        if (this.item != null && !this.item.getItem().equals(ExItemStack.getItem(e.getItemStack(), false))) {
+            return;
+        }
+
+        if (this.material != null && !this.material.equals(e.getItemStack().getType())) {
             return;
         }
 

@@ -102,7 +102,7 @@ public class BookFile {
                     try {
                         current = this.getActionFromFile(action, actionId);
                     } catch (CharacterNotFoundException | ItemNotFoundException | UnknownLocationException
-                             | UnknownGuardTypeException e) {
+                             | UnknownGuardTypeException | MissingArgumentException | InvalidArgumentTypeException e) {
                         Server.printWarning(Plugin.STORY, e.getMessage(), "Book " + this.id,
                                 "Chapter " + chapterId, "Quest " + questName, "Action " + actionId);
                         continue;
@@ -169,7 +169,8 @@ public class BookFile {
     }
 
     private StoryAction getActionFromFile(Toml actionTable, int id)
-            throws CharacterNotFoundException, ItemNotFoundException, UnknownLocationException, UnknownGuardTypeException {
+            throws CharacterNotFoundException, ItemNotFoundException, UnknownLocationException,
+            UnknownGuardTypeException, MissingArgumentException, InvalidArgumentTypeException {
 
         String actionType = actionTable.getString("action");
 
@@ -181,7 +182,7 @@ public class BookFile {
 
         StoryAction action = switch (actionType.toLowerCase()) {
             case TalkAction.NAME -> new TalkAction(actionTable, id, diaryPages);
-            case ItemSearchAction.NAME -> new ItemSearchAction(actionTable, id, diaryPages);
+            case ItemCollectAction.NAME -> new ItemCollectAction(actionTable, id, diaryPages);
             case ItemGiveAction.NAME -> new ItemGiveAction(actionTable, id, diaryPages);
             case DelayAction.NAME -> new DelayAction(actionTable, id, diaryPages);
             case ThoughtAction.NAME -> new ThoughtAction(actionTable, id, diaryPages);
@@ -190,6 +191,7 @@ public class BookFile {
             case TriggerAction.NAME -> new TriggerAction(actionTable, id, diaryPages);
             case SpawnGuardAction.NAME -> new SpawnGuardAction(actionTable, id, diaryPages);
             case BlockInteractAction.NAME -> new BlockInteractAction(actionTable, id, diaryPages);
+            case BlockBreakAction.NAME -> new BlockBreakAction(actionTable, id, diaryPages);
             default -> new TriggerAction(actionTable, id, diaryPages);
         };
 

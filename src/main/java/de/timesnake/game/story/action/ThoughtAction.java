@@ -21,6 +21,7 @@ package de.timesnake.game.story.action;
 import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.core.user.UserPlayerDelegation;
 import de.timesnake.basic.bukkit.util.Server;
+import de.timesnake.game.story.elements.MissingArgumentException;
 import de.timesnake.game.story.event.TriggerEvent;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.Quest;
@@ -51,10 +52,14 @@ public class ThoughtAction extends TriggeredAction implements Listener {
         Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public ThoughtAction(Toml action, int id, List<Integer> diaryPages) {
+    public ThoughtAction(Toml action, int id, List<Integer> diaryPages) throws MissingArgumentException {
         super(id, diaryPages);
 
         this.messages = action.getList(MESSAGES);
+
+        if (this.messages == null) {
+            throw new MissingArgumentException("messages");
+        }
     }
 
     @Override

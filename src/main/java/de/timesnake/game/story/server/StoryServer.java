@@ -51,9 +51,5 @@ public class StoryServer {
         return server.getBaseWorld();
     }
 
-    public static ExWorld getStoryWorldTemplate() {
-        return server.getStoryWorldTemplate();
-    }
-
     private static final StoryServerManager server = StoryServerManager.getInstance();
 }

@@ -29,7 +29,6 @@ import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 import org.bukkit.block.data.*;
-import org.bukkit.block.data.type.Piston;
 
 import java.util.List;
 
@@ -48,21 +47,20 @@ public class BlockInteractAction extends LocationAction {
 
     @Override
     public StoryAction clone(Quest quest, StoryReader reader, StoryAction clonedNext, StoryChapter chapter) {
-        return new BlockInteractAction(this.id, clonedNext, this.location.clone().setExWorld(reader.getWorld()),
-                this.character.clone(reader, chapter));
+        return new BlockInteractAction(this.id, clonedNext, this.location.clone().setExWorld(chapter.getWorld()),
+                this.character != null ? this.character.clone(reader, chapter) : null);
     }
 
     @Override
     public void trigger(TriggerEvent.Type type, StoryUser user) {
         this.interact();
+        this.startNext();
     }
 
     private void interact() {
         BlockData blockData = this.location.getBlock().getBlockData();
         if (blockData instanceof Openable openable) {
             openable.setOpen(!openable.isOpen());
-        } else if (blockData instanceof Piston piston) {
-            piston.setExtended(!piston.isExtended());
         } else if (blockData instanceof Lightable lightable) {
             lightable.setLit(!lightable.isLit());
         } else if (blockData instanceof AnaloguePowerable powerable) {
@@ -70,5 +68,6 @@ public class BlockInteractAction extends LocationAction {
         } else if (blockData instanceof Powerable powerable) {
             powerable.setPowered(!powerable.isPowered());
         }
+        this.location.getBlock().setBlockData(blockData);
     }
 }

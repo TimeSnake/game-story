@@ -54,6 +54,8 @@ public class ItemLootAction extends LocationAction {
 
             inv.clear();
             inv.addItem(this.items.stream().map(StoryItem::getItem).toArray(ItemStack[]::new));
+        } else {
+            throw new StoryGamePlayException("Could not set loot item, block has no inventory");
         }
 
     }

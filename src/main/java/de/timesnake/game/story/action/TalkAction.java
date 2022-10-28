@@ -25,6 +25,7 @@ import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.basic.bukkit.util.world.entity.HoloDisplay;
 import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.elements.CharacterNotFoundException;
+import de.timesnake.game.story.elements.MissingArgumentException;
 import de.timesnake.game.story.elements.StoryCharacter;
 import de.timesnake.game.story.elements.UnknownLocationException;
 import de.timesnake.game.story.event.TriggerEvent;
@@ -71,14 +72,23 @@ public class TalkAction extends RadiusAction implements Listener {
     }
 
     public TalkAction(Toml action, int id, List<Integer> diaryPages) throws
-            CharacterNotFoundException, UnknownLocationException {
+            CharacterNotFoundException, UnknownLocationException, MissingArgumentException {
         super(action, id, diaryPages);
 
         String charId = action.getString(CHARACTER);
+
+        if (charId == null) {
+            throw new MissingArgumentException("character");
+        }
+
         this.speaker = StoryServer.getCharater(charId);
 
         this.messages = new LinkedList<>();
         List<String> messageTexts = action.getList(MESSAGES);
+
+        if (messageTexts == null) {
+            throw new MissingArgumentException("messages");
+        }
 
         for (String messageText : messageTexts) {
             if (messageText.startsWith(MESSAGE_PLAYER + ":")) {
