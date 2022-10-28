@@ -44,9 +44,6 @@ public abstract class StoryAction implements Iterator<StoryAction> {
     public static final String RADIUS = "radius";
 
     public static final String LOCATION = "location";
-    public static final String X = "x";
-    public static final String Y = "y";
-    public static final String Z = "z";
 
     public static final String DELAY = "delay";
 

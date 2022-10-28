@@ -31,6 +31,7 @@ import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
+import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
@@ -39,25 +40,51 @@ public class DropItemAtEvent<Action extends TriggeredAction> extends LocationEve
     public static final String NAME = "drop_at";
 
     private static final String ITEM = "item";
-
-
-    private final StoryItem item;
-
+    private final int amount;
+    private StoryItem item;
+    private Material material;
     private boolean dropped = false;
 
-    protected DropItemAtEvent(ExLocation location, StoryCharacter<?> character, StoryItem item) {
+    protected DropItemAtEvent(ExLocation location, StoryCharacter<?> character, StoryItem item, Material material,
+                              int amount) {
         super(location, character);
-
         this.item = item;
+        this.material = material;
+        this.amount = amount;
 
         Server.registerListener(this, GameStory.getPlugin());
     }
 
     public DropItemAtEvent(Action action, Toml trigger) throws ItemNotFoundException,
-            CharacterNotFoundException, UnknownLocationException {
+            CharacterNotFoundException, UnknownLocationException, MissingArgumentException, InvalidArgumentTypeException {
         super(action, trigger);
 
-        this.item = StoryServer.getItem(trigger.getString(ITEM));
+        if (trigger.contains("item")) {
+            String itemName = trigger.getString("item");
+            if (itemName == null) {
+                throw new MissingArgumentException("item");
+            }
+            this.item = StoryServer.getItem(itemName);
+        } else if (trigger.contains("material")) {
+            String materialName = trigger.getString("material");
+            this.material = Material.getMaterial(materialName.toUpperCase());
+            if (material == null) {
+                throw new InvalidArgumentTypeException("invalid material '" + materialName + "'");
+            }
+        } else {
+            throw new MissingArgumentException("item", "material");
+        }
+
+        if (trigger.contains("amount")) {
+            Long amount = trigger.getLong("amount");
+            if (amount == null) {
+                throw new InvalidArgumentTypeException("invalid item amount");
+            }
+
+            this.amount = amount.intValue();
+        } else {
+            this.amount = 1;
+        }
     }
 
     @EventHandler
@@ -73,7 +100,11 @@ public class DropItemAtEvent<Action extends TriggeredAction> extends LocationEve
             return;
         }
 
-        if (!this.item.getItem().equals(ExItemStack.getItem(e.getItemStack(), false))) {
+        if (this.item != null && !this.item.getItem().equals(ExItemStack.getItem(e.getItemStack(), false))) {
+            return;
+        }
+
+        if (this.material != null && !this.material.equals(e.getItemStack().getType())) {
             return;
         }
 
@@ -101,7 +132,8 @@ public class DropItemAtEvent<Action extends TriggeredAction> extends LocationEve
     protected DropItemAtEvent<Action> clone(Quest section, StoryReader reader, StoryChapter chapter) {
         return new DropItemAtEvent<>(this.location.clone().setExWorld(chapter.getWorld()),
                 this.character != null ? section.getChapter().getCharacter(this.character.getName()) : null,
-                this.item.clone(reader));
+                this.item != null ? this.item.clone(reader) : null,
+                this.material, this.amount);
     }
 
     @Override

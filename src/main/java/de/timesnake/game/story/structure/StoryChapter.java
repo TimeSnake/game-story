@@ -61,6 +61,7 @@ public class StoryChapter {
 
         if (this.world == null) {
             Server.printWarning(Plugin.STORY, "World " + worldName + " not exists", "Part " + this.id);
+            return;
         }
 
         for (StoryCharacter<?> character : characters) {
@@ -68,23 +69,23 @@ public class StoryChapter {
         }
 
         this.world.setPVP(false);
-        this.world.allowBlockPlace(false);
-        this.world.allowBlockBreak(false);
-        this.world.allowFluidCollect(false);
-        this.world.allowFluidPlace(false);
-        this.world.allowBlockBurnUp(false);
-        this.world.allowBlockIgnite(false);
-        this.world.allowFlintAndSteel(false);
-        this.world.allowLightUpInteraction(true);
-        this.world.allowFireSpread(false);
-        this.world.allowEntityExplode(false);
-        this.world.allowEntityBlockBreak(false);
-        this.world.allowItemFrameRotate(true);
+        this.world.restrict(ExWorld.Restriction.BLOCK_PLACE, true);
+        this.world.restrict(ExWorld.Restriction.BLOCK_BREAK, true);
+        this.world.restrict(ExWorld.Restriction.FLUID_COLLECT, true);
+        this.world.restrict(ExWorld.Restriction.FLUID_PLACE, true);
+        this.world.restrict(ExWorld.Restriction.BLOCK_BURN_UP, true);
+        this.world.restrict(ExWorld.Restriction.BLOCK_IGNITE, true);
+        this.world.restrict(ExWorld.Restriction.FLINT_AND_STEEL, false);
+        this.world.restrict(ExWorld.Restriction.LIGHT_UP_INTERACTION, false);
+        this.world.restrict(ExWorld.Restriction.FIRE_SPREAD, true);
+        this.world.restrict(ExWorld.Restriction.ENTITY_EXPLODE, true);
+        this.world.restrict(ExWorld.Restriction.ENTITY_BLOCK_BREAK, true);
+        this.world.restrict(ExWorld.Restriction.ITEM_FRAME_ROTATE, false);
         this.world.setExceptService(true);
-        this.world.allowDropPickItem(true);
-        this.world.allowPlaceInBlock(true);
-        this.world.allowCakeEat(false);
-        this.world.setLockedBlockInventories(List.of(Material.DISPENSER, Material.DROPPER, Material.HOPPER));
+        this.world.restrict(ExWorld.Restriction.DROP_PICK_ITEM, false);
+        this.world.restrict(ExWorld.Restriction.PLACE_IN_BLOCK, false);
+        this.world.restrict(ExWorld.Restriction.CAKE_EAT, true);
+        this.world.restrict(ExWorld.Restriction.OPEN_INVENTORIES, List.of(Material.DISPENSER, Material.DROPPER, Material.HOPPER));
         this.world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
         this.world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
         this.world.setGameRule(GameRule.RANDOM_TICK_SPEED, 0);

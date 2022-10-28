@@ -38,9 +38,9 @@ import org.bukkit.util.EulerAngle;
 
 import java.util.List;
 
-public class ItemSearchAction extends LocationAction {
+public class ItemCollectAction extends LocationAction {
 
-    public static final String NAME = "item_search";
+    public static final String NAME = "item_collect";
 
     private static final String ITEM = "item";
     private static final String ANGLE = "angle";
@@ -50,30 +50,41 @@ public class ItemSearchAction extends LocationAction {
 
     private ExArmorStand entity;
 
-    public ItemSearchAction(int id, StoryAction next, ExLocation location, StoryCharacter<?> character,
-                            StoryItem item, double itemAngle) {
+    public ItemCollectAction(int id, StoryAction next, ExLocation location, StoryCharacter<?> character,
+                             StoryItem item, double itemAngle) {
         super(id, next, location, character);
         this.item = item;
         this.itemAngle = itemAngle;
     }
 
-    public ItemSearchAction(Toml action, int id, List<Integer> diaryPages)
-            throws ItemNotFoundException, CharacterNotFoundException, UnknownLocationException {
+    public ItemCollectAction(Toml action, int id, List<Integer> diaryPages)
+            throws ItemNotFoundException, CharacterNotFoundException, UnknownLocationException, MissingArgumentException {
         super(action, id, diaryPages);
 
-        this.item = StoryServer.getItem(action.getString(ITEM));
-        double itemAngle;
+        String itemName = action.getString(ITEM);
+
+        if (itemName == null) {
+            throw new MissingArgumentException("item");
+        }
+        this.item = StoryServer.getItem(itemName);
+
+        Double itemAngle;
         try {
             itemAngle = action.getDouble(ANGLE);
         } catch (ClassCastException e) {
             itemAngle = action.getLong(ANGLE).doubleValue();
         }
+
+        if (itemAngle == null) {
+            throw new MissingArgumentException("angle");
+        }
+
         this.itemAngle = itemAngle;
     }
 
     @Override
-    public ItemSearchAction clone(Quest quest, StoryReader reader, StoryAction clonedNext, StoryChapter chapter) {
-        return new ItemSearchAction(this.id, clonedNext, this.location.clone().setExWorld(chapter.getWorld()),
+    public ItemCollectAction clone(Quest quest, StoryReader reader, StoryAction clonedNext, StoryChapter chapter) {
+        return new ItemCollectAction(this.id, clonedNext, this.location.clone().setExWorld(chapter.getWorld()),
                 this.character != null ? quest.getChapter().getCharacter(this.character.getName()) : null,
                 this.item.clone(reader), this.itemAngle);
     }

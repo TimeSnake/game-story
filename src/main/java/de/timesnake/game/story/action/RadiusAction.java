@@ -22,6 +22,7 @@ import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.elements.CharacterNotFoundException;
+import de.timesnake.game.story.elements.MissingArgumentException;
 import de.timesnake.game.story.elements.StoryCharacter;
 import de.timesnake.game.story.elements.UnknownLocationException;
 import de.timesnake.game.story.main.GameStory;
@@ -41,14 +42,20 @@ public abstract class RadiusAction extends LocationAction implements Listener {
     }
 
     public RadiusAction(Toml action, int id, List<Integer> diaryPages)
-            throws CharacterNotFoundException, UnknownLocationException {
+            throws CharacterNotFoundException, UnknownLocationException, MissingArgumentException {
         super(action, id, diaryPages);
-        double radius;
+        Double radius;
         try {
             radius = action.getDouble(RADIUS);
         } catch (ClassCastException e) {
             radius = action.getLong(RADIUS).doubleValue();
         }
+
+        if (radius == null) {
+            throw new MissingArgumentException("radius");
+        }
+
+
         this.radius = radius;
     }
 

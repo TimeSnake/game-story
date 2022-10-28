@@ -164,6 +164,7 @@ public class StoryReader implements Iterable<StoryUser> {
 
          */
 
+
         this.chapter = chapter.clone(this);
 
         this.quest = this.chapter.getFirstQuest();

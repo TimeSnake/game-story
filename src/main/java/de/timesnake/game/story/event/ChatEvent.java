@@ -24,6 +24,7 @@ import de.timesnake.basic.bukkit.util.user.UserChatCommandListener;
 import de.timesnake.basic.bukkit.util.user.event.UserChatCommandEvent;
 import de.timesnake.game.story.action.TriggeredAction;
 import de.timesnake.game.story.chat.Plugin;
+import de.timesnake.game.story.elements.MissingArgumentException;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
@@ -50,12 +51,16 @@ public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Acti
         this.reader.forEach(u -> Server.getUserEventManager().addUserChatCommand(u, this));
     }
 
-    public ChatEvent(Action action, Toml trigger) {
+    public ChatEvent(Action action, Toml trigger) throws MissingArgumentException {
         super(action);
         if (trigger.containsPrimitive(CODE)) {
             this.codes = List.of(trigger.getString(CODE));
         } else {
             this.codes = trigger.getList(CODE);
+        }
+
+        if (this.codes == null) {
+            throw new MissingArgumentException("code");
         }
     }
 

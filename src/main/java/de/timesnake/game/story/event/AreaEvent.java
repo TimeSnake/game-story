@@ -24,6 +24,7 @@ import de.timesnake.basic.bukkit.util.user.event.UserMoveEvent;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.action.TriggeredAction;
 import de.timesnake.game.story.elements.CharacterNotFoundException;
+import de.timesnake.game.story.elements.MissingArgumentException;
 import de.timesnake.game.story.elements.StoryCharacter;
 import de.timesnake.game.story.elements.UnknownLocationException;
 import de.timesnake.game.story.main.GameStory;
@@ -50,15 +51,20 @@ public class AreaEvent<Action extends TriggeredAction> extends LocationEvent<Act
     }
 
     public AreaEvent(Action action, Toml trigger) throws CharacterNotFoundException,
-            UnknownLocationException {
+            UnknownLocationException, MissingArgumentException {
         super(action, trigger);
 
-        double radius;
+        Double radius;
         try {
             radius = trigger.getDouble(RADIUS);
         } catch (ClassCastException e) {
             radius = trigger.getLong(RADIUS).doubleValue();
         }
+
+        if (radius == null) {
+            throw new MissingArgumentException("radius");
+        }
+
         this.radius = radius;
 
     }
