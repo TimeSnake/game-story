@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -20,11 +20,16 @@ package de.timesnake.game.story.action;
 
 import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
-import de.timesnake.game.story.elements.*;
+import de.timesnake.game.story.element.StoryCharacter;
+import de.timesnake.game.story.element.StoryItem;
 import de.timesnake.game.story.event.AreaEvent;
 import de.timesnake.game.story.event.TriggerEvent;
-import de.timesnake.game.story.server.StoryServer;
+import de.timesnake.game.story.exception.CharacterNotFoundException;
+import de.timesnake.game.story.exception.ItemNotFoundException;
+import de.timesnake.game.story.exception.StoryGamePlayException;
+import de.timesnake.game.story.exception.UnknownLocationException;
 import de.timesnake.game.story.structure.Quest;
+import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
@@ -60,16 +65,16 @@ public class ItemLootAction extends LocationAction {
 
     }
 
-    public ItemLootAction(Toml action, int id, List<Integer> diaryPages)
+    public ItemLootAction(StoryBookBuilder bookBuilder, Toml action, int id, List<Integer> diaryPages)
             throws CharacterNotFoundException, UnknownLocationException, ItemNotFoundException {
-        super(action, id, diaryPages);
+        super(bookBuilder, action, id, diaryPages);
 
         this.items = new LinkedList<>();
         for (String name : action.getList("items", new LinkedList<String>())) {
-            this.items.add(StoryServer.getItem(name));
+            this.items.add(bookBuilder.getItem(name));
         }
 
-        this.triggerEvent = new AreaEvent<>(this, action, RADIUS);
+        this.triggerEvent = new AreaEvent<>(this, bookBuilder, action, RADIUS);
     }
 
     @Override

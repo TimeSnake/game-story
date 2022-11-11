@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -45,7 +45,7 @@ public class Diary {
         this.book = book;
     }
 
-    public Diary(Toml toml, int chapterId) {
+    public Diary(Toml toml, String chapterName) {
         this.pagesByNumber = new HashMap<>();
 
         this.book = new ExItemStack(Material.WRITTEN_BOOK).setDropable(false).setMoveable(false);

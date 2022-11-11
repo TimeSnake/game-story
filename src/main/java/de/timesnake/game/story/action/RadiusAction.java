@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -21,11 +21,12 @@ package de.timesnake.game.story.action;
 import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
-import de.timesnake.game.story.elements.CharacterNotFoundException;
-import de.timesnake.game.story.elements.MissingArgumentException;
-import de.timesnake.game.story.elements.StoryCharacter;
-import de.timesnake.game.story.elements.UnknownLocationException;
+import de.timesnake.game.story.element.StoryCharacter;
+import de.timesnake.game.story.exception.CharacterNotFoundException;
+import de.timesnake.game.story.exception.MissingArgumentException;
+import de.timesnake.game.story.exception.UnknownLocationException;
 import de.timesnake.game.story.main.GameStory;
+import de.timesnake.game.story.structure.StoryBookBuilder;
 import org.bukkit.event.Listener;
 
 import java.util.List;
@@ -41,9 +42,9 @@ public abstract class RadiusAction extends LocationAction implements Listener {
         Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public RadiusAction(Toml action, int id, List<Integer> diaryPages)
+    public RadiusAction(StoryBookBuilder bookBuilder, Toml action, int id, List<Integer> diaryPages)
             throws CharacterNotFoundException, UnknownLocationException, MissingArgumentException {
-        super(action, id, diaryPages);
+        super(bookBuilder, action, id, diaryPages);
         Double radius;
         try {
             radius = action.getDouble(RADIUS);
@@ -58,11 +59,4 @@ public abstract class RadiusAction extends LocationAction implements Listener {
 
         this.radius = radius;
     }
-
-    public RadiusAction(Toml action, int id, List<Integer> diaryPages, Double radius)
-            throws CharacterNotFoundException, UnknownLocationException {
-        super(action, id, diaryPages);
-        this.radius = radius;
-    }
-
 }

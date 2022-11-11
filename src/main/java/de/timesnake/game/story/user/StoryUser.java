@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -22,9 +22,11 @@ import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.chat.DisplayGroup;
 import de.timesnake.basic.bukkit.util.user.User;
 import de.timesnake.basic.bukkit.util.user.scoreboard.Tablist;
+import de.timesnake.basic.bukkit.util.user.scoreboard.TablistBuilder;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.database.util.Database;
 import de.timesnake.game.story.book.StoryContentBook;
+import de.timesnake.game.story.element.TalkType;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.StoryBook;
 import org.bukkit.entity.Player;
@@ -73,10 +75,13 @@ public class StoryUser extends User {
 
     public void stopStory() {
         if (this.readerGroup != null) {
-            if (this.readerGroup.getQuest() != null) {
-                this.readerGroup.getQuest().clearEntities();
-            }
             this.readerGroup.removeUser(this);
+
+            if (readerGroup.getUsers().isEmpty()) {
+                readerGroup.destroy();
+            } else {
+                this.readerGroup.saveProgress();
+            }
         }
 
         this.playing = false;
@@ -101,13 +106,13 @@ public class StoryUser extends User {
         this.playing = playing;
     }
 
-    public Set<Integer> getBoughtChapters(Integer bookId) {
+    public Set<String> getBoughtChapters(Integer bookId) {
         return this.progress.getBoughtChaptersByBook().get(bookId);
     }
 
-    public void buyChapter(int bookId, int chapterId) {
+    public void buyChapter(int bookId, String chapterName) {
         this.removeCoins(StoryServer.PART_PRICE, true);
-        this.progress.buyChapter(bookId, chapterId);
+        this.progress.buyChapter(bookId, chapterName);
     }
 
     public ExLocation getStoryRespawnLocation() {
@@ -122,15 +127,19 @@ public class StoryUser extends User {
         return selectedUsers;
     }
 
-    public void startBookPart(int bookId, int chapterId) {
+    public void startBookPart(int bookId, String chapterName) {
         List<StoryUser> users = new LinkedList<>(this.joinedUsers);
         users.add(this);
 
         this.selectedUsers.clear();
         this.joinedUsers.clear();
 
-        StoryReader readerGroup = new StoryReader(users);
+        StoryReader readerGroup = new StoryReader(this, users, TalkType.TEXT);
         users.forEach(u -> u.setReaderGroup(readerGroup));
-        readerGroup.startBookChapter(bookId, chapterId);
+        readerGroup.startBookChapter(bookId, chapterName);
+    }
+
+    public UserProgress getProgress() {
+        return progress;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -24,6 +24,8 @@ import de.timesnake.basic.bukkit.util.chat.CommandListener;
 import de.timesnake.basic.bukkit.util.chat.Sender;
 import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.server.StoryServer;
+import de.timesnake.game.story.structure.StoryBook;
+import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.library.basic.util.chat.ExTextColor;
 import de.timesnake.library.extension.util.cmd.Arguments;
@@ -81,26 +83,60 @@ public class StoryCmd implements CommandListener {
 
              */
         } else {
-            if (!args.get(0).isInt(true) || !args.get(1).isInt(true)) {
+            if (!args.get(0).isInt(true)) {
                 return;
             }
 
             Integer bookId = args.get(0).toInt();
-            Integer chapterId = args.get(1).toInt();
+            String chapterName = args.getString(1);
 
-            if (!user.getBoughtChapters(bookId).contains(chapterId)) {
+            if (!user.getBoughtChapters(bookId).contains(chapterName)) {
                 if (user.getCoins() < StoryServer.PART_PRICE) {
                     sender.sendNotEnoughCoinsMessage(StoryServer.PART_PRICE - user.getCoins());
                     return;
                 }
 
-                user.buyChapter(bookId, chapterId);
+                user.buyChapter(bookId, chapterName);
                 sender.sendPluginMessage(Component.text("Bought chapter for ", ExTextColor.PERSONAL)
                         .append(Component.text(StoryServer.PART_PRICE + " TimeCoins", ExTextColor.VALUE)));
-                Server.printText(Plugin.STORY, user.getName() + " bought chapter " + bookId + "." + chapterId, "Buy");
+                Server.printText(Plugin.STORY, user.getName() + " bought chapter " + bookId + "." + chapterName, "Buy");
             }
 
-            user.startBookPart(bookId, chapterId);
+            if (!user.getProgress().canPlayChapter(bookId, chapterName)) {
+                sender.sendPluginMessage(Component.text("You can not play this chapter", ExTextColor.WARNING));
+                return;
+            }
+
+            StoryBook book = StoryServer.getBook(bookId);
+            if (book == null) {
+                sender.sendPluginMessage(Component.text("Unknown book", ExTextColor.WARNING));
+                return;
+            }
+
+            StoryChapter chapter = book.getChapter(chapterName);
+
+            if (chapter == null) {
+                sender.sendPluginMessage(Component.text("Unknown chapter", ExTextColor.WARNING));
+                return;
+            }
+
+            if (!chapter.getPlayerSizes().contains(user.getJoinedUsers().size() + 1)) {
+                sender.sendPluginMessage(Component.text("Invalid player size ", ExTextColor.WARNING)
+                        .append(Component.text(user.getJoinedUsers().size(), ExTextColor.VALUE)));
+                return;
+            }
+
+
+            for (StoryUser member : user.getJoinedUsers()) {
+                if (!member.getProgress().canPlayChapter(bookId, chapterName)) {
+                    sender.sendPluginMessage(member.getChatNameComponent()
+                            .append(Component.text("can not play this chapter", ExTextColor.WARNING)));
+                    return;
+                }
+            }
+
+
+            user.startBookPart(bookId, chapterName);
         }
     }
 

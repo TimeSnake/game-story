@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -22,36 +22,34 @@ import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
 import de.timesnake.game.story.book.Diary;
 import de.timesnake.game.story.chat.Plugin;
-import de.timesnake.game.story.elements.StoryCharacter;
+import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.user.StoryReader;
 import org.bukkit.GameRule;
 import org.bukkit.Material;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
-public class StoryChapter {
-
-    private final Integer id;
+public class StoryChapter implements Iterable<Quest> {
 
     private final String name;
-    private final String endMessage;
 
+    private final String displayName;
+    private final String endMessage;
     private final Quest firstQuest;
     private final LinkedHashMap<String, StoryCharacter<?>> characterByName = new LinkedHashMap<>();
-
     private final Diary diary;
-
-    private final List<Long> playerSizes;
-
+    private final List<Integer> playerSizes;
     private final ExWorld world;
+    private String previous;
+    private String next;
+    private StoryBook book;
 
-    public StoryChapter(Integer id, String name, String endMessage, Diary diary, Quest firstQuest,
-                        List<Long> playerSizes, String worldName, Set<StoryCharacter<?>> characters) {
-        this.id = id;
+    public StoryChapter(String name, String displayName, String endMessage, Diary diary, Quest firstQuest,
+                        List<Integer> playerSizes, String worldName, Set<StoryCharacter<?>> characters) {
         this.name = name;
+        this.displayName = displayName;
         this.endMessage = endMessage;
         this.diary = diary;
         this.firstQuest = firstQuest;
@@ -60,7 +58,7 @@ public class StoryChapter {
         this.world = Server.getWorld(worldName);
 
         if (this.world == null) {
-            Server.printWarning(Plugin.STORY, "World " + worldName + " not exists", "Part " + this.id);
+            Server.printWarning(Plugin.STORY, "World " + worldName + " not exists", "Part " + this.name);
             return;
         }
 
@@ -93,11 +91,11 @@ public class StoryChapter {
 
     }
 
-    private StoryChapter(StoryReader reader, Integer id, String name, String endMessage,
-                         Diary diary, Quest firstQuest, List<Long> playerSizes, ExWorld world,
+    private StoryChapter(StoryReader reader, String name, String displayName, String endMessage,
+                         Diary diary, Quest firstQuest, List<Integer> playerSizes, ExWorld world,
                          LinkedHashMap<String, StoryCharacter<?>> characterByName) {
-        this.id = id;
         this.name = name;
+        this.displayName = displayName;
         this.endMessage = endMessage;
         this.world = world;
         this.diary = diary.clone(reader);
@@ -111,20 +109,44 @@ public class StoryChapter {
     }
 
     public StoryChapter clone(StoryReader reader) {
-        return new StoryChapter(reader, this.id, this.name, this.endMessage, this.diary, this.firstQuest, this.playerSizes,
+        return new StoryChapter(reader, this.name, this.displayName, this.endMessage, this.diary, this.firstQuest, this.playerSizes,
                 Server.getWorldManager().cloneWorld(this.world.getName() + "_" + reader.getId(), this.world), this.characterByName);
-    }
-
-    public Integer getId() {
-        return id;
     }
 
     public String getName() {
         return name;
     }
 
+    public String getDisplayName() {
+        return displayName;
+    }
+
     public String getEndMessage() {
         return endMessage;
+    }
+
+    public String getPrevious() {
+        return previous;
+    }
+
+    protected void setPrevious(String previous) {
+        this.previous = previous;
+    }
+
+    public String getNext() {
+        return next;
+    }
+
+    protected void setNext(String next) {
+        this.next = next;
+    }
+
+    public StoryBook getBook() {
+        return book;
+    }
+
+    protected void setBook(StoryBook book) {
+        this.book = book;
     }
 
     public Quest getFirstQuest() {
@@ -133,6 +155,15 @@ public class StoryChapter {
 
     public Quest getLastQuest() {
         return this.firstQuest.lastQuest();
+    }
+
+    public Quest getQuest(String name) {
+        for (Quest quest : this) {
+            if (quest.getName().equals(name)) {
+                return quest;
+            }
+        }
+        return null;
     }
 
     public Diary getDiary() {
@@ -155,11 +186,43 @@ public class StoryChapter {
         return this.characterByName.get(name);
     }
 
-    public List<Long> getPlayerSizes() {
+    public List<Integer> getPlayerSizes() {
         return playerSizes;
     }
 
     public ExWorld getWorld() {
         return world;
+    }
+
+    @NotNull
+    @Override
+    public Iterator<Quest> iterator() {
+        return new QuestIterator(this.firstQuest);
+    }
+
+    public static class QuestIterator implements Iterator<Quest> {
+
+        private final Stack<Quest> traversal;
+
+        public QuestIterator(Quest first) {
+            traversal = new Stack<>();
+            traversal.push(first);
+        }
+
+        public boolean hasNext() {
+            return !traversal.isEmpty();
+        }
+
+        public Quest next() {
+            if (!hasNext()) throw new NoSuchElementException();
+
+            Quest current = traversal.pop();
+
+            List<? extends Quest> nextQuests = current.getNextQuests();
+            Collections.reverse(nextQuests);
+            nextQuests.forEach(traversal::push);
+
+            return current;
+        }
     }
 }

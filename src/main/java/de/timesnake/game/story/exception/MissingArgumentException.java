@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -16,11 +16,11 @@
  * along with this program; If not, see <http://www.gnu.org/licenses/>.
  */
 
-package de.timesnake.game.story.elements;
+package de.timesnake.game.story.exception;
 
-public class UnknownGuardTypeException extends Exception {
+public class MissingArgumentException extends Exception {
 
-    public UnknownGuardTypeException(String name) {
-        super("Unknown guard type '" + name + "'");
+    public MissingArgumentException(String... type) {
+        super("Missing '" + String.join("' or '", type) + "' argument");
     }
 }

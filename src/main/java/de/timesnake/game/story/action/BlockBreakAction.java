@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -23,10 +23,11 @@ import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.user.event.CancelPriority;
 import de.timesnake.basic.bukkit.util.user.event.UserBlockBreakEvent;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
-import de.timesnake.game.story.elements.InvalidArgumentTypeException;
-import de.timesnake.game.story.elements.MissingArgumentException;
+import de.timesnake.game.story.exception.InvalidArgumentTypeException;
+import de.timesnake.game.story.exception.MissingArgumentException;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.Quest;
+import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
@@ -53,7 +54,7 @@ public class BlockBreakAction extends StoryAction implements Listener {
         Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public BlockBreakAction(Toml action, int id, List<Integer> diaryPages)
+    public BlockBreakAction(StoryBookBuilder bookBuilder, Toml action, int id, List<Integer> diaryPages)
             throws MissingArgumentException, InvalidArgumentTypeException {
         super(id, diaryPages);
 
@@ -117,8 +118,6 @@ public class BlockBreakAction extends StoryAction implements Listener {
         if (!this.materials.isEmpty() && !this.materials.contains(e.getBlock().getType())) {
             return;
         }
-
-        System.out.println("break");
 
         e.setCancelled(CancelPriority.HIGH, false);
         e.setDropItems(true);

@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -23,12 +23,13 @@ import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.user.event.UserMoveEvent;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.action.TriggeredAction;
-import de.timesnake.game.story.elements.CharacterNotFoundException;
-import de.timesnake.game.story.elements.MissingArgumentException;
-import de.timesnake.game.story.elements.StoryCharacter;
-import de.timesnake.game.story.elements.UnknownLocationException;
+import de.timesnake.game.story.element.StoryCharacter;
+import de.timesnake.game.story.exception.CharacterNotFoundException;
+import de.timesnake.game.story.exception.MissingArgumentException;
+import de.timesnake.game.story.exception.UnknownLocationException;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.Quest;
+import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
@@ -50,9 +51,9 @@ public class AreaEvent<Action extends TriggeredAction> extends LocationEvent<Act
         Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public AreaEvent(Action action, Toml trigger) throws CharacterNotFoundException,
+    public AreaEvent(Action action, StoryBookBuilder bookBuilder, Toml trigger) throws CharacterNotFoundException,
             UnknownLocationException, MissingArgumentException {
-        super(action, trigger);
+        super(action, bookBuilder, trigger);
 
         Double radius;
         try {
@@ -69,8 +70,9 @@ public class AreaEvent<Action extends TriggeredAction> extends LocationEvent<Act
 
     }
 
-    public AreaEvent(Action action, Toml trigger, double radius) throws CharacterNotFoundException, UnknownLocationException {
-        super(action, trigger);
+    public AreaEvent(Action action, StoryBookBuilder bookBuilder, Toml trigger, double radius)
+            throws CharacterNotFoundException, UnknownLocationException {
+        super(action, bookBuilder, trigger);
         this.radius = radius;
     }
 

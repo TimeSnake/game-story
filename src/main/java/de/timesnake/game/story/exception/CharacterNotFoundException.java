@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -16,15 +16,11 @@
  * along with this program; If not, see <http://www.gnu.org/licenses/>.
  */
 
-package de.timesnake.game.story.elements;
+package de.timesnake.game.story.exception;
 
-public class UnknownLocationException extends Exception {
+public class CharacterNotFoundException extends Exception {
 
-    public UnknownLocationException() {
-
-    }
-
-    public UnknownLocationException(String message) {
-        super(message);
+    public CharacterNotFoundException(String name) {
+        super("Could not find character '" + name + "'");
     }
 }

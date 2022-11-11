@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -16,7 +16,7 @@
  * along with this program; If not, see <http://www.gnu.org/licenses/>.
  */
 
-package de.timesnake.game.story.elements;
+package de.timesnake.game.story.element;
 
 import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.file.ExToml;

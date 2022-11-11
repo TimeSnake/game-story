@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -20,10 +20,12 @@ package de.timesnake.game.story.action;
 
 import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
-import de.timesnake.game.story.elements.*;
+import de.timesnake.game.story.element.StoryCharacter;
+import de.timesnake.game.story.element.StoryItem;
 import de.timesnake.game.story.event.TriggerEvent;
-import de.timesnake.game.story.server.StoryServer;
+import de.timesnake.game.story.exception.*;
 import de.timesnake.game.story.structure.Quest;
+import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
@@ -47,15 +49,15 @@ public class ItemGiveAction extends LocationAction {
         this.amount = amount;
     }
 
-    public ItemGiveAction(Toml action, int id, List<Integer> diaryPages) throws CharacterNotFoundException,
+    public ItemGiveAction(StoryBookBuilder bookBuilder, Toml action, int id, List<Integer> diaryPages) throws CharacterNotFoundException,
             ItemNotFoundException, UnknownLocationException, MissingArgumentException, InvalidArgumentTypeException {
-        super(action, id, diaryPages);
+        super(bookBuilder, action, id, diaryPages);
         if (action.contains("item")) {
             String itemName = action.getString("item");
             if (itemName == null) {
                 throw new MissingArgumentException("item");
             }
-            this.item = StoryServer.getItem(itemName);
+            this.item = bookBuilder.getItem(itemName);
         } else if (action.contains("material")) {
             String materialName = action.getString("material");
             this.material = Material.getMaterial(materialName.toUpperCase());
