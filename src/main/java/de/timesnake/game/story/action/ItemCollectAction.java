@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -20,10 +20,15 @@ package de.timesnake.game.story.action;
 
 import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
-import de.timesnake.game.story.elements.*;
+import de.timesnake.game.story.element.StoryCharacter;
+import de.timesnake.game.story.element.StoryItem;
 import de.timesnake.game.story.event.TriggerEvent;
-import de.timesnake.game.story.server.StoryServer;
+import de.timesnake.game.story.exception.CharacterNotFoundException;
+import de.timesnake.game.story.exception.ItemNotFoundException;
+import de.timesnake.game.story.exception.MissingArgumentException;
+import de.timesnake.game.story.exception.UnknownLocationException;
 import de.timesnake.game.story.structure.Quest;
+import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
@@ -57,16 +62,16 @@ public class ItemCollectAction extends LocationAction {
         this.itemAngle = itemAngle;
     }
 
-    public ItemCollectAction(Toml action, int id, List<Integer> diaryPages)
+    public ItemCollectAction(StoryBookBuilder bookBuilder, Toml action, int id, List<Integer> diaryPages)
             throws ItemNotFoundException, CharacterNotFoundException, UnknownLocationException, MissingArgumentException {
-        super(action, id, diaryPages);
+        super(bookBuilder, action, id, diaryPages);
 
         String itemName = action.getString(ITEM);
 
         if (itemName == null) {
             throw new MissingArgumentException("item");
         }
-        this.item = StoryServer.getItem(itemName);
+        this.item = bookBuilder.getItem(itemName);
 
         Double itemAngle;
         try {

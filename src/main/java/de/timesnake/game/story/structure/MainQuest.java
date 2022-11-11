@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -18,17 +18,19 @@
 
 package de.timesnake.game.story.structure;
 
+import com.google.common.collect.Streams;
 import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.action.StoryAction;
-import de.timesnake.game.story.elements.InvalidQuestException;
+import de.timesnake.game.story.exception.InvalidQuestException;
 import de.timesnake.game.story.user.StoryReader;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class MainQuest extends Quest {
+public non-sealed class MainQuest extends Quest {
 
     protected final Map<String, MainQuest> nextMainQuestByName;
     protected final Map<String, OptionalQuest> nextOptionalQuestByName;
@@ -110,5 +112,11 @@ public class MainQuest extends Quest {
         } else {
             throw new InvalidQuestException("unknown quest type");
         }
+    }
+
+    @Override
+    public List<? extends Quest> getNextQuests() {
+        return Streams.concat(this.nextMainQuestByName.values().stream(),
+                this.nextOptionalQuestByName.values().stream()).toList();
     }
 }

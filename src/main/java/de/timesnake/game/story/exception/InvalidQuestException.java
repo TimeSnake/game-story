@@ -16,28 +16,15 @@
  * along with this program; If not, see <http://www.gnu.org/licenses/>.
  */
 
-package de.timesnake.game.story.server;
+package de.timesnake.game.story.exception;
 
-import de.timesnake.basic.bukkit.util.world.ExWorld;
-import de.timesnake.game.story.structure.StoryBook;
+public class InvalidQuestException extends RuntimeException {
 
-import java.util.Collection;
+    public InvalidQuestException() {
 
-public class StoryServer {
-
-    public static final int PART_PRICE = 200;
-
-    public static StoryBook getBook(Integer id) {
-        return server.getBook(id);
     }
 
-    public static Collection<StoryBook> getBooks() {
-        return server.getBooks();
+    public InvalidQuestException(String message) {
+        super(message);
     }
-
-    public static ExWorld getBaseWorld() {
-        return server.getBaseWorld();
-    }
-
-    private static final StoryServerManager server = StoryServerManager.getInstance();
 }

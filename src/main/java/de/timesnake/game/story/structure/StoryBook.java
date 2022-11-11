@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -18,8 +18,14 @@
 
 package de.timesnake.game.story.structure;
 
+import de.timesnake.game.story.element.StoryCharacter;
+import de.timesnake.game.story.element.StoryItem;
+import de.timesnake.game.story.exception.CharacterNotFoundException;
+import de.timesnake.game.story.exception.ItemNotFoundException;
+
 import java.util.Collection;
-import java.util.SortedMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class StoryBook {
 
@@ -27,16 +33,33 @@ public class StoryBook {
 
     private final String name;
 
-    private final SortedMap<Integer, StoryChapter> chapterById;
+    private final LinkedHashMap<String, StoryChapter> chapterByName;
+    private final Map<String, StoryCharacter<?>> characterByName;
+    private final Map<String, StoryItem> itemByName;
 
-    public StoryBook(int id, String name, SortedMap<Integer, StoryChapter> chapterById) {
+    public StoryBook(int id, String name, LinkedHashMap<String, StoryChapter> chapterByName,
+                     Map<String, StoryCharacter<?>> characterByName, Map<String, StoryItem> itemByName) {
         this.id = id;
         this.name = name;
-        this.chapterById = chapterById;
+        this.chapterByName = chapterByName;
+        this.characterByName = characterByName;
+        this.itemByName = itemByName;
+
+        for (StoryChapter chapter : this.chapterByName.values()) {
+            chapter.setBook(this);
+        }
     }
 
-    public StoryChapter getChapter(int id) {
-        return this.chapterById.get(id);
+    public StoryChapter getChapter(String name) {
+        return this.chapterByName.get(name);
+    }
+
+    public StoryChapter getPreviousChapter(String name) {
+        return this.chapterByName.get(this.chapterByName.get(name).getPrevious());
+    }
+
+    public StoryChapter getNextChapter(String name) {
+        return this.chapterByName.get(this.chapterByName.get(name).getNext());
     }
 
     public Integer getId() {
@@ -47,15 +70,43 @@ public class StoryBook {
         return name;
     }
 
-    public StoryChapter nextChapter(StoryChapter chapter) {
-        return this.chapterById.get(chapter.getId() + 1);
+    public Collection<StoryChapter> getChapters() {
+        return this.chapterByName.values();
     }
 
-    public Collection<StoryChapter> getChapters() {
-        return this.chapterById.values();
+    public StoryChapter getFirstChapter() {
+        for (StoryChapter chapter : this.chapterByName.values()) {
+            if (chapter.getPrevious() == null) {
+                return chapter;
+            }
+        }
+        return null;
     }
 
     public StoryChapter getLastChapter() {
-        return this.chapterById.get(this.chapterById.lastKey());
+        for (StoryChapter chapter : this.chapterByName.values()) {
+            if (chapter.getNext() == null) {
+                return chapter;
+            }
+        }
+        return null;
+    }
+
+    public StoryCharacter<?> getCharacter(String name) throws CharacterNotFoundException {
+        StoryCharacter<?> character = this.characterByName.get(name);
+        if (character == null) {
+            throw new CharacterNotFoundException(name);
+        }
+
+        return character;
+    }
+
+    public StoryItem getItem(String name) throws ItemNotFoundException {
+        StoryItem item = this.itemByName.get(name);
+        if (item == null) {
+            throw new ItemNotFoundException(name);
+        }
+
+        return item;
     }
 }

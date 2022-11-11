@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -134,6 +134,9 @@ public abstract class StoryAction implements Iterator<StoryAction> {
         return reader;
     }
 
+    public Quest getQuest() {
+        return quest;
+    }
 
     public void setQuest(Quest quest) {
         this.quest = quest;

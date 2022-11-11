@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -24,10 +24,12 @@ import de.timesnake.basic.bukkit.util.user.ExItemStack;
 import de.timesnake.basic.bukkit.util.user.event.UserDropItemEvent;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.action.TriggeredAction;
-import de.timesnake.game.story.elements.*;
+import de.timesnake.game.story.element.StoryCharacter;
+import de.timesnake.game.story.element.StoryItem;
+import de.timesnake.game.story.exception.*;
 import de.timesnake.game.story.main.GameStory;
-import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.Quest;
+import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
@@ -39,7 +41,6 @@ public class DropItemAtEvent<Action extends TriggeredAction> extends LocationEve
 
     public static final String NAME = "drop_at";
 
-    private static final String ITEM = "item";
     private final int amount;
     private StoryItem item;
     private Material material;
@@ -55,16 +56,16 @@ public class DropItemAtEvent<Action extends TriggeredAction> extends LocationEve
         Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public DropItemAtEvent(Action action, Toml trigger) throws ItemNotFoundException,
+    public DropItemAtEvent(Action action, StoryBookBuilder bookBuilder, Toml trigger) throws ItemNotFoundException,
             CharacterNotFoundException, UnknownLocationException, MissingArgumentException, InvalidArgumentTypeException {
-        super(action, trigger);
+        super(action, bookBuilder, trigger);
 
         if (trigger.contains("item")) {
             String itemName = trigger.getString("item");
             if (itemName == null) {
                 throw new MissingArgumentException("item");
             }
-            this.item = StoryServer.getItem(itemName);
+            this.item = bookBuilder.getItem(itemName);
         } else if (trigger.contains("material")) {
             String materialName = trigger.getString("material");
             this.material = Material.getMaterial(materialName.toUpperCase());

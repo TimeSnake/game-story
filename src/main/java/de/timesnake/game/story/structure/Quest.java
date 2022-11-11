@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -32,9 +32,10 @@ import org.bukkit.Particle;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.function.Consumer;
 
-public abstract class Quest implements Iterable<StoryAction> {
+public abstract sealed class Quest implements Iterable<StoryAction> permits MainQuest, OptionalQuest {
 
     protected static final String START_LOCATION = "location";
 
@@ -107,8 +108,8 @@ public abstract class Quest implements Iterable<StoryAction> {
 
         if (spawnEntities) {
             Server.runTaskLaterSynchrony(() -> {
-                Server.printText(Plugin.STORY, "Starting quest " + this.name + " " +
-                        Chat.listToString(this.reader.getUsers().stream().map(UserPlayerDelegation::getName).toList()));
+                Server.printText(Plugin.STORY, "Starting quest " + this.name + " [" +
+                        Chat.listToString(this.reader.getUsers().stream().map(UserPlayerDelegation::getName).toList()) + "]");
                 int delay = 0;
                 for (StoryAction action : this) {
                     Server.runTaskLaterSynchrony(action::spawnEntities, delay, GameStory.getPlugin());
@@ -147,6 +148,8 @@ public abstract class Quest implements Iterable<StoryAction> {
     }
 
     public abstract void addNextQuest(Quest quest);
+
+    public abstract List<? extends Quest> getNextQuests();
 
     public enum Type {
         MAIN,

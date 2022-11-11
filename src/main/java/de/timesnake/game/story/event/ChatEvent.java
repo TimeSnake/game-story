@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -24,7 +24,7 @@ import de.timesnake.basic.bukkit.util.user.UserChatCommandListener;
 import de.timesnake.basic.bukkit.util.user.event.UserChatCommandEvent;
 import de.timesnake.game.story.action.TriggeredAction;
 import de.timesnake.game.story.chat.Plugin;
-import de.timesnake.game.story.elements.MissingArgumentException;
+import de.timesnake.game.story.exception.MissingArgumentException;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;

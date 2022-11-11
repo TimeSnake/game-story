@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -21,6 +21,7 @@ package de.timesnake.game.story.user;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.user.ExItemStack;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
+import de.timesnake.game.story.element.TalkType;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.Quest;
@@ -42,14 +43,18 @@ public class StoryReader implements Iterable<StoryUser> {
 
     private final UUID id = UUID.randomUUID();
 
+    private final StoryUser host;
     private final UserList<StoryUser> users;
+    private final TalkType talkType;
 
     private StoryBook book;
     private StoryChapter chapter;
     private Quest quest;
 
-    public StoryReader(Collection<StoryUser> users) {
+    public StoryReader(StoryUser host, Collection<StoryUser> users, TalkType talkType) {
+        this.host = host;
         this.users = new UserList<>(users);
+        this.talkType = talkType;
     }
 
     public void close() {
@@ -58,6 +63,10 @@ public class StoryReader implements Iterable<StoryUser> {
 
     public UUID getId() {
         return id;
+    }
+
+    public TalkType getTalkType() {
+        return talkType;
     }
 
     public boolean matchAnyUser(Predicate<StoryUser> predicate) {
@@ -112,6 +121,8 @@ public class StoryReader implements Iterable<StoryUser> {
         this.quest = next;
 
         previous.clearEntities();
+        this.saveProgress();
+
         this.quest.start(false, true);
     }
 
@@ -136,36 +147,31 @@ public class StoryReader implements Iterable<StoryUser> {
         return this.users.iterator();
     }
 
-    public void startBookChapter(Integer bookId, Integer chapterId) {
+    public void startBookChapter(Integer bookId, String chapterName) {
         StoryBook book = StoryServer.getBook(bookId);
 
         if (book == null) {
             return;
         }
 
-        StoryChapter chapter = book.getChapter(chapterId);
+        StoryChapter chapter = book.getChapter(chapterName);
 
         if (chapter == null) {
             return;
         }
 
         this.book = book;
+        this.chapter = chapter.clone(this);
 
+        String savedQuestName = this.host.getProgress().getQuest(bookId, chapterName);
+        if (savedQuestName != null) {
+            this.quest = this.chapter.getQuest(savedQuestName);
+        } else {
+            this.quest = this.chapter.getFirstQuest();
+        }
 
         // TODO update progress
 
-        int sectionId = 1; // TODO resume at progress
-
-        /*
-        if (sectionId > chapter.getChapter(partId).getLastQuest().getName()) {
-            this.sendPluginMessage(Plugin.STORY, Component.text("You already played this part", ExTextColor.WARNING));
-            return;
-        }
-
-         */
-
-
-        this.chapter = chapter.clone(this);
 
         this.quest = this.chapter.getFirstQuest();
 
@@ -187,6 +193,19 @@ public class StoryReader implements Iterable<StoryUser> {
 
         this.chapter.spawnCharacters();
         this.quest.start(true, true);
+    }
+
+    public void destroy() {
+        this.saveProgress();
+        if (this.quest != null) {
+            this.quest.clearEntities();
+        }
+
+        Server.getWorldManager().deleteWorld(this.getWorld(), true);
+    }
+
+    public void saveProgress() {
+        // TODO save progress from current quest
     }
 
     public StoryBook getBook() {

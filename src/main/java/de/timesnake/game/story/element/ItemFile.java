@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * timesnake.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -16,11 +16,30 @@
  * along with this program; If not, see <http://www.gnu.org/licenses/>.
  */
 
-package de.timesnake.game.story.elements;
+package de.timesnake.game.story.element;
 
-public class InvalidArgumentTypeException extends Exception {
+import com.moandjiezana.toml.Toml;
+import de.timesnake.basic.bukkit.util.file.ExToml;
 
-    public InvalidArgumentTypeException(String message) {
-        super(message);
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+
+public class ItemFile {
+
+    private static final String ITEM = "item";
+
+    private final ExToml file;
+
+    public ItemFile(File file) {
+        this.file = new ExToml(file);
+    }
+
+    public Map<String, Toml> getItemTables() {
+        Map<String, Toml> map = new HashMap<>();
+        for (String name : this.file.getTable(ITEM).toMap().keySet()) {
+            map.put(name, this.file.getTable(ITEM).getTable(name));
+        }
+        return map;
     }
 }
