@@ -43,8 +43,10 @@ public class StoryUser extends User {
     public StoryUser(Player player) {
         super(player);
 
-        Tablist tablist = Server.getScoreboardManager().registerNewGroupTablist(this.getName(), Tablist.Type.DUMMY,
-                DisplayGroup.MAIN_TABLIST_GROUPS, (e, t) -> {}, (e, t) -> {});
+        Tablist tablist = Server.getScoreboardManager().registerGroupTablist(new TablistBuilder(this.getName())
+                .groupTypes(DisplayGroup.MAIN_TABLIST_GROUPS)
+                .userJoin((e, t) -> {})
+                .userQuit((e, t) -> {}));
 
         tablist.setHeader("§6Time§2Snake§9.de");
         tablist.setFooter("§7Server: " + Server.getName() + "\n§cSupport: /ticket or \n" + Server.SUPPORT_EMAIL);
