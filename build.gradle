@@ -29,7 +29,7 @@ dependencies {
     compileOnly project(':channel-bukkit')
     compileOnly project(':channel-api')
 
-    compileOnly project(':library-entities:library-entities')
+    compileOnly project(':library-entities')
     compileOnly project(':library-packets')
     compileOnly project(':library-reflection')
     compileOnly project(':library-extension')
