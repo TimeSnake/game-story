@@ -34,16 +34,22 @@ dependencies {
 }
 
 group = project.group
-version = '1.0-SNAPSHOT'
+version = '1.1-SNAPSHOT'
 archivesBaseName = 'game-story'
 
 task deleteOldPluginJar(type: Delete) {
     delete fileTree(dir: "${project.plugins_dir}", include: "**/${archivesBaseName}-*.jar")
+    onlyIf {
+        !jar.state.upToDate
+    }
 }
 
 task copyJarToPlugins(type: Copy) {
     from jar
     into project.plugins_dir
+    onlyIf {
+        !jar.state.upToDate
+    }
 }
 
 copyJarToPlugins.dependsOn(deleteOldPluginJar)
