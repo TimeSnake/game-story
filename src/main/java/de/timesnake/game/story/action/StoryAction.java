@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -18,6 +18,8 @@
 
 package de.timesnake.game.story.action;
 
+import de.timesnake.game.story.listener.StoryEventListener;
+import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
@@ -27,7 +29,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
-public abstract class StoryAction implements Iterator<StoryAction> {
+public abstract class StoryAction implements Iterator<StoryAction>, StoryEventListener {
 
     public static final String DIARY = "diary";
 
@@ -36,6 +38,7 @@ public abstract class StoryAction implements Iterator<StoryAction> {
 
     public static final String MESSAGE_PLAYER = "p";
     public static final String MESSAGE_CHARACTER = "c";
+    public static final String AUDIO = "a";
 
     public static final String CHARACTER_LOOK_DIRECTION = "character_look_direction";
     public static final String YAW = "yaw";
@@ -68,8 +71,12 @@ public abstract class StoryAction implements Iterator<StoryAction> {
     }
 
     public StoryAction clone(Quest quest, StoryReader reader, StoryChapter chapter) {
-        StoryAction cloned = this.hasNext() ? this.clone(quest, reader, this.next.clone(quest, reader, chapter), chapter) :
-                this.clone(quest, reader, null, chapter);
+        StoryAction cloned;
+        if (this.hasNext()) {
+            cloned = this.clone(quest, reader, this.next.clone(quest, reader, chapter), chapter);
+        } else {
+            cloned = this.clone(quest, reader, null, chapter);
+        }
         cloned.reader = reader;
         cloned.diaryPages = this.diaryPages;
         cloned.quest = quest;
@@ -88,6 +95,7 @@ public abstract class StoryAction implements Iterator<StoryAction> {
 
     public void start() {
         this.active = true;
+        StoryServer.getEventManager().registerListeners(this);
     }
 
     @Override
@@ -102,6 +110,7 @@ public abstract class StoryAction implements Iterator<StoryAction> {
 
     public void startNext() {
         this.active = false;
+        StoryServer.getEventManager().unregisterListeners(this);
 
         if (this.diaryPages != null) {
             this.quest.getChapter().getDiary().loadPage(this.diaryPages.toArray(new Integer[0]));

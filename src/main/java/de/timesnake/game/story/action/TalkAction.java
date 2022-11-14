@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -29,9 +29,10 @@ import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.element.TalkType;
 import de.timesnake.game.story.event.TriggerEvent;
-import de.timesnake.game.story.exception.CharacterNotFoundException;
 import de.timesnake.game.story.exception.MissingArgumentException;
+import de.timesnake.game.story.exception.StoryParseException;
 import de.timesnake.game.story.exception.UnknownLocationException;
+import de.timesnake.game.story.listener.StoryEvent;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBookBuilder;
@@ -42,46 +43,41 @@ import de.timesnake.library.basic.util.Tuple;
 import de.timesnake.library.packets.util.packet.ExPacketPlayOutEntityHeadRotation;
 import de.timesnake.library.packets.util.packet.ExPacketPlayOutEntityLook;
 import net.kyori.adventure.text.Component;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.function.Supplier;
 
-public class TalkAction extends RadiusAction implements Listener {
+public class TalkAction extends RadiusAction {
 
     public static final String NAME = "talk";
 
-    private final LinkedList<Tuple<Speaker, String>> messages;
+    private final LinkedList<Tuple<Speaker, Supplier<String>>> messages;
+    private final LinkedList<Tuple<Speaker, Supplier<String>>> audioMessages;
 
     private final StoryCharacter<?> speaker;
     private final Set<StoryUser> delayingByUser = new HashSet<>();
     private final float yaw;
     private final float pitch;
-    private final String audioName;
-    private final int audioLength; // in seconds
     private StoryUser partner;
     private Integer messageIndex;
     private HoloDisplay display;
 
 
-    public TalkAction(int id, StoryAction next, StoryCharacter<?> speaker, LinkedList<Tuple<Speaker, String>> messages,
-                      ExLocation location, StoryCharacter<?> character, Double radius, float yaw, float pitch,
-                      String audioName, int audioLength) {
+    public TalkAction(int id, StoryAction next, StoryCharacter<?> speaker,
+                      LinkedList<Tuple<Speaker, Supplier<String>>> messages,
+                      LinkedList<Tuple<Speaker, Supplier<String>>> audioMessages,
+                      ExLocation location, StoryCharacter<?> character, Double radius, float yaw, float pitch) {
         super(id, next, location, character, radius);
         this.messages = messages;
+        this.audioMessages = audioMessages;
         this.speaker = speaker;
         this.yaw = yaw;
         this.pitch = pitch;
-        this.audioLength = audioLength;
-        this.audioName = audioName;
-
-        Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public TalkAction(StoryBookBuilder bookBuilder, Toml action, int id, List<Integer> diaryPages) throws
-            CharacterNotFoundException, UnknownLocationException, MissingArgumentException {
+    public TalkAction(StoryBookBuilder bookBuilder, Quest quest, Toml action, int id, List<Integer> diaryPages) throws StoryParseException {
         super(bookBuilder, action, id, diaryPages);
 
         String charId = action.getString(CHARACTER);
@@ -105,13 +101,13 @@ public class TalkAction extends RadiusAction implements Listener {
                 if (messageText.startsWith(" ")) {
                     messageText = messageText.replaceFirst(" ", "");
                 }
-                this.messages.add(new Tuple<>(Speaker.PLAYER, messageText));
+                this.messages.add(new Tuple<>(Speaker.PLAYER, quest.parseString(messageText)));
             } else if (messageText.startsWith(MESSAGE_CHARACTER + ":")) {
                 messageText = messageText.replaceFirst(MESSAGE_CHARACTER + ":", "");
                 if (messageText.startsWith(" ")) {
                     messageText = messageText.replaceFirst(" ", "");
                 }
-                this.messages.add(new Tuple<>(Speaker.CHARACTER, messageText));
+                this.messages.add(new Tuple<>(Speaker.CHARACTER, quest.parseString(messageText)));
             } else {
                 Server.printWarning(Plugin.STORY, "Unknown speaker in " + id, "Action");
             }
@@ -124,25 +120,35 @@ public class TalkAction extends RadiusAction implements Listener {
         this.yaw = lookDirections.get(0).floatValue();
         this.pitch = lookDirections.get(1).floatValue();
 
-        this.audioName = action.getString("audio_name");
+        this.audioMessages = new LinkedList<>();
+        List<String> audioTexts = action.getList("audio");
 
-        if (audioName != null) {
-            Long audioLength = action.getLong("audio_length");
-            if (audioLength == null) {
-                throw new MissingArgumentException("audio_length");
+        if (audioTexts != null) {
+            for (String audioText : audioTexts) {
+                if (audioText.startsWith(AUDIO + ":")) {
+                    audioText = audioText.replaceFirst(AUDIO + ":", "");
+                    if (audioText.startsWith(" ")) {
+                        audioText = audioText.replaceFirst(" ", "");
+                    }
+                    this.audioMessages.add(new Tuple<>(Speaker.AUDIO, quest.parseString(audioText)));
+                } else if (audioText.startsWith(MESSAGE_PLAYER + ":")) {
+                    audioText = audioText.replaceFirst(MESSAGE_CHARACTER + ":", "");
+                    if (audioText.startsWith(" ")) {
+                        audioText = audioText.replaceFirst(" ", "");
+                    }
+                    this.audioMessages.add(new Tuple<>(Speaker.CHARACTER, quest.parseString(audioText)));
+                }
             }
-            this.audioLength = audioLength.intValue();
-        } else {
-            this.audioLength = 0;
         }
     }
 
     @Override
     public StoryAction clone(Quest quest, StoryReader reader, StoryAction clonedNext, StoryChapter chapter) {
-        return new TalkAction(this.id, clonedNext, quest.getChapter().getCharacter(this.speaker.getName()), this.messages,
+        return new TalkAction(this.id, clonedNext, quest.getChapter().getCharacter(this.speaker.getName()),
+                this.messages, this.audioMessages,
                 this.location.clone().setExWorld(chapter.getWorld()),
                 this.character != null ? quest.getChapter().getCharacter(this.character.getName()) : null,
-                this.radius, this.yaw, this.pitch, this.audioName, this.audioLength);
+                this.radius, this.yaw, this.pitch);
     }
 
     @Override
@@ -153,30 +159,13 @@ public class TalkAction extends RadiusAction implements Listener {
                 this.yaw >= 0 ? this.yaw + 44f : this.yaw - 44f, this.pitch, true)));
     }
 
-    private void playAudio() {
-        if (this.audioName == null) {
-            Server.printWarning(Plugin.STORY, "Missing audio name",
-                    "Chapter " + this.getQuest().getChapter().getName(), "Quest " + this.getQuest().getName(),
-                    "Action " + this.id);
-            return;
-        }
-
-        // TODO play audio and wait
-        this.reader.forEach(u -> {
-            Server.getChannel().sendMessage(new ChannelUserMessage<>(u.getUniqueId(), MessageType.User.STORY_PLAY_AUDIO,
-                    ""));
-        });
-    }
-
     private boolean isAudio() {
-        return this.reader.getTalkType() == TalkType.AUDIO && this.audioName != null;
+        return this.reader.getTalkType() == TalkType.AUDIO && this.audioMessages != null && !this.audioMessages.isEmpty();
     }
 
     @Override
     public void trigger(TriggerEvent.Type type, StoryUser user) {
-        if (this.isAudio()) {
-            this.playAudio();
-        } else if (this.partner == null && this.reader.getTalkType() == TalkType.TEXT) {
+        if (this.partner == null) {
             this.partner = user;
             this.messageIndex = 0;
             this.nextMessage(user);
@@ -195,12 +184,23 @@ public class TalkAction extends RadiusAction implements Listener {
             return;
         }
 
-        Tuple<Speaker, String> messageBySpeaker = this.messages.get(this.messageIndex);
+        if (!this.isAudio()) {
+            Tuple<Speaker, Supplier<String>> messageBySpeaker = this.messages.get(this.messageIndex);
 
-        if (messageBySpeaker.getA().equals(Speaker.CHARACTER)) {
-            this.sendMessage(user, messageBySpeaker.getB());
+            if (messageBySpeaker.getA().equals(Speaker.CHARACTER)) {
+                this.sendMessage(user, messageBySpeaker.getB().get());
+            } else {
+                this.sendSelfMessage(user, messageBySpeaker.getB().get());
+            }
         } else {
-            this.sendSelfMessage(user, messageBySpeaker.getB());
+            Tuple<Speaker, Supplier<String>> messageBySpeaker = this.audioMessages.get(this.messageIndex);
+
+            if (messageBySpeaker.getA().equals(Speaker.AUDIO)) {
+                Server.getChannel().sendMessage(new ChannelUserMessage<>(user.getUniqueId(),
+                        MessageType.User.STORY_PLAY_AUDIO, messageBySpeaker.getB().get()));
+            } else {
+                this.sendSelfMessage(user, messageBySpeaker.getB().get());
+            }
         }
         this.messageIndex++;
     }
@@ -250,7 +250,7 @@ public class TalkAction extends RadiusAction implements Listener {
 
         for (String word : words) {
             if (length > 20) {
-                lines.add(line.toString());
+                lines.add(line.substring(0, line.length() - 2));
                 line = new StringBuilder();
                 length = 0;
             }
@@ -264,13 +264,13 @@ public class TalkAction extends RadiusAction implements Listener {
         return lines;
     }
 
-    @EventHandler
+    @StoryEvent
     public void onPlayerToggleSneak(PlayerToggleSneakEvent e) {
-        if (!e.isSneaking()) {
+        if (!this.isActive()) {
             return;
         }
 
-        if (this.reader.getTalkType() != TalkType.TEXT) {
+        if (!e.isSneaking()) {
             return;
         }
 
@@ -329,6 +329,7 @@ public class TalkAction extends RadiusAction implements Listener {
 
     private enum Speaker {
         PLAYER,
-        CHARACTER
+        CHARACTER,
+        AUDIO
     }
 }

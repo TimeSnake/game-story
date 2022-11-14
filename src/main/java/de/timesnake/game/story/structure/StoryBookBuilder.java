@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -37,13 +37,10 @@ import java.util.*;
 public class StoryBookBuilder {
 
     private static final String NAME = "name";
-
     private static final String END_MESSAGE = "end_message";
-
     private final int id;
     private final Path folder;
     private final ExToml bookToml;
-
     private final Map<String, StoryCharacter<?>> characterByName = new HashMap<>();
     private final Map<String, StoryItem> itemByName = new HashMap<>();
 
@@ -117,7 +114,7 @@ public class StoryBookBuilder {
             String worldName = chapter.getString("world");
 
             Toml diaryTable = chapter.getTable("diary");
-            Diary diary = new Diary(diaryTable, chapterName);
+            Diary diary = new Diary(diaryTable);
 
             Set<String> characterNames = new HashSet<>();
 
@@ -144,6 +141,22 @@ public class StoryBookBuilder {
 
                 Quest.Type type = Quest.Type.valueOf(quest.getString("type").toUpperCase());
 
+                Quest currentQuest;
+
+                try {
+                    if (type.equals(Quest.Type.MAIN)) {
+                        currentQuest = new MainQuest(this, quest, questName);
+                    } else {
+                        currentQuest = new OptionalQuest(this, quest, questName);
+                    }
+                } catch (StoryParseException e) {
+                    Server.printWarning(Plugin.STORY, e.getMessage(), "Book " + this.id,
+                            "Chapter " + chapterName, "Quest " + questName);
+                    continue;
+                }
+
+                loadedQuestByName.put(currentQuest.getName(), currentQuest);
+
                 StoryAction first = null;
                 StoryAction previous = null;
                 StoryAction current;
@@ -153,9 +166,8 @@ public class StoryBookBuilder {
                 for (int actionId = 1; quest.contains(String.valueOf(actionId)); actionId++) {
                     Toml action = quest.getTable(String.valueOf(actionId));
                     try {
-                        current = this.getActionFromFile(action, actionId);
-                    } catch (CharacterNotFoundException | ItemNotFoundException | UnknownLocationException
-                             | UnknownGuardTypeException | MissingArgumentException | InvalidArgumentTypeException e) {
+                        current = this.getActionFromFile(currentQuest, action, actionId);
+                    } catch (StoryParseException e) {
                         Server.printWarning(Plugin.STORY, e.getMessage(), "Book " + this.id,
                                 "Chapter " + chapterName, "Quest " + questName, "Action " + actionId);
                         continue;
@@ -176,18 +188,14 @@ public class StoryBookBuilder {
                     previous = current;
                 }
 
-                if (type.equals(Quest.Type.MAIN)) {
-                    loadedQuestByName.put(questName, new MainQuest(quest, questName, first));
-                } else {
-                    loadedQuestByName.put(questName, new OptionalQuest(quest, questName, first));
-                }
-
                 List<String> next = quest.getList("next");
                 nextQuestsByQuestName.put(questName, next);
 
                 if (next != null) {
                     questsToLoad.addAll(next);
                 }
+
+                currentQuest.setFirstAction(first);
 
                 Server.printText(Plugin.STORY, sb.toString(), "Book " + this.id, "Chapter " + chapterName,
                         "Quest " + questName);
@@ -232,9 +240,7 @@ public class StoryBookBuilder {
         return new StoryBook(this.id, bookName, chapterByName, characterByName, itemByName);
     }
 
-    private StoryAction getActionFromFile(Toml actionTable, int id)
-            throws CharacterNotFoundException, ItemNotFoundException, UnknownLocationException,
-            UnknownGuardTypeException, MissingArgumentException, InvalidArgumentTypeException {
+    private StoryAction getActionFromFile(Quest quest, Toml actionTable, int id) throws StoryParseException {
 
         String actionType = actionTable.getString("action");
 
@@ -245,17 +251,17 @@ public class StoryBookBuilder {
         List<Integer> diaryPages = actionTable.getList("diary");
 
         StoryAction action = switch (actionType.toLowerCase()) {
-            case TalkAction.NAME -> new TalkAction(this, actionTable, id, diaryPages);
-            case ItemCollectAction.NAME -> new ItemCollectAction(this, actionTable, id, diaryPages);
-            case ItemGiveAction.NAME -> new ItemGiveAction(this, actionTable, id, diaryPages);
-            case DelayAction.NAME -> new DelayAction(actionTable, id, diaryPages);
-            case ThoughtAction.NAME -> new ThoughtAction(actionTable, id, diaryPages);
-            case ClearInventoryAction.NAME -> new ClearInventoryAction(actionTable, id, diaryPages);
-            case ItemLootAction.NAME -> new ItemLootAction(this, actionTable, id, diaryPages);
-            case SpawnGuardAction.NAME -> new SpawnGuardAction(this, actionTable, id, diaryPages);
-            case BlockInteractAction.NAME -> new BlockInteractAction(this, actionTable, id, diaryPages);
-            case BlockBreakAction.NAME -> new BlockBreakAction(this, actionTable, id, diaryPages);
-            default -> new TriggerAction(actionTable, id, diaryPages);
+            case TalkAction.NAME -> new TalkAction(this, quest, actionTable, id, diaryPages);
+            case ItemCollectAction.NAME -> new ItemCollectAction(this, quest, actionTable, id, diaryPages);
+            case ItemGiveAction.NAME -> new ItemGiveAction(this, quest, actionTable, id, diaryPages);
+            case DelayAction.NAME -> new DelayAction(quest, actionTable, id, diaryPages);
+            case ThoughtAction.NAME -> new ThoughtAction(quest, actionTable, id, diaryPages);
+            case ClearInventoryAction.NAME -> new ClearInventoryAction(quest, actionTable, id, diaryPages);
+            case ItemLootAction.NAME -> new ItemLootAction(this, quest, actionTable, id, diaryPages);
+            case SpawnGuardAction.NAME -> new SpawnGuardAction(this, quest, actionTable, id, diaryPages);
+            case BlockInteractAction.NAME -> new BlockInteractAction(this, quest, actionTable, id, diaryPages);
+            case BlockBreakAction.NAME -> new BlockBreakAction(this, quest, actionTable, id, diaryPages);
+            default -> new TriggerAction(quest, actionTable, id, diaryPages);
         };
 
         if (!(action instanceof TriggeredAction triggeredAction)) {
@@ -271,11 +277,12 @@ public class StoryBookBuilder {
         switch (triggerType.toLowerCase()) {
             case AreaEvent.NAME -> triggeredAction.setTriggerEvent(new AreaEvent<>(triggeredAction, this, actionTable));
             case DropItemAtEvent.NAME ->
-                    triggeredAction.setTriggerEvent(new DropItemAtEvent<>(triggeredAction, this, actionTable));
+                    triggeredAction.setTriggerEvent(new DropItemAtEvent<>(quest, triggeredAction, this, actionTable));
             case DropItemEvent.NAME ->
-                    triggeredAction.setTriggerEvent(new DropItemEvent<>(triggeredAction, this, actionTable));
+                    triggeredAction.setTriggerEvent(new DropItemEvent<>(quest, triggeredAction, this, actionTable));
             case SleepEvent.NAME -> triggeredAction.setTriggerEvent(new SleepEvent<>(triggeredAction));
-            case ChatEvent.NAME -> triggeredAction.setTriggerEvent(new ChatEvent<>(triggeredAction, actionTable));
+            case ChatEvent.NAME ->
+                    triggeredAction.setTriggerEvent(new ChatEvent<>(quest, triggeredAction, actionTable));
             default -> Server.printWarning(Plugin.STORY, "Unknown trigger type: " + triggerType);
         }
 
@@ -299,4 +306,5 @@ public class StoryBookBuilder {
 
         return item;
     }
+
 }

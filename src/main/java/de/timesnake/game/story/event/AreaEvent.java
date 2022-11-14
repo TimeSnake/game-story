@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -19,24 +19,20 @@
 package de.timesnake.game.story.event;
 
 import com.moandjiezana.toml.Toml;
-import de.timesnake.basic.bukkit.util.Server;
-import de.timesnake.basic.bukkit.util.user.event.UserMoveEvent;
+import de.timesnake.basic.bukkit.util.user.event.AsyncUserMoveEvent;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.action.TriggeredAction;
 import de.timesnake.game.story.element.StoryCharacter;
-import de.timesnake.game.story.exception.CharacterNotFoundException;
 import de.timesnake.game.story.exception.MissingArgumentException;
-import de.timesnake.game.story.exception.UnknownLocationException;
-import de.timesnake.game.story.main.GameStory;
+import de.timesnake.game.story.exception.StoryParseException;
+import de.timesnake.game.story.listener.StoryEvent;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 
-public class AreaEvent<Action extends TriggeredAction> extends LocationEvent<Action> implements Listener {
+public class AreaEvent<Action extends TriggeredAction> extends LocationEvent<Action> {
 
     public static final String NAME = "area";
 
@@ -47,12 +43,9 @@ public class AreaEvent<Action extends TriggeredAction> extends LocationEvent<Act
     protected AreaEvent(ExLocation location, StoryCharacter<?> character, double radius) {
         super(location, character);
         this.radius = radius;
-
-        Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public AreaEvent(Action action, StoryBookBuilder bookBuilder, Toml trigger) throws CharacterNotFoundException,
-            UnknownLocationException, MissingArgumentException {
+    public AreaEvent(Action action, StoryBookBuilder bookBuilder, Toml trigger) throws StoryParseException {
         super(action, bookBuilder, trigger);
 
         Double radius;
@@ -70,14 +63,13 @@ public class AreaEvent<Action extends TriggeredAction> extends LocationEvent<Act
 
     }
 
-    public AreaEvent(Action action, StoryBookBuilder bookBuilder, Toml trigger, double radius)
-            throws CharacterNotFoundException, UnknownLocationException {
+    public AreaEvent(Action action, StoryBookBuilder bookBuilder, Toml trigger, double radius) throws StoryParseException {
         super(action, bookBuilder, trigger);
         this.radius = radius;
     }
 
-    @EventHandler
-    public void onUserMove(UserMoveEvent e) {
+    @StoryEvent
+    public void onUserMove(AsyncUserMoveEvent e) {
         if (this.action.getReader() == null || (!this.action.getReader().containsUser(((StoryUser) e.getUser()))
                 && !this.action.getReader().containsUser((StoryUser) e.getUser())) || !this.action.isActive()) {
             return;

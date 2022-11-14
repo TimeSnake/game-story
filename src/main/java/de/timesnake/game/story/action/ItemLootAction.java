@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -24,10 +24,9 @@ import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.element.StoryItem;
 import de.timesnake.game.story.event.AreaEvent;
 import de.timesnake.game.story.event.TriggerEvent;
-import de.timesnake.game.story.exception.CharacterNotFoundException;
-import de.timesnake.game.story.exception.ItemNotFoundException;
+import de.timesnake.game.story.exception.MissingArgumentException;
 import de.timesnake.game.story.exception.StoryGamePlayException;
-import de.timesnake.game.story.exception.UnknownLocationException;
+import de.timesnake.game.story.exception.StoryParseException;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
@@ -65,14 +64,20 @@ public class ItemLootAction extends LocationAction {
 
     }
 
-    public ItemLootAction(StoryBookBuilder bookBuilder, Toml action, int id, List<Integer> diaryPages)
-            throws CharacterNotFoundException, UnknownLocationException, ItemNotFoundException {
+    public ItemLootAction(StoryBookBuilder bookBuilder, Quest quest, Toml action, int id, List<Integer> diaryPages)
+            throws StoryParseException {
         super(bookBuilder, action, id, diaryPages);
 
         this.items = new LinkedList<>();
-        for (String name : action.getList("items", new LinkedList<String>())) {
-            this.items.add(bookBuilder.getItem(name));
+
+        if (action.contains("items")) {
+            for (Object name : action.getList("items")) {
+                this.items.add(bookBuilder.getItem(((String) name)));
+            }
+        } else {
+            throw new MissingArgumentException("items");
         }
+
 
         this.triggerEvent = new AreaEvent<>(this, bookBuilder, action, RADIUS);
     }

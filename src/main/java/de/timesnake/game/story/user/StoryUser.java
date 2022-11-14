@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -26,9 +26,13 @@ import de.timesnake.basic.bukkit.util.user.scoreboard.TablistBuilder;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.database.util.Database;
 import de.timesnake.game.story.book.StoryContentBook;
-import de.timesnake.game.story.element.TalkType;
+import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.StoryBook;
+import de.timesnake.library.basic.util.chat.ExTextColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.entity.Player;
 
 import java.util.*;
@@ -39,8 +43,13 @@ public class StoryUser extends User {
     private final Map<Integer, StoryContentBook> contentBookByStoryId = new HashMap<>();
     private final List<StoryUser> selectedUsers = new LinkedList<>();
     private final List<StoryUser> joinedUsers = new LinkedList<>();
+
     private StoryReader readerGroup;
+
     private boolean playing = false;
+
+    private Integer selectedBookId;
+    private String selectedChapterName;
 
     public StoryUser(Player player) {
         super(player);
@@ -76,12 +85,6 @@ public class StoryUser extends User {
     public void stopStory() {
         if (this.readerGroup != null) {
             this.readerGroup.removeUser(this);
-
-            if (readerGroup.getUsers().isEmpty()) {
-                readerGroup.destroy();
-            } else {
-                this.readerGroup.saveProgress();
-            }
         }
 
         this.playing = false;
@@ -127,16 +130,36 @@ public class StoryUser extends User {
         return selectedUsers;
     }
 
-    public void startBookPart(int bookId, String chapterName) {
+    public void prepareStoryChapter(int bookId, String chapterName) {
         List<StoryUser> users = new LinkedList<>(this.joinedUsers);
         users.add(this);
 
         this.selectedUsers.clear();
         this.joinedUsers.clear();
 
-        StoryReader readerGroup = new StoryReader(this, users, TalkType.TEXT);
+        StoryReader readerGroup = new StoryReader(this, users);
         users.forEach(u -> u.setReaderGroup(readerGroup));
-        readerGroup.startBookChapter(bookId, chapterName);
+
+        this.sendPluginMessage(Plugin.STORY, Component.text("Select talk type: ", ExTextColor.PERSONAL)
+                .append(Component.text("[ AUDIO ]", ExTextColor.VALUE)
+                        .hoverEvent(HoverEvent.showText(Component.text("Plays audio for the characters")))
+                        .clickEvent(ClickEvent.runCommand("/story talk audio")))
+                .append(Component.text(" [ TEXT ]", ExTextColor.VALUE)
+                        .hoverEvent(HoverEvent.showText(Component.text("Displays text above the characters")))
+                        .clickEvent(ClickEvent.runCommand("/story talk text"))));
+
+        this.selectedBookId = bookId;
+        this.selectedChapterName = chapterName;
+
+        this.setItem(8, UserManager.START_ITEM);
+    }
+
+    public void startStory() {
+        if (this.readerGroup == null || this.selectedBookId == null || this.selectedChapterName == null) {
+            return;
+        }
+
+        this.readerGroup.startBookChapter(this.selectedBookId, this.selectedChapterName);
     }
 
     public UserProgress getProgress() {

@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -21,8 +21,8 @@ package de.timesnake.game.story.action;
 import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.element.StoryCharacter;
-import de.timesnake.game.story.exception.CharacterNotFoundException;
-import de.timesnake.game.story.exception.UnknownLocationException;
+import de.timesnake.game.story.exception.MissingArgumentException;
+import de.timesnake.game.story.exception.StoryParseException;
 import de.timesnake.game.story.structure.StoryBookBuilder;
 
 import java.util.Collection;
@@ -39,8 +39,7 @@ public abstract class LocationAction extends TriggeredAction {
         this.character = character;
     }
 
-    public LocationAction(StoryBookBuilder bookBuilder, Toml action, int id, List<Integer> diaryPages)
-            throws CharacterNotFoundException, UnknownLocationException {
+    public LocationAction(StoryBookBuilder bookBuilder, Toml action, int id, List<Integer> diaryPages) throws StoryParseException {
         super(id, diaryPages);
 
         if (action.contains(LOCATION)) {
@@ -50,7 +49,7 @@ public abstract class LocationAction extends TriggeredAction {
             this.character = bookBuilder.getCharacter(action.getString(CHARACTER));
             this.location = this.character.getLocation();
         } else {
-            throw new UnknownLocationException();
+            throw new MissingArgumentException("location");
         }
     }
 

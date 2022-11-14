@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -23,10 +23,8 @@ import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.element.StoryItem;
 import de.timesnake.game.story.event.TriggerEvent;
-import de.timesnake.game.story.exception.CharacterNotFoundException;
-import de.timesnake.game.story.exception.ItemNotFoundException;
 import de.timesnake.game.story.exception.MissingArgumentException;
-import de.timesnake.game.story.exception.UnknownLocationException;
+import de.timesnake.game.story.exception.StoryParseException;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
@@ -62,8 +60,8 @@ public class ItemCollectAction extends LocationAction {
         this.itemAngle = itemAngle;
     }
 
-    public ItemCollectAction(StoryBookBuilder bookBuilder, Toml action, int id, List<Integer> diaryPages)
-            throws ItemNotFoundException, CharacterNotFoundException, UnknownLocationException, MissingArgumentException {
+    public ItemCollectAction(StoryBookBuilder bookBuilder, Quest quest, Toml action, int id, List<Integer> diaryPages)
+            throws StoryParseException {
         super(bookBuilder, action, id, diaryPages);
 
         String itemName = action.getString(ITEM);

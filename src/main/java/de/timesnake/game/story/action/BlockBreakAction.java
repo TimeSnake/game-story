@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -25,21 +25,19 @@ import de.timesnake.basic.bukkit.util.user.event.UserBlockBreakEvent;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.exception.InvalidArgumentTypeException;
 import de.timesnake.game.story.exception.MissingArgumentException;
-import de.timesnake.game.story.main.GameStory;
+import de.timesnake.game.story.listener.StoryEvent;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 import org.bukkit.Material;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 
 import java.awt.*;
 import java.util.LinkedList;
 import java.util.List;
 
-public class BlockBreakAction extends StoryAction implements Listener {
+public class BlockBreakAction extends StoryAction {
 
     public static final String NAME = "block_break";
 
@@ -50,11 +48,9 @@ public class BlockBreakAction extends StoryAction implements Listener {
         super(id, next);
         this.breakArea = breakArea;
         this.materials = materials;
-
-        Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public BlockBreakAction(StoryBookBuilder bookBuilder, Toml action, int id, List<Integer> diaryPages)
+    public BlockBreakAction(StoryBookBuilder bookBuilder, Quest quest, Toml action, int id, List<Integer> diaryPages)
             throws MissingArgumentException, InvalidArgumentTypeException {
         super(id, diaryPages);
 
@@ -95,7 +91,7 @@ public class BlockBreakAction extends StoryAction implements Listener {
         super.startNext();
     }
 
-    @EventHandler
+    @StoryEvent
     public void onUserBreakBlock(UserBlockBreakEvent e) {
         if (!this.isActive() && !this.getNext().isActive()) {
             return;

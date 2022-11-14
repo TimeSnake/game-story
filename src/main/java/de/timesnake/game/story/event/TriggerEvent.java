@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -19,19 +19,16 @@
 package de.timesnake.game.story.event;
 
 import de.timesnake.game.story.action.TriggeredAction;
+import de.timesnake.game.story.listener.StoryEventListener;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 
-public abstract class TriggerEvent<Action extends TriggeredAction> {
+public abstract class TriggerEvent<Action extends TriggeredAction> implements StoryEventListener {
 
     public static final String LOCATION = "location";
     public static final String CHARACTER = "character";
-    public static final String X = "x";
-    public static final String Y = "y";
-    public static final String Z = "z";
-
 
     protected Action action;
 

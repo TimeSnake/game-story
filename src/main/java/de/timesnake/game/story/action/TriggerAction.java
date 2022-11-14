@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@ public class TriggerAction extends TriggeredAction {
         super(id, next);
     }
 
-    public TriggerAction(Toml action, int id, List<Integer> diaryPages) {
+    public TriggerAction(Quest quest, Toml action, int id, List<Integer> diaryPages) {
         super(id, diaryPages);
     }
 

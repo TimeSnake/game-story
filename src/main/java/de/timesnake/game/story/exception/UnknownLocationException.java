@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -18,11 +18,7 @@
 
 package de.timesnake.game.story.exception;
 
-public class UnknownLocationException extends Exception {
-
-    public UnknownLocationException() {
-
-    }
+public class UnknownLocationException extends StoryParseException {
 
     public UnknownLocationException(String message) {
         super(message);

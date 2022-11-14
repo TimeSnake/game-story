@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -27,6 +27,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class GameStory extends JavaPlugin {
 
+    public static GameStory getPlugin() {
+        return plugin;
+    }
+
     private static GameStory plugin;
 
     @Override
@@ -39,11 +43,6 @@ public class GameStory extends JavaPlugin {
         plugin = this;
 
         Server.getCommandManager().addCommand(this, "story", new StoryCmd(), Plugin.STORY);
-
         StoryServerManager.getInstance().onStoryEnable();
-    }
-
-    public static GameStory getPlugin() {
-        return plugin;
     }
 }

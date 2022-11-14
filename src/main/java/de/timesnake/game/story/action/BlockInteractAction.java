@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -19,11 +19,12 @@
 package de.timesnake.game.story.action;
 
 import com.moandjiezana.toml.Toml;
+import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.event.TriggerEvent;
-import de.timesnake.game.story.exception.CharacterNotFoundException;
-import de.timesnake.game.story.exception.UnknownLocationException;
+import de.timesnake.game.story.exception.StoryParseException;
+import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
@@ -41,8 +42,8 @@ public class BlockInteractAction extends LocationAction {
         super(id, next, location, character);
     }
 
-    public BlockInteractAction(StoryBookBuilder bookBuilder, Toml action, int id, List<Integer> diaryPages)
-            throws CharacterNotFoundException, UnknownLocationException {
+    public BlockInteractAction(StoryBookBuilder bookBuilder, Quest quest, Toml action, int id, List<Integer> diaryPages)
+            throws StoryParseException {
         super(bookBuilder, action, id, diaryPages);
     }
 
@@ -59,16 +60,19 @@ public class BlockInteractAction extends LocationAction {
     }
 
     private void interact() {
-        BlockData blockData = this.location.getBlock().getBlockData();
-        if (blockData instanceof Openable openable) {
-            openable.setOpen(!openable.isOpen());
-        } else if (blockData instanceof Lightable lightable) {
-            lightable.setLit(!lightable.isLit());
-        } else if (blockData instanceof AnaloguePowerable powerable) {
-            powerable.setPower(powerable.getPower() == 0 ? 15 : 0);
-        } else if (blockData instanceof Powerable powerable) {
-            powerable.setPowered(!powerable.isPowered());
-        }
-        this.location.getBlock().setBlockData(blockData);
+        Server.runTaskSynchrony(() -> {
+            BlockData blockData = this.location.getBlock().getBlockData();
+            if (blockData instanceof Openable openable) {
+                openable.setOpen(!openable.isOpen());
+            } else if (blockData instanceof Lightable lightable) {
+                lightable.setLit(!lightable.isLit());
+            } else if (blockData instanceof AnaloguePowerable powerable) {
+                powerable.setPower(powerable.getPower() == 0 ? 15 : 0);
+            } else if (blockData instanceof Powerable powerable) {
+                powerable.setPowered(!powerable.isPowered());
+            }
+            this.location.getBlock().setBlockData(blockData);
+        }, GameStory.getPlugin());
+
     }
 }

@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -18,7 +18,7 @@
 
 package de.timesnake.game.story.exception;
 
-public class MissingArgumentException extends Exception {
+public class MissingArgumentException extends StoryParseException {
 
     public MissingArgumentException(String... type) {
         super("Missing '" + String.join("' or '", type) + "' argument");
