@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -21,6 +21,7 @@ package de.timesnake.game.story.structure;
 import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.action.StoryAction;
+import de.timesnake.game.story.exception.InvalidArgumentTypeException;
 import de.timesnake.game.story.exception.InvalidQuestException;
 import de.timesnake.game.story.user.StoryReader;
 
@@ -29,19 +30,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public non-sealed class OptionalQuest extends Quest {
 
     private final Map<String, OptionalQuest> nextQuestByName;
 
     public OptionalQuest(StoryChapter chapter, String name, StoryReader reader, ExLocation startLocation,
+                         Map<String, Supplier<?>> varSupplier,
                          Map<String, OptionalQuest> nextQuestByName, StoryAction firstAction) {
-        super(chapter, name, reader, startLocation, firstAction);
+        super(chapter, name, reader, startLocation, varSupplier, firstAction);
         this.nextQuestByName = nextQuestByName;
     }
 
-    public OptionalQuest(Toml quest, String name, StoryAction firstAction) {
-        super(quest, name, firstAction);
+    public OptionalQuest(StoryBookBuilder bookBuilder, Toml quest, String name) throws InvalidArgumentTypeException {
+        super(bookBuilder, quest, name);
         this.nextQuestByName = new HashMap<>();
     }
 
@@ -51,7 +54,8 @@ public non-sealed class OptionalQuest extends Quest {
         for (OptionalQuest quest : this.nextQuestByName.values()) {
             clonedNextQuests.put(quest.getName(), quest.clone(chapter, reader));
         }
-        return new OptionalQuest(chapter, this.name, reader, this.startLocation, clonedNextQuests, this.firstAction);
+        return new OptionalQuest(chapter, this.name, reader, this.startLocation,
+                this.varSupplier, clonedNextQuests, this.firstAction);
     }
 
     @Override

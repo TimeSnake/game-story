@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -23,8 +23,6 @@ import de.timesnake.basic.bukkit.util.user.ExItemStack;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.library.basic.util.chat.ExTextColor;
 import net.kyori.adventure.text.Component;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Material;
 import org.bukkit.inventory.meta.BookMeta;
 
@@ -34,18 +32,18 @@ public class Diary {
 
     private final ExItemStack book;
 
-    private final HashMap<Integer, BaseComponent[]> pagesByNumber;
+    private final HashMap<Integer, Component> pagesByNumber;
     private final Set<Integer> writtenPages = new HashSet<>();
     private StoryReader reader;
 
-    public Diary(StoryReader reader, HashMap<Integer, BaseComponent[]> pagesByNumber,
+    public Diary(StoryReader reader, HashMap<Integer, Component> pagesByNumber,
                  ExItemStack book) {
         this.reader = reader;
         this.pagesByNumber = pagesByNumber;
         this.book = book;
     }
 
-    public Diary(Toml toml, String chapterName) {
+    public Diary(Toml toml) {
         this.pagesByNumber = new HashMap<>();
 
         this.book = new ExItemStack(Material.WRITTEN_BOOK).setDropable(false).setMoveable(false);
@@ -54,17 +52,18 @@ public class Diary {
             int pageNumber = Integer.parseInt(entry.getKey());
             List<String> text = (List<String>) entry.getValue();
 
-            BaseComponent[] components = new BaseComponent[text.size()];
+            Component component = Component.empty();
 
-            for (int i = 0; i < text.size(); i++) {
-                components[i] = new TextComponent(text.get(i) + "\n");
+            for (String s : text) {
+                component = component.append(Component.text(s)
+                        .append(Component.newline()));
             }
 
-            this.pagesByNumber.put(pageNumber, components);
+            this.pagesByNumber.put(pageNumber, component);
         }
 
         BookMeta meta = ((BookMeta) this.book.getItemMeta());
-        meta.spigot().setPages(new BaseComponent[]{new TextComponent()});
+        meta.addPages(Component.empty());
 
         meta.setAuthor("Yourself");
         meta.setTitle("Diary");
@@ -78,32 +77,22 @@ public class Diary {
 
     public void loadPage(Integer... pageNumbers) {
         BookMeta meta = (BookMeta) this.book.getItemMeta();
-        meta.spigot().setPages();
 
         this.writtenPages.addAll(Arrays.asList(pageNumbers));
 
         int pages = this.writtenPages.size() > 0 ? Collections.max(this.writtenPages) : 1;
 
         for (int page = 1; page <= pages; page++) {
-            BaseComponent[] text = this.pagesByNumber.get(page);
-
-            boolean exists = true;
-
-            try {
-                meta.getPage(page);
-            } catch (IllegalArgumentException e) {
-                exists = false;
-            }
-
-            if (text != null && (this.writtenPages.contains(page) || !exists)) {
-                meta.spigot().addPage(text);
+            Component text = this.pagesByNumber.get(page);
+            if (meta.getPageCount() < page) {
+                meta.addPages(text);
             } else {
-                meta.spigot().setPage(page, this.pagesByNumber.get(page));
+                meta.page(page, this.pagesByNumber.get(page));
             }
         }
 
         if (!meta.hasPages()) {
-            meta.spigot().setPages(new BaseComponent[]{});
+            meta.addPages(Component.empty());
         }
 
         meta.setAuthor("Yourself");

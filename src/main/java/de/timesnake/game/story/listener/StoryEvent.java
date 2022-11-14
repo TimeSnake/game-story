@@ -16,11 +16,14 @@
  * along with this program; If not, see <http://www.gnu.org/licenses/>.
  */
 
-package de.timesnake.game.story.exception;
+package de.timesnake.game.story.listener;
 
-public class InvalidArgumentTypeException extends StoryParseException {
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-    public InvalidArgumentTypeException(String message) {
-        super(message);
-    }
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface StoryEvent {
 }

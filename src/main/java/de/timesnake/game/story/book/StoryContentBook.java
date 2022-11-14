@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -60,9 +60,9 @@ public class StoryContentBook {
                 mainPage = mainPage
                         .append(Component.text(romanChapterId).decorate(TextDecoration.BOLD))
                         .append(Component.text(" " + chapter.getDisplayName())
-                                .append(Component.text(" [", ExTextColor.DARK_GRAY))
-                                .append(Chat.listToComponent(chapter.getPlayerSizes(), ExTextColor.DARK_GRAY, ExTextColor.DARK_GRAY))
-                                .append(Component.text("]", ExTextColor.DARK_GRAY)).decoration(TextDecoration.BOLD, false));
+                                .append(Component.text(" 웃"))
+                                .append(Chat.listToComponent(chapter.getPlayerSizes()))
+                                .decoration(TextDecoration.BOLD, false));
 
                 if (!boughtChapters.contains(chapter.getName())) {
                     mainPage = mainPage

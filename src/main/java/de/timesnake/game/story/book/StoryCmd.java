@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -23,11 +23,13 @@ import de.timesnake.basic.bukkit.util.chat.Argument;
 import de.timesnake.basic.bukkit.util.chat.CommandListener;
 import de.timesnake.basic.bukkit.util.chat.Sender;
 import de.timesnake.game.story.chat.Plugin;
+import de.timesnake.game.story.element.TalkType;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.StoryBook;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.library.basic.util.chat.ExTextColor;
+import de.timesnake.library.extension.util.chat.Code;
 import de.timesnake.library.extension.util.cmd.Arguments;
 import de.timesnake.library.extension.util.cmd.ExCommand;
 import net.kyori.adventure.text.Component;
@@ -35,6 +37,8 @@ import net.kyori.adventure.text.Component;
 import java.util.List;
 
 public class StoryCmd implements CommandListener {
+
+    private Code.Help talkTypeNotExists;
 
     @Override
     public void onCommand(Sender sender, ExCommand<Sender, Argument> cmd, Arguments<Argument> args) {
@@ -82,6 +86,26 @@ public class StoryCmd implements CommandListener {
             }
 
              */
+        } else if (args.getString(0).equalsIgnoreCase("talk")) {
+            String typeString = args.getString(1).toUpperCase();
+            TalkType type = TalkType.valueOf(typeString);
+
+            if (type == null) {
+                sender.sendMessageNotExist("talk-type", this.talkTypeNotExists, typeString);
+                return;
+            }
+
+            if (user.getReaderGroup() == null) {
+                sender.sendPluginMessage(Component.text("Can not set talk-type, no story selected", ExTextColor.WARNING));
+                return;
+            }
+
+            boolean successful = user.getReaderGroup().setTalkType(type);
+            if (successful) {
+                user.sendPluginMessage(Plugin.STORY, Component.text("Updated talk type to ", ExTextColor.PERSONAL)
+                        .append(Component.text(typeString, ExTextColor.VALUE)));
+                user.sendPluginMessage(Plugin.STORY, Component.text("Click on start if done", ExTextColor.WARNING));
+            }
         } else {
             if (!args.get(0).isInt(true)) {
                 return;
@@ -136,7 +160,7 @@ public class StoryCmd implements CommandListener {
             }
 
 
-            user.startBookPart(bookId, chapterName);
+            user.prepareStoryChapter(bookId, chapterName);
         }
     }
 
@@ -154,6 +178,6 @@ public class StoryCmd implements CommandListener {
 
     @Override
     public void loadCodes(de.timesnake.library.extension.util.chat.Plugin plugin) {
-
+        this.talkTypeNotExists = plugin.createHelpCode("xnt", "talk-type not exists");
     }
 }

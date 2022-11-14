@@ -16,11 +16,7 @@
  * along with this program; If not, see <http://www.gnu.org/licenses/>.
  */
 
-package de.timesnake.game.story.exception;
+package de.timesnake.game.story.listener;
 
-public class InvalidArgumentTypeException extends StoryParseException {
-
-    public InvalidArgumentTypeException(String message) {
-        super(message);
-    }
+public interface StoryEventListener {
 }

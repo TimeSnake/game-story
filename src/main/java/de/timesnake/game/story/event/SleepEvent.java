@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -20,23 +20,20 @@ package de.timesnake.game.story.event;
 
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.game.story.action.TriggeredAction;
-import de.timesnake.game.story.main.GameStory;
+import de.timesnake.game.story.listener.StoryEvent;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 import org.bukkit.event.Event;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerBedEnterEvent;
 
-public class SleepEvent<Action extends TriggeredAction> extends TriggerEvent<Action> implements Listener {
+public class SleepEvent<Action extends TriggeredAction> extends TriggerEvent<Action> {
 
     public static final String NAME = "sleep";
 
     public SleepEvent() {
         super();
-        Server.registerListener(this, GameStory.getPlugin());
     }
 
     public SleepEvent(Action action) {
@@ -53,7 +50,7 @@ public class SleepEvent<Action extends TriggeredAction> extends TriggerEvent<Act
         return Type.SLEEP;
     }
 
-    @EventHandler
+    @StoryEvent
     public void onPlayerSleep(PlayerBedEnterEvent e) {
         if (!this.action.isActive()) {
             return;

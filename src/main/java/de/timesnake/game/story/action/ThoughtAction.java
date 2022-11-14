@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -23,40 +23,37 @@ import de.timesnake.basic.bukkit.core.user.UserPlayerDelegation;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.game.story.event.TriggerEvent;
 import de.timesnake.game.story.exception.MissingArgumentException;
+import de.timesnake.game.story.listener.StoryEvent;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 import net.kyori.adventure.text.Component;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.function.Supplier;
 
-public class ThoughtAction extends TriggeredAction implements Listener {
+public class ThoughtAction extends TriggeredAction {
 
     public static final String NAME = "thought";
 
-    private final List<String> messages;
+    private final List<Supplier<String>> messages;
     private int messageIndex = 0;
 
     private boolean delaying = false;
 
-    protected ThoughtAction(int id, StoryAction next, List<String> messages) {
+    protected ThoughtAction(int id, StoryAction next, List<Supplier<String>> messages) {
         super(id, next);
         this.messages = messages;
-
-        Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public ThoughtAction(Toml action, int id, List<Integer> diaryPages) throws MissingArgumentException {
+    public ThoughtAction(Quest quest, Toml action, int id, List<Integer> diaryPages) throws MissingArgumentException {
         super(id, diaryPages);
 
-        this.messages = action.getList(MESSAGES);
-
+        this.messages = action.getList(MESSAGES).stream().map(m -> quest.parseString(((String) m))).toList();
         if (this.messages == null) {
             throw new MissingArgumentException("messages");
         }
@@ -75,12 +72,13 @@ public class ThoughtAction extends TriggeredAction implements Listener {
         }
 
         this.reader.forEach(UserPlayerDelegation::resetTitle);
-        this.reader.forEach(u -> u.showTitle(Component.empty(), Component.text(this.messages.get(this.messageIndex)), Duration.ofSeconds(20)));
+        this.reader.forEach(u -> u.showTitle(Component.empty(),
+                Component.text(this.messages.get(this.messageIndex).get()), Duration.ofSeconds(20)));
 
         this.messageIndex++;
     }
 
-    @EventHandler
+    @StoryEvent
     public void onPlayerToggleSneak(PlayerToggleSneakEvent e) {
         StoryUser user = (StoryUser) Server.getUser(e.getPlayer());
 

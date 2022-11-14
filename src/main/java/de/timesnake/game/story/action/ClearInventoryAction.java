@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -36,7 +36,7 @@ public class ClearInventoryAction extends TriggeredAction {
         super(id, next);
     }
 
-    public ClearInventoryAction(Toml action, int id, List<Integer> diaryPages) {
+    public ClearInventoryAction(Quest quest, Toml action, int id, List<Integer> diaryPages) {
         super(id, diaryPages);
     }
 

@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -19,6 +19,7 @@
 package de.timesnake.game.story.action;
 
 import de.timesnake.game.story.event.TriggerEvent;
+import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
@@ -57,7 +58,17 @@ public abstract class TriggeredAction extends StoryAction {
 
         if (this.triggerEvent == null) {
             this.trigger(TriggerEvent.Type.START, this.reader.anyUser());
+        } else {
+            StoryServer.getEventManager().registerListeners(this.triggerEvent);
         }
+    }
+
+    @Override
+    public void startNext() {
+        if (this.triggerEvent != null) {
+            StoryServer.getEventManager().unregisterListeners(this.triggerEvent);
+        }
+        super.startNext();
     }
 
     public abstract void trigger(TriggerEvent.Type type, StoryUser user);

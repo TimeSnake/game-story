@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -19,6 +19,7 @@
 package de.timesnake.game.story.server;
 
 import de.timesnake.basic.bukkit.util.world.ExWorld;
+import de.timesnake.game.story.listener.EventManager;
 import de.timesnake.game.story.structure.StoryBook;
 
 import java.util.Collection;
@@ -37,6 +38,10 @@ public class StoryServer {
 
     public static ExWorld getBaseWorld() {
         return server.getBaseWorld();
+    }
+
+    public static EventManager getEventManager() {
+        return server.getEventManager();
     }
 
     private static final StoryServerManager server = StoryServerManager.getInstance();

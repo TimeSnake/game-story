@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -18,7 +18,7 @@
 
 package de.timesnake.game.story.exception;
 
-public class CharacterNotFoundException extends Exception {
+public class CharacterNotFoundException extends StoryParseException {
 
     public CharacterNotFoundException(String name) {
         super("Could not find character '" + name + "'");

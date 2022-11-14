@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -19,13 +19,13 @@
 package de.timesnake.game.story.action;
 
 import com.moandjiezana.toml.Toml;
+import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.event.TriggerEvent;
-import de.timesnake.game.story.exception.CharacterNotFoundException;
-import de.timesnake.game.story.exception.MissingArgumentException;
+import de.timesnake.game.story.exception.StoryParseException;
 import de.timesnake.game.story.exception.UnknownGuardTypeException;
-import de.timesnake.game.story.exception.UnknownLocationException;
+import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
@@ -33,12 +33,14 @@ import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.library.entities.EntityManager;
 import de.timesnake.library.entities.entity.bukkit.ExPillager;
+import de.timesnake.library.entities.entity.bukkit.ExRavager;
 import de.timesnake.library.entities.entity.bukkit.ExVindicator;
 import de.timesnake.library.entities.entity.bukkit.HumanEntity;
 import de.timesnake.library.entities.entity.extension.Mob;
 import de.timesnake.library.entities.entity.extension.Monster;
 import de.timesnake.library.entities.pathfinder.ExPathfinderGoalCrossbowAttack;
 import de.timesnake.library.entities.pathfinder.ExPathfinderGoalFloat;
+import de.timesnake.library.entities.pathfinder.ExPathfinderGoalRandomStrollLand;
 import de.timesnake.library.entities.pathfinder.custom.*;
 import de.timesnake.library.reflection.wrapper.ExEnumItemSlot;
 import org.bukkit.Location;
@@ -48,33 +50,29 @@ import org.bukkit.inventory.ItemStack;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 public class SpawnGuardAction extends LocationAction {
 
     public static final String NAME = "spawn_guard";
 
-    private final int amount;
+    private final Supplier<Integer> amount;
     private final GuardType type;
     private final Set<Mob> guards = new HashSet<>();
 
     protected SpawnGuardAction(int id, StoryAction next, ExLocation location, StoryCharacter<?> character,
-                               int amount, GuardType type) {
+                               Supplier<Integer> amount, GuardType type) {
         super(id, next, location, character);
         this.amount = amount;
         this.type = type;
     }
 
-    public SpawnGuardAction(StoryBookBuilder bookBuilder, Toml action, int id, List<Integer> diaryPages)
-            throws CharacterNotFoundException, UnknownLocationException, UnknownGuardTypeException, MissingArgumentException {
+    public SpawnGuardAction(StoryBookBuilder bookBuilder, Quest quest, Toml action, int id, List<Integer> diaryPages)
+            throws StoryParseException {
         super(bookBuilder, action, id, diaryPages);
 
-        Long size = action.getLong("amount");
+        this.amount = quest.parseAdvancedInt(action, "amount");
 
-        if (size == null) {
-            throw new MissingArgumentException("amount");
-        }
-
-        this.amount = size.intValue();
         this.type = GuardType.fromString(action.getString("guard_type"));
 
         if (this.type == null) {
@@ -95,11 +93,13 @@ public class SpawnGuardAction extends LocationAction {
     }
 
     private void spawn() {
-        for (int i = 0; i < this.amount; i++) {
-            Mob mob = type.create(this.location);
-            this.guards.add(mob);
-            EntityManager.spawnEntity(mob);
-        }
+        Server.runTaskSynchrony(() -> {
+            for (int i = 0; i < this.amount.get(); i++) {
+                Mob mob = type.create(this.location);
+                this.guards.add(mob);
+                EntityManager.spawnEntity(mob);
+            }
+        }, GameStory.getPlugin());
     }
 
     public enum GuardType {
@@ -135,39 +135,35 @@ public class SpawnGuardAction extends LocationAction {
                 vindicator.setPosition(location.getX(), location.getY(), location.getZ());
                 vindicator.setSlot(ExEnumItemSlot.MAIN_HAND, new ItemStack(Material.IRON_AXE));
 
-                /*
-                vindicator.addPathfinderGoal(0, new PathfinderGoalFloat(this));
-                vindicator.addPathfinderGoal(1, new EntityVindicator.a(this));
-                vindicator.addPathfinderGoal(2, new EntityIllagerAbstract.b(this, this));
-                vindicator.addPathfinderGoal(3, new EntityRaider.a(this, this, 10.0F));
-                vindicator.addPathfinderGoal(4, new EntityVindicator.c(this));
-                vindicator.addPathfinderGoal(1, (new PathfinderGoalHurtByTarget(this, new Class[]{EntityRaider.class})).a(new Class[0]));
-                vindicator.addPathfinderGoal(2, new PathfinderGoalNearestAttackableTarget(this, EntityHuman.class, true));
-                vindicator.addPathfinderGoal(3, new PathfinderGoalNearestAttackableTarget(this, EntityVillagerAbstract.class, true));
-                vindicator.addPathfinderGoal(3, new PathfinderGoalNearestAttackableTarget(this, EntityIronGolem.class, true));
-                vindicator.addPathfinderGoal(4, new EntityVindicator.b(this));
-                vindicator.addPathfinderGoal(8, new PathfinderGoalRandomStroll(this, 0.6));
-                vindicator.addPathfinderGoal(9, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 3.0F, 1.0F));
-                vindicator.addPathfinderGoal(10, new PathfinderGoalLookAtPlayer(this, EntityInsentient.class, 8.0F));
-
                 vindicator.addPathfinderGoal(0, new ExPathfinderGoalFloat());
-                vindicator.addPathfinderGoal(4, getCorePathfinder(this.getMapType(), 0.7, breakBlock, BREAK_LEVEL));
-                vindicator.addPathfinderGoal(4, breakBlock);
-                vindicator.addPathfinderGoal(8, new ExCustomPathfinderGoalRandomStroll(0.6));
-                vindicator.addPathfinderGoal(9, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class));
-                vindicator.addPathfinderGoal(10, new ExCustomPathfinderGoalLookAtPlayer(Mob.class));
-
-
-                 */
-                vindicator.addPathfinderGoal(1, new ExCustomPathfinderGoalHurtByTarget(Monster.class));
-
-                vindicator.addPathfinderGoal(0, new ExPathfinderGoalFloat());
-                vindicator.addPathfinderGoal(3, new ExPathfinderGoalCrossbowAttack(1.0, 15.0F));
+                vindicator.addPathfinderGoal(3, new ExCustomPathfinderGoalMeleeAttackVindicator(1.1));
                 vindicator.addPathfinderGoal(4, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
                         location.getZ(), 0.9, 32, 5));
                 vindicator.addPathfinderGoal(8, new ExCustomPathfinderGoalRandomStroll(0.6));
                 vindicator.addPathfinderGoal(9, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class));
                 vindicator.addPathfinderGoal(10, new ExCustomPathfinderGoalLookAtPlayer(Mob.class));
+
+                vindicator.addPathfinderGoal(1, new ExCustomPathfinderGoalHurtByTarget(Monster.class));
+                vindicator.addPathfinderGoal(2, new ExCustomPathfinderGoalNearestAttackableTarget(HumanEntity.class,
+                        20.0));
+
+                return vindicator;
+            }
+        },
+
+        RAVAGER() {
+            @Override
+            public Mob create(Location location) {
+                ExRavager vindicator = new ExRavager(location.getWorld(), false, false);
+                vindicator.setPosition(location.getX(), location.getY(), location.getZ());
+
+                vindicator.addPathfinderGoal(0, new ExPathfinderGoalFloat());
+                vindicator.addPathfinderGoal(3, new ExCustomPathfinderGoalMeleeAttackRavager(1));
+                vindicator.addPathfinderGoal(4, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
+                        location.getZ(), 0.9, 32, 5));
+                vindicator.addPathfinderGoal(5, new ExPathfinderGoalRandomStrollLand(0.4));
+                vindicator.addPathfinderGoal(6, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class, 6.0F));
+                vindicator.addPathfinderGoal(10, new ExCustomPathfinderGoalLookAtPlayer(Mob.class, 8.0F));
 
                 vindicator.addPathfinderGoal(1, new ExCustomPathfinderGoalHurtByTarget(Monster.class));
                 vindicator.addPathfinderGoal(2, new ExCustomPathfinderGoalNearestAttackableTarget(HumanEntity.class,

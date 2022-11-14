@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -22,6 +22,7 @@ import com.google.common.collect.Streams;
 import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.action.StoryAction;
+import de.timesnake.game.story.exception.InvalidArgumentTypeException;
 import de.timesnake.game.story.exception.InvalidQuestException;
 import de.timesnake.game.story.user.StoryReader;
 
@@ -29,22 +30,26 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public non-sealed class MainQuest extends Quest {
 
     protected final Map<String, MainQuest> nextMainQuestByName;
     protected final Map<String, OptionalQuest> nextOptionalQuestByName;
 
+    protected boolean finished = false;
+
     public MainQuest(StoryChapter chapter, String name, StoryReader reader, ExLocation startLocation,
+                     Map<String, Supplier<?>> varSupplier,
                      Map<String, MainQuest> nextMainQuestByName,
                      Map<String, OptionalQuest> nextOptionalQuestByName, StoryAction firstAction) {
-        super(chapter, name, reader, startLocation, firstAction);
+        super(chapter, name, reader, startLocation, varSupplier, firstAction);
         this.nextMainQuestByName = nextMainQuestByName;
         this.nextOptionalQuestByName = nextOptionalQuestByName;
     }
 
-    public MainQuest(Toml quest, String name, StoryAction firstAction) {
-        super(quest, name, firstAction);
+    public MainQuest(StoryBookBuilder bookBuilder, Toml quest, String name) throws InvalidArgumentTypeException {
+        super(bookBuilder, quest, name);
         this.nextMainQuestByName = new HashMap<>();
         this.nextOptionalQuestByName = new HashMap<>();
     }
@@ -62,8 +67,8 @@ public non-sealed class MainQuest extends Quest {
             clonedNextOptionalQuests.put(quest.getName(), quest.clone(chapter, reader));
         }
 
-        return new MainQuest(chapter, this.name, reader, this.startLocation, clonedNextMainQuests,
-                clonedNextOptionalQuests, this.firstAction);
+        return new MainQuest(chapter, this.name, reader, this.startLocation, this.varSupplier,
+                clonedNextMainQuests, clonedNextOptionalQuests, this.firstAction);
     }
 
     @Override
@@ -79,6 +84,8 @@ public non-sealed class MainQuest extends Quest {
 
     @Override
     public MainQuest nextQuest() {
+        this.finished = true;
+
         if (this.nextMainQuestByName.size() == 0) {
             return null;
         }
@@ -118,5 +125,12 @@ public non-sealed class MainQuest extends Quest {
     public List<? extends Quest> getNextQuests() {
         return Streams.concat(this.nextMainQuestByName.values().stream(),
                 this.nextOptionalQuestByName.values().stream()).toList();
+    }
+
+    @Override
+    public void start(boolean teleport, boolean spawnEntities) {
+        if (!this.finished) {
+            super.start(teleport, spawnEntities);
+        }
     }
 }

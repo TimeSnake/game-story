@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -22,8 +22,8 @@ import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.action.TriggeredAction;
 import de.timesnake.game.story.element.StoryCharacter;
-import de.timesnake.game.story.exception.CharacterNotFoundException;
-import de.timesnake.game.story.exception.UnknownLocationException;
+import de.timesnake.game.story.exception.MissingArgumentException;
+import de.timesnake.game.story.exception.StoryParseException;
 import de.timesnake.game.story.structure.StoryBookBuilder;
 
 public abstract class LocationEvent<Action extends TriggeredAction> extends TriggerEvent<Action> {
@@ -37,8 +37,7 @@ public abstract class LocationEvent<Action extends TriggeredAction> extends Trig
         this.character = character;
     }
 
-    public LocationEvent(Action action, StoryBookBuilder bookBuilder, Toml trigger) throws CharacterNotFoundException,
-            UnknownLocationException {
+    public LocationEvent(Action action, StoryBookBuilder bookBuilder, Toml trigger) throws StoryParseException {
         super(action);
 
         if (trigger.contains(CHARACTER)) {
@@ -52,7 +51,7 @@ public abstract class LocationEvent<Action extends TriggeredAction> extends Trig
         } else if (trigger.contains(CHARACTER)) {
             this.location = this.character.getLocation();
         } else {
-            throw new UnknownLocationException();
+            throw new MissingArgumentException("location");
         }
     }
 

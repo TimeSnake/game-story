@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -33,6 +33,7 @@ import de.timesnake.library.basic.util.chat.ExTextColor;
 import net.kyori.adventure.text.Component;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Action> implements UserChatCommandListener {
 
@@ -40,10 +41,10 @@ public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Acti
 
     private static final String CODE = "code";
 
-    private final List<String> codes;
+    private final List<Supplier<String>> codes;
     private StoryReader reader;
 
-    protected ChatEvent(StoryReader reader, List<String> codes) {
+    protected ChatEvent(StoryReader reader, List<Supplier<String>> codes) {
         super();
         this.codes = codes;
         this.reader = reader;
@@ -51,12 +52,12 @@ public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Acti
         this.reader.forEach(u -> Server.getUserEventManager().addUserChatCommand(u, this));
     }
 
-    public ChatEvent(Action action, Toml trigger) throws MissingArgumentException {
+    public ChatEvent(Quest quest, Action action, Toml trigger) throws MissingArgumentException {
         super(action);
         if (trigger.containsPrimitive(CODE)) {
-            this.codes = List.of(trigger.getString(CODE));
+            this.codes = List.of(quest.parseString(trigger.getString(CODE)));
         } else {
-            this.codes = trigger.getList(CODE);
+            this.codes = trigger.getList(CODE).stream().map(m -> quest.parseString(((String) m))).toList();
         }
 
         if (this.codes == null) {
@@ -84,7 +85,7 @@ public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Acti
 
         Server.printText(Plugin.STORY, Server.getChatManager().getSenderMember(event.getUser()) + event.getMessage());
 
-        if (!this.codes.contains(event.getMessage())) {
+        if (this.codes.stream().anyMatch(c -> c.get().equals(event.getMessage()))) {
             event.removeLisener(false);
             event.setCancelled(true);
             event.getUser().sendMessage(Server.getChat().getSenderMember(event.getUser()) + "§7" + event.getMessage());

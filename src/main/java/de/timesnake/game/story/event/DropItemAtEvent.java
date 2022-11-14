@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -26,7 +26,10 @@ import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.action.TriggeredAction;
 import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.element.StoryItem;
-import de.timesnake.game.story.exception.*;
+import de.timesnake.game.story.exception.InvalidArgumentTypeException;
+import de.timesnake.game.story.exception.MissingArgumentException;
+import de.timesnake.game.story.exception.StoryParseException;
+import de.timesnake.game.story.listener.StoryEvent;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBookBuilder;
@@ -34,30 +37,27 @@ import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 import org.bukkit.Material;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 
-public class DropItemAtEvent<Action extends TriggeredAction> extends LocationEvent<Action> implements Listener {
+import java.util.function.Supplier;
+
+public class DropItemAtEvent<Action extends TriggeredAction> extends LocationEvent<Action> {
 
     public static final String NAME = "drop_at";
 
-    private final int amount;
+    private final Supplier<Integer> amount;
     private StoryItem item;
     private Material material;
     private boolean dropped = false;
 
     protected DropItemAtEvent(ExLocation location, StoryCharacter<?> character, StoryItem item, Material material,
-                              int amount) {
+                              Supplier<Integer> amount) {
         super(location, character);
         this.item = item;
         this.material = material;
         this.amount = amount;
-
-        Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public DropItemAtEvent(Action action, StoryBookBuilder bookBuilder, Toml trigger) throws ItemNotFoundException,
-            CharacterNotFoundException, UnknownLocationException, MissingArgumentException, InvalidArgumentTypeException {
+    public DropItemAtEvent(Quest quest, Action action, StoryBookBuilder bookBuilder, Toml trigger) throws StoryParseException {
         super(action, bookBuilder, trigger);
 
         if (trigger.contains("item")) {
@@ -76,19 +76,16 @@ public class DropItemAtEvent<Action extends TriggeredAction> extends LocationEve
             throw new MissingArgumentException("item", "material");
         }
 
-        if (trigger.contains("amount")) {
-            Long amount = trigger.getLong("amount");
-            if (amount == null) {
-                throw new InvalidArgumentTypeException("invalid item amount");
-            }
-
-            this.amount = amount.intValue();
-        } else {
-            this.amount = 1;
+        Supplier<Integer> amount;
+        try {
+            amount = quest.parseAdvancedInt(trigger, "amount");
+        } catch (MissingArgumentException e) {
+            amount = () -> 1;
         }
+        this.amount = amount;
     }
 
-    @EventHandler
+    @StoryEvent
     public void onUserDropItem(UserDropItemEvent e) {
 
         StoryUser user = (StoryUser) e.getUser();

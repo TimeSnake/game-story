@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -27,6 +27,7 @@ import de.timesnake.game.story.element.StoryItem;
 import de.timesnake.game.story.exception.InvalidArgumentTypeException;
 import de.timesnake.game.story.exception.ItemNotFoundException;
 import de.timesnake.game.story.exception.MissingArgumentException;
+import de.timesnake.game.story.listener.StoryEvent;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBookBuilder;
@@ -34,10 +35,10 @@ import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 import org.bukkit.Material;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 
-public class DropItemEvent<Action extends TriggeredAction> extends TriggerEvent<Action> implements Listener {
+import java.util.function.Supplier;
+
+public class DropItemEvent<Action extends TriggeredAction> extends TriggerEvent<Action> {
 
     public static final String NAME = "drop";
 
@@ -45,21 +46,19 @@ public class DropItemEvent<Action extends TriggeredAction> extends TriggerEvent<
     private static final String CLEAR_ITEM = "clear";
 
     protected final boolean clearItem;
-    private final int amount;
+    private final Supplier<Integer> amount;
     private StoryItem item;
     private Material material;
 
-    protected DropItemEvent(StoryItem item, Material material, int amount, boolean clearItem) {
+    protected DropItemEvent(StoryItem item, Material material, Supplier<Integer> amount, boolean clearItem) {
         super();
         this.item = item;
         this.material = material;
         this.amount = amount;
         this.clearItem = clearItem;
-
-        Server.registerListener(this, GameStory.getPlugin());
     }
 
-    public DropItemEvent(Action action, StoryBookBuilder bookBuilder, Toml trigger)
+    public DropItemEvent(Quest quest, Action action, StoryBookBuilder bookBuilder, Toml trigger)
             throws ItemNotFoundException, MissingArgumentException, InvalidArgumentTypeException {
         super(action);
 
@@ -79,16 +78,13 @@ public class DropItemEvent<Action extends TriggeredAction> extends TriggerEvent<
             throw new MissingArgumentException("item", "material");
         }
 
-        if (trigger.contains("amount")) {
-            Long amount = trigger.getLong("amount");
-            if (amount == null) {
-                throw new InvalidArgumentTypeException("invalid item amount");
-            }
-
-            this.amount = amount.intValue();
-        } else {
-            this.amount = 1;
+        Supplier<Integer> amount;
+        try {
+            amount = quest.parseAdvancedInt(trigger, "amount");
+        } catch (MissingArgumentException e) {
+            amount = () -> 1;
         }
+        this.amount = amount;
 
         this.clearItem = trigger.getBoolean(CLEAR_ITEM).equals(Boolean.TRUE);
     }
@@ -104,7 +100,7 @@ public class DropItemEvent<Action extends TriggeredAction> extends TriggerEvent<
         return Type.DROP_ITEM;
     }
 
-    @EventHandler
+    @StoryEvent
     public void onUserDropItem(UserDropItemEvent e) {
 
         StoryUser user = (StoryUser) e.getUser();

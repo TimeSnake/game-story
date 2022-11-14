@@ -1,5 +1,5 @@
 /*
- * game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -48,11 +48,14 @@ public class UserManager implements Listener, UserInventoryInteractListener {
     public static final ExItemStack CHECKPOINT =
             new ExItemStack(Material.RED_DYE, "§cTeleport to last checkpoint").setDropable(false).setMoveable(false);
 
+    public static final ExItemStack START_ITEM = new ExItemStack(Material.CLOCK).setDisplayName("§cStart")
+            .setLore("", "§7Click to start").setDropable(false).setMoveable(false).immutable();
+
     private final Set<StoryUser> checkpointUsers = new HashSet<>();
 
     public UserManager() {
         Server.registerListener(this, GameStory.getPlugin());
-        Server.getInventoryEventManager().addInteractListener(this, CHECKPOINT);
+        Server.getInventoryEventManager().addInteractListener(this, CHECKPOINT, START_ITEM);
     }
 
     @EventHandler
@@ -132,16 +135,22 @@ public class UserManager implements Listener, UserInventoryInteractListener {
 
     @Override
     public void onUserInventoryInteract(UserInventoryInteractEvent event) {
-        if (this.checkpointUsers.contains(((StoryUser) event.getUser()))) {
-            return;
+        StoryUser user = ((StoryUser) event.getUser());
+        ExItemStack item = event.getClickedItem();
+
+        if (item.equals(CHECKPOINT)) {
+            if (this.checkpointUsers.contains(((StoryUser) event.getUser()))) {
+                return;
+            }
+
+            this.checkpointUsers.add(user);
+
+            user.getReaderGroup().getQuest().start(true, false);
+
+            Server.runTaskLaterSynchrony(() -> this.checkpointUsers.remove(user), 2 * 20, GameStory.getPlugin());
+        } else if (item.equals(START_ITEM)) {
+            user.startStory();
         }
-
-        this.checkpointUsers.add(((StoryUser) event.getUser()));
-
-        ((StoryUser) event.getUser()).getReaderGroup().getQuest().start(true, false);
-
-        Server.runTaskLaterSynchrony(() -> this.checkpointUsers.remove(((StoryUser) event.getUser())), 2 * 20,
-                GameStory.getPlugin());
     }
 
     @EventHandler

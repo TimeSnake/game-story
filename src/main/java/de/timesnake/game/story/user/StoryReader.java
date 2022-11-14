@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -21,12 +21,14 @@ package de.timesnake.game.story.user;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.user.ExItemStack;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
+import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.element.TalkType;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBook;
 import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.library.basic.util.chat.ExTextColor;
 import de.timesnake.library.extension.util.player.UserList;
 import net.kyori.adventure.text.Component;
 import org.bukkit.GameMode;
@@ -45,20 +47,17 @@ public class StoryReader implements Iterable<StoryUser> {
 
     private final StoryUser host;
     private final UserList<StoryUser> users;
-    private final TalkType talkType;
+    private TalkType talkType = TalkType.TEXT;
 
     private StoryBook book;
     private StoryChapter chapter;
     private Quest quest;
 
-    public StoryReader(StoryUser host, Collection<StoryUser> users, TalkType talkType) {
+    private boolean perfomedPreChecks = false;
+
+    public StoryReader(StoryUser host, Collection<StoryUser> users) {
         this.host = host;
         this.users = new UserList<>(users);
-        this.talkType = talkType;
-    }
-
-    public void close() {
-
     }
 
     public UUID getId() {
@@ -67,6 +66,14 @@ public class StoryReader implements Iterable<StoryUser> {
 
     public TalkType getTalkType() {
         return talkType;
+    }
+
+    public boolean setTalkType(TalkType talkType) {
+        if (!this.perfomedPreChecks) {
+            this.talkType = talkType;
+            return true;
+        }
+        return false;
     }
 
     public boolean matchAnyUser(Predicate<StoryUser> predicate) {
@@ -91,8 +98,11 @@ public class StoryReader implements Iterable<StoryUser> {
 
     public void removeUser(StoryUser user) {
         this.users.remove(user);
-        if (this.users.isEmpty()) {
-            this.close();
+
+        if (this.getUsers().isEmpty()) {
+            this.destroy();
+        } else {
+            this.saveProgress();
         }
     }
 
@@ -126,7 +136,7 @@ public class StoryReader implements Iterable<StoryUser> {
         this.quest.start(false, true);
     }
 
-    public void onCompletedChapter() {
+    private void onCompletedChapter() {
         this.forEach(u -> u.showTitle(Component.empty(), Component.text(this.chapter.getEndMessage()), Duration.ofSeconds(3)));
 
         // TODO save progress
@@ -148,6 +158,12 @@ public class StoryReader implements Iterable<StoryUser> {
     }
 
     public void startBookChapter(Integer bookId, String chapterName) {
+        if (!this.perfomedPreChecks) {
+            if (this.runPreChecks()) {
+                return;
+            }
+        }
+
         StoryBook book = StoryServer.getBook(bookId);
 
         if (book == null) {
@@ -172,7 +188,6 @@ public class StoryReader implements Iterable<StoryUser> {
 
         // TODO update progress
 
-
         this.quest = this.chapter.getFirstQuest();
 
         // TODO update progress
@@ -195,11 +210,32 @@ public class StoryReader implements Iterable<StoryUser> {
         this.quest.start(true, true);
     }
 
+    private boolean runPreChecks() {
+        boolean checksDone = false;
+
+        if (this.talkType == TalkType.AUDIO) {
+            this.forEach(u -> u.sendPluginMessage(Plugin.STORY,
+                    Component.text("Login to our website and start the audio check now.", ExTextColor.PERSONAL)));
+            checksDone = true;
+        }
+
+        if (checksDone) {
+            this.host.sendPluginMessage(Plugin.STORY, Component.text("Click on start if done", ExTextColor.WARNING));
+        }
+
+        this.perfomedPreChecks = true;
+        return checksDone;
+    }
+
     public void destroy() {
         this.saveProgress();
         if (this.quest != null) {
             this.quest.clearEntities();
         }
+
+        this.book = null;
+        this.chapter = null;
+        this.quest = null;
 
         Server.getWorldManager().deleteWorld(this.getWorld(), true);
     }

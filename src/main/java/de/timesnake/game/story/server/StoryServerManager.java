@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -22,6 +22,7 @@ import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.ServerManager;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
 import de.timesnake.game.story.chat.Plugin;
+import de.timesnake.game.story.listener.EventManager;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.StoryBook;
 import de.timesnake.game.story.structure.StoryBookBuilder;
@@ -46,6 +47,7 @@ public class StoryServerManager extends ServerManager implements Listener {
 
     private final Map<Integer, StoryBook> bookById = new HashMap<>();
 
+    private EventManager eventManager;
     private UserManager userManager;
     private StoryFile file;
 
@@ -72,8 +74,7 @@ public class StoryServerManager extends ServerManager implements Listener {
         this.baseWorld.setGameRule(GameRule.DO_MOB_SPAWNING, false);
         this.baseWorld.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
 
-        // load characters from file
-
+        this.eventManager = new EventManager();
 
         // load chapters from file
         for (Long id : this.file.getBookIds()) {
@@ -104,4 +105,7 @@ public class StoryServerManager extends ServerManager implements Listener {
         return baseWorld;
     }
 
+    public EventManager getEventManager() {
+        return eventManager;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -18,7 +18,7 @@
 
 package de.timesnake.game.story.exception;
 
-public class UnknownGuardTypeException extends Exception {
+public class UnknownGuardTypeException extends StoryParseException {
 
     public UnknownGuardTypeException(String name) {
         super("Unknown guard type '" + name + "'");

@@ -1,0 +1,104 @@
+/*
+ * workspace.game-story.main
+ * Copyright (C) 2022 timesnake
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package de.timesnake.game.story.listener;
+
+import de.timesnake.basic.bukkit.util.Server;
+import de.timesnake.basic.bukkit.util.user.event.AsyncUserMoveEvent;
+import de.timesnake.basic.bukkit.util.user.event.UserBlockBreakEvent;
+import de.timesnake.basic.bukkit.util.user.event.UserDropItemEvent;
+import de.timesnake.basic.bukkit.util.user.event.UserMoveEvent;
+import de.timesnake.game.story.main.GameStory;
+import org.bukkit.event.Event;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerBedEnterEvent;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class EventManager implements Listener {
+
+    private final ConcurrentHashMap<StoryEventListener, Map<Class<? extends Event>, Method>> methodByEventByListener = new ConcurrentHashMap<>();
+
+    public EventManager() {
+        Server.registerListener(this, GameStory.getPlugin());
+    }
+
+    public void registerListeners(StoryEventListener listener) {
+        Class<? extends StoryEventListener> clazz = listener.getClass();
+        Arrays.stream(clazz.getMethods()).filter(m -> m.isAnnotationPresent(StoryEvent.class)).forEach(method -> {
+            Class<?>[] parameters = method.getParameterTypes();
+            if (parameters.length == 1) {
+                this.methodByEventByListener.computeIfAbsent(listener, e -> new HashMap<>())
+                        .put((Class<? extends Event>) parameters[0], method);
+            }
+        });
+    }
+
+    public void unregisterListeners(StoryEventListener listener) {
+        this.methodByEventByListener.remove(listener);
+    }
+
+    @EventHandler
+    public void onBlockBreak(UserBlockBreakEvent e) {
+        this.handleEvent(e);
+    }
+
+    @EventHandler
+    public void onUserMove(AsyncUserMoveEvent e) {
+        this.handleEvent(e);
+    }
+
+    @EventHandler
+    public void onUserMove(UserMoveEvent e) {
+        this.handleEvent(e);
+    }
+
+    @EventHandler
+    public void onPlayerSneak(PlayerToggleSneakEvent e) {
+        this.handleEvent(e);
+    }
+
+    @EventHandler
+    public void onPlayerSleep(PlayerBedEnterEvent e) {
+        this.handleEvent(e);
+    }
+
+    @EventHandler
+    public void onUserDropItem(UserDropItemEvent e) {
+        this.handleEvent(e);
+    }
+
+    private void handleEvent(Event event) {
+        this.methodByEventByListener.forEach((k, v) -> {
+            Method method = v.get(event.getClass());
+            if (method != null) {
+                try {
+                    v.get(event.getClass()).invoke(k, event);
+                } catch (IllegalAccessException | InvocationTargetException ignored) {
+                }
+            }
+        });
+    }
+}
