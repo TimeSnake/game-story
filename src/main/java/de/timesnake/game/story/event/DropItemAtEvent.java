@@ -98,6 +98,10 @@ public class DropItemAtEvent<Action extends TriggeredAction> extends LocationEve
             return;
         }
 
+        if (e.getItemStack().getAmount() < this.amount.get()) {
+            return;
+        }
+
         if (this.item != null && !this.item.getItem().equals(ExItemStack.getItem(e.getItemStack(), false))) {
             return;
         }

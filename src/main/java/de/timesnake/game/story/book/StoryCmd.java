@@ -104,7 +104,7 @@ public class StoryCmd implements CommandListener {
             if (successful) {
                 user.sendPluginMessage(Plugin.STORY, Component.text("Updated talk type to ", ExTextColor.PERSONAL)
                         .append(Component.text(typeString, ExTextColor.VALUE)));
-                user.sendPluginMessage(Plugin.STORY, Component.text("Click on start if done", ExTextColor.WARNING));
+                user.sendPluginMessage(Plugin.STORY, Component.text("Click on the start item if done", ExTextColor.WARNING));
             }
         } else {
             if (!args.get(0).isInt(true)) {

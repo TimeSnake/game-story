@@ -25,44 +25,45 @@ import de.timesnake.game.story.exception.InvalidArgumentTypeException;
 import de.timesnake.game.story.exception.InvalidQuestException;
 import de.timesnake.game.story.user.StoryReader;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public non-sealed class OptionalQuest extends Quest {
 
-    private final Map<String, OptionalQuest> nextQuestByName;
+    private final Map<String, OptionalQuest> nextQuestByName = new HashMap<>();
 
     public OptionalQuest(StoryChapter chapter, String name, StoryReader reader, ExLocation startLocation,
-                         Map<String, Supplier<?>> varSupplier,
-                         Map<String, OptionalQuest> nextQuestByName, StoryAction firstAction) {
+                         Map<String, Supplier<?>> varSupplier, StoryAction firstAction) {
         super(chapter, name, reader, startLocation, varSupplier, firstAction);
-        this.nextQuestByName = nextQuestByName;
     }
 
     public OptionalQuest(StoryBookBuilder bookBuilder, Toml quest, String name) throws InvalidArgumentTypeException {
         super(bookBuilder, quest, name);
-        this.nextQuestByName = new HashMap<>();
     }
 
     @Override
-    public OptionalQuest clone(StoryChapter chapter, StoryReader reader) {
-        Map<String, OptionalQuest> clonedNextQuests = new HashMap<>();
+    public OptionalQuest clone(StoryChapter chapter, StoryReader reader, Map<String, Quest> visited) {
+        OptionalQuest cloned = new OptionalQuest(chapter, this.name, reader, this.startLocation,
+                this.varSupplier, this.firstAction);
+
+        visited.put(this.getName(), cloned);
+
         for (OptionalQuest quest : this.nextQuestByName.values()) {
-            clonedNextQuests.put(quest.getName(), quest.clone(chapter, reader));
+            OptionalQuest next = visited.containsKey(quest.getName()) ? (OptionalQuest) visited.get(quest.getName()) : quest.clone(chapter, reader, visited);
+            cloned.nextQuestByName.put(quest.getName(), next);
         }
-        return new OptionalQuest(chapter, this.name, reader, this.startLocation,
-                this.varSupplier, clonedNextQuests, this.firstAction);
+        return cloned;
     }
 
     @Override
-    public void forEachNext(Consumer<Quest> consumer) {
+    public void forEachNext(Consumer<Quest> consumer, Set<Quest> visited) {
         consumer.accept(this);
+        visited.add(this);
         for (OptionalQuest quest : this.nextQuestByName.values()) {
-            quest.forEachNext(consumer);
+            if (!visited.contains(quest)) {
+                quest.forEachNext(consumer, visited);
+            }
         }
     }
 

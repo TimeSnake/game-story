@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -37,8 +37,10 @@ public class ItemFile {
 
     public Map<String, Toml> getItemTables() {
         Map<String, Toml> map = new HashMap<>();
-        for (String name : this.file.getTable(ITEM).toMap().keySet()) {
-            map.put(name, this.file.getTable(ITEM).getTable(name));
+        if (this.file.containsTable(ITEM)) {
+            for (String name : this.file.getTable(ITEM).toMap().keySet()) {
+                map.put(name, this.file.getTable(ITEM).getTable(name));
+            }
         }
         return map;
     }

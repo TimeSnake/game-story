@@ -48,18 +48,20 @@ public class Diary {
 
         this.book = new ExItemStack(Material.WRITTEN_BOOK).setDropable(false).setMoveable(false);
 
-        for (Map.Entry<String, Object> entry : toml.entrySet()) {
-            int pageNumber = Integer.parseInt(entry.getKey());
-            List<String> text = (List<String>) entry.getValue();
+        if (toml != null) {
+            for (Map.Entry<String, Object> entry : toml.entrySet()) {
+                int pageNumber = Integer.parseInt(entry.getKey());
+                List<String> text = (List<String>) entry.getValue();
 
-            Component component = Component.empty();
+                Component component = Component.empty();
 
-            for (String s : text) {
-                component = component.append(Component.text(s)
-                        .append(Component.newline()));
+                for (String s : text) {
+                    component = component.append(Component.text(s)
+                            .append(Component.newline()));
+                }
+
+                this.pagesByNumber.put(pageNumber, component);
             }
-
-            this.pagesByNumber.put(pageNumber, component);
         }
 
         BookMeta meta = ((BookMeta) this.book.getItemMeta());

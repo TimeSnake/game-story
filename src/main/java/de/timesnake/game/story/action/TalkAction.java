@@ -172,6 +172,12 @@ public class TalkAction extends RadiusAction {
         }
     }
 
+    @Override
+    public void startNext() {
+        this.partner = null;
+        super.startNext();
+    }
+
     private void nextMessage(StoryUser user) {
         if (this.display != null) {
             Server.getEntityManager().unregisterEntity(this.display);
@@ -218,25 +224,27 @@ public class TalkAction extends RadiusAction {
 
         Random random = new Random();
 
-        Server.runTaskTimerAsynchrony((time) -> {
-            if (time % 2 == 0) {
-                user.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(),
-                        this.yaw - random.nextInt(10) + 8));
-                user.sendPacket(ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(), this.yaw,
-                        this.pitch + random.nextInt(5) + 3, true));
-            } else {
-                user.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(),
-                        this.yaw - random.nextInt(10) + 8));
-                user.sendPacket(ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(), this.yaw,
-                        this.pitch - random.nextInt(5) - 3, true));
-            }
+        if (this.character.isRotateable()) {
+            Server.runTaskTimerAsynchrony((time) -> {
+                if (time % 2 == 0) {
+                    user.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(),
+                            this.yaw - random.nextInt(10) + 8));
+                    user.sendPacket(ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(), this.yaw,
+                            this.pitch + random.nextInt(5) + 3, true));
+                } else {
+                    user.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(),
+                            this.yaw - random.nextInt(10) + 8));
+                    user.sendPacket(ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(), this.yaw,
+                            this.pitch - random.nextInt(5) - 3, true));
+                }
 
-            if (time == 0) {
-                user.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(), this.yaw));
-                user.sendPacket(ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(), this.yaw, this.pitch, true));
-            }
+                if (time == 0) {
+                    user.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(), this.yaw));
+                    user.sendPacket(ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(), this.yaw, this.pitch, true));
+                }
 
-        }, 8, true, 0, 7, GameStory.getPlugin());
+            }, 8, true, 0, 7, GameStory.getPlugin());
+        }
     }
 
     private List<String> getMessageToLines(String message) {
@@ -250,7 +258,7 @@ public class TalkAction extends RadiusAction {
 
         for (String word : words) {
             if (length > 20) {
-                lines.add(line.substring(0, line.length() - 2));
+                lines.add(line.substring(0, line.length() - 1));
                 line = new StringBuilder();
                 length = 0;
             }

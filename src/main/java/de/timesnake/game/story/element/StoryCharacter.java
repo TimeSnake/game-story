@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -47,14 +47,13 @@ public abstract class StoryCharacter<Entity extends de.timesnake.library.entitie
     protected final String name;
     protected final String displayName;
     protected final ExLocation location;
-    protected final Entity entity;
+    protected Entity entity;
     protected StoryReader reader;
 
     public StoryCharacter(String name, String displayName, ExLocation location) {
         this.name = name;
         this.displayName = displayName;
         this.location = location;
-        this.entity = this.initEntity();
     }
 
     public StoryCharacter(String name, Toml character) {
@@ -78,14 +77,14 @@ public abstract class StoryCharacter<Entity extends de.timesnake.library.entitie
         return location;
     }
 
-
-    protected abstract Entity initEntity();
-
     public abstract void spawn();
 
     public abstract void despawn();
 
+    public abstract boolean isRotateable();
+
     public String getName() {
         return this.name;
     }
+
 }

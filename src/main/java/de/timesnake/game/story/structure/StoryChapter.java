@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -105,7 +105,7 @@ public class StoryChapter implements Iterable<Quest> {
             this.characterByName.put(character.getName(), character.clone(reader, this));
         }
 
-        this.firstQuest = firstQuest.clone(this, reader);
+        this.firstQuest = firstQuest.clone(this, reader, new HashMap<>());
     }
 
     public StoryChapter clone(StoryReader reader) {

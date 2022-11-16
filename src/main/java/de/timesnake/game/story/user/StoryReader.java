@@ -18,6 +18,7 @@
 
 package de.timesnake.game.story.user;
 
+import de.timesnake.basic.bukkit.core.user.UserPlayerDelegation;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.user.ExItemStack;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
@@ -29,6 +30,7 @@ import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBook;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.library.basic.util.chat.ExTextColor;
+import de.timesnake.library.extension.util.chat.Chat;
 import de.timesnake.library.extension.util.player.UserList;
 import net.kyori.adventure.text.Component;
 import org.bukkit.GameMode;
@@ -114,12 +116,14 @@ public class StoryReader implements Iterable<StoryUser> {
     }
 
     public void onCompletedQuest(Quest quest) {
-        if (!quest.equals(this.quest)) {
-            quest.stop();
-            quest.nextQuest();
-        }
+        quest.stop();
+        Server.printText(Plugin.STORY, Chat.listToString(this.users.stream()
+                .map(UserPlayerDelegation::getName).toList()) + " completed '" + quest.getName() + "'");
 
-        this.quest.stop();
+        if (!quest.equals(this.quest)) {
+            quest.nextQuest();
+            return;
+        }
 
         Quest next = this.quest.nextQuest();
         if (next == null) {
@@ -215,12 +219,13 @@ public class StoryReader implements Iterable<StoryUser> {
 
         if (this.talkType == TalkType.AUDIO) {
             this.forEach(u -> u.sendPluginMessage(Plugin.STORY,
-                    Component.text("Login to our website and start the audio check now.", ExTextColor.PERSONAL)));
+                    Component.text("Login to our website and start the audio check now. ", ExTextColor.PERSONAL)
+                            .append(Component.text("https://timesnake.de/story/interface/?story=", ExTextColor.VALUE))));
             checksDone = true;
         }
 
         if (checksDone) {
-            this.host.sendPluginMessage(Plugin.STORY, Component.text("Click on start if done", ExTextColor.WARNING));
+            this.host.sendPluginMessage(Plugin.STORY, Component.text("Click on the start item if done", ExTextColor.WARNING));
         }
 
         this.perfomedPreChecks = true;

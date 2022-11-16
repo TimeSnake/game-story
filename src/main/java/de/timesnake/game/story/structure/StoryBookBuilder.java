@@ -139,7 +139,12 @@ public class StoryBookBuilder {
 
                 Toml quest = chapter.getTable("quest." + questName);
 
-                Quest.Type type = Quest.Type.valueOf(quest.getString("type").toUpperCase());
+                String typeName = quest.getString("type").toUpperCase();
+                if (typeName == null) {
+                    Server.printText(Plugin.STORY, "Missing type argument", "Book " + this.id,
+                            "Chapter " + chapterName, "Quest " + questName);
+                }
+                Quest.Type type = Quest.Type.valueOf(typeName);
 
                 Quest currentQuest;
 
@@ -261,6 +266,7 @@ public class StoryBookBuilder {
             case SpawnGuardAction.NAME -> new SpawnGuardAction(this, quest, actionTable, id, diaryPages);
             case BlockInteractAction.NAME -> new BlockInteractAction(this, quest, actionTable, id, diaryPages);
             case BlockBreakAction.NAME -> new BlockBreakAction(this, quest, actionTable, id, diaryPages);
+            case WeatherAction.NAME -> new WeatherAction(actionTable, id, diaryPages);
             default -> new TriggerAction(quest, actionTable, id, diaryPages);
         };
 
