@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -46,6 +46,8 @@ public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
         super(name, displayName, location);
         this.skinValue = skinValue;
         this.skinSignature = skinSignature;
+        this.entity = new ExPlayer(this.location.getWorld(), this.displayName);
+        this.entity.setPosition(this.location.getX(), this.location.getY(), this.location.getZ());
 
         this.entity.setTextures(this.skinValue, this.skinSignature);
     }
@@ -66,12 +68,8 @@ public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
     }
 
     @Override
-    protected ExPlayer initEntity() {
-        ExPlayer player = new ExPlayer(this.location.getWorld(), this.displayName);
-
-        player.setPosition(this.location.getX(), this.location.getY(), this.location.getZ());
-
-        return player;
+    public boolean isRotateable() {
+        return true;
     }
 
     @Override

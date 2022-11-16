@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -19,9 +19,11 @@
 package de.timesnake.game.story.element;
 
 import com.moandjiezana.toml.Toml;
+import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.exception.InvalidArgumentTypeException;
 import de.timesnake.game.story.exception.MissingArgumentException;
+import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.library.entities.EntityManager;
@@ -40,14 +42,13 @@ import java.util.List;
 
 public class StoryCharacterMob extends StoryCharacter<Mob> {
 
-    public static final String NAME = "villager";
-
     private final Type type;
     protected List<ExPathfinderGoal> walkPathfinders = new ArrayList<>();
 
     public StoryCharacterMob(String name, String displayName, ExLocation location, Type type) {
         super(name, displayName, location);
         this.type = type;
+        this.entity = this.type.initEntity(this.location);
     }
 
     public StoryCharacterMob(String name, Toml character) throws MissingArgumentException, InvalidArgumentTypeException {
@@ -73,13 +74,14 @@ public class StoryCharacterMob extends StoryCharacter<Mob> {
     }
 
     @Override
-    protected Mob initEntity() {
-        return this.type.initEntity(this.location);
-    }
-
-    @Override
     public void spawn() {
-        EntityManager.spawnEntity(location.getWorld(), this.entity);
+        Server.runTaskSynchrony(() -> {
+            this.entity.setPersistent(true);
+            this.entity.setInvulnerable(true);
+            this.entity.setPosition(this.location.getX(), this.location.getY(), this.location.getZ());
+            this.entity.setRemoveWhenFarAway(false);
+            EntityManager.spawnEntity(location.getWorld(), this.entity);
+        }, GameStory.getPlugin());
     }
 
     public void setWalkPathfinders(ExPathfinderGoal... walkPathfinders) {
@@ -102,15 +104,17 @@ public class StoryCharacterMob extends StoryCharacter<Mob> {
         this.entity.remove();
     }
 
+    @Override
+    public boolean isRotateable() {
+        return false;
+    }
+
     public enum Type {
 
         VILLAGER() {
             @Override
             public Mob initEntity(ExLocation location) {
                 ExVillager entity = new ExVillager(location.getWorld(), ExVillager.Type.PLAINS, false, false, false);
-
-                entity.setInvulnerable(true);
-                entity.setPersistent(true);
 
                 entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class, 1));
                 entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
@@ -124,9 +128,6 @@ public class StoryCharacterMob extends StoryCharacter<Mob> {
             public Mob initEntity(ExLocation location) {
                 ExPillager entity = new ExPillager(location.getWorld(), false, false);
 
-                entity.setInvulnerable(true);
-                entity.setPersistent(true);
-
                 entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class, 1));
                 entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
                         location.getZ(), 1, 16, 0.1));
@@ -138,9 +139,6 @@ public class StoryCharacterMob extends StoryCharacter<Mob> {
             @Override
             public Mob initEntity(ExLocation location) {
                 ExVindicator entity = new ExVindicator(location.getWorld(), false, false);
-
-                entity.setInvulnerable(true);
-                entity.setPersistent(true);
 
                 entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class, 1));
                 entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),

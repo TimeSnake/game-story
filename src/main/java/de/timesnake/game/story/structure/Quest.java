@@ -87,9 +87,9 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
         this.firstAction.setQuest(this);
     }
 
-    public abstract Quest clone(StoryChapter chapter, StoryReader reader);
+    public abstract Quest clone(StoryChapter chapter, StoryReader reader, Map<String, Quest> visited);
 
-    public abstract void forEachNext(Consumer<Quest> consumer);
+    public abstract void forEachNext(Consumer<Quest> consumer, Set<Quest> visited);
 
     public String getName() {
         return name;
@@ -100,7 +100,7 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
     }
 
     public void setChapter(StoryChapter chapter) {
-        this.forEachNext(q -> q.chapter = chapter);
+        this.forEachNext(q -> q.chapter = chapter, new HashSet<>());
     }
 
     public void start(boolean teleport, boolean spawnEntities) {
@@ -123,7 +123,7 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
                             this.startLocation.getY(), this.startLocation.getZ() + z, 8, 0, 1.5, 0, 5, dust);
                 }
 
-            }, 8, true, 0, 10, GameStory.getPlugin());
+            }, 5, true, 0, 10, GameStory.getPlugin());
 
             Server.runTaskLaterSynchrony(() -> {
                 this.reader.forEach(u -> u.lockLocation(false));
@@ -132,8 +132,8 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
 
         if (spawnEntities) {
             Server.runTaskLaterSynchrony(() -> {
-                Server.printText(Plugin.STORY, "Starting quest " + this.name + " [" +
-                        Chat.listToString(this.reader.getUsers().stream().map(UserPlayerDelegation::getName).toList()) + "]");
+                Server.printText(Plugin.STORY, Chat.listToString(this.reader.getUsers().stream()
+                        .map(UserPlayerDelegation::getName).toList()) + " enabled quest '" + this.name + "'");
                 int delay = 0;
                 for (StoryAction action : this) {
                     Server.runTaskLaterSynchrony(action::spawnEntities, delay, GameStory.getPlugin());
@@ -240,8 +240,8 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
         result.add(splitByVars[0]);
         for (int i = 1; i < splitByVars.length; i++) {
             String[] splitByBlank = splitByVars[i].split(" ", 2);
-            result.add(this.getVars().get(splitByBlank[0]).get());
-            result.add(splitByBlank[1]);
+            result.add(this.getVars().get(splitByBlank[0]));
+            result.add(" " + splitByBlank[1]);
         }
         return () -> {
             StringBuilder sb = new StringBuilder();

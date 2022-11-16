@@ -113,6 +113,10 @@ public class DropItemEvent<Action extends TriggeredAction> extends TriggerEvent<
             return;
         }
 
+        if (e.getItemStack().getAmount() < this.amount.get()) {
+            return;
+        }
+
         if (this.item != null && !this.item.getItem().equals(ExItemStack.getItem(e.getItemStack(), false))) {
             return;
         }

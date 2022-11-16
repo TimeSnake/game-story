@@ -23,6 +23,7 @@ import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.event.TriggerEvent;
+import de.timesnake.game.story.exception.MissingArgumentException;
 import de.timesnake.game.story.exception.StoryParseException;
 import de.timesnake.game.story.exception.UnknownGuardTypeException;
 import de.timesnake.game.story.main.GameStory;
@@ -73,10 +74,14 @@ public class SpawnGuardAction extends LocationAction {
 
         this.amount = quest.parseAdvancedInt(action, "amount");
 
-        this.type = GuardType.fromString(action.getString("guard_type"));
+        String typeName = action.getString("type");
+        if (typeName == null) {
+            throw new MissingArgumentException("type");
+        }
+        this.type = GuardType.fromString(typeName);
 
         if (this.type == null) {
-            throw new UnknownGuardTypeException(action.getString("guard_type"));
+            throw new UnknownGuardTypeException(action.getString("type"));
         }
     }
 
@@ -96,6 +101,8 @@ public class SpawnGuardAction extends LocationAction {
         Server.runTaskSynchrony(() -> {
             for (int i = 0; i < this.amount.get(); i++) {
                 Mob mob = type.create(this.location);
+                mob.setPersistent(true);
+                mob.setRemoveWhenFarAway(false);
                 this.guards.add(mob);
                 EntityManager.spawnEntity(mob);
             }
