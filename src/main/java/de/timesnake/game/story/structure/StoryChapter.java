@@ -42,12 +42,13 @@ public class StoryChapter implements Iterable<Quest> {
     private final Diary diary;
     private final List<Integer> playerSizes;
     private final ExWorld world;
+    private final Integer maxDeaths;
     private String previous;
     private String next;
     private StoryBook book;
 
     public StoryChapter(String name, String displayName, String endMessage, Diary diary, Quest firstQuest,
-                        List<Integer> playerSizes, String worldName, Set<StoryCharacter<?>> characters) {
+                        List<Integer> playerSizes, Integer maxDeaths, String worldName, Set<StoryCharacter<?>> characters) {
         this.name = name;
         this.displayName = displayName;
         this.endMessage = endMessage;
@@ -55,6 +56,7 @@ public class StoryChapter implements Iterable<Quest> {
         this.firstQuest = firstQuest;
         this.firstQuest.setChapter(this);
         this.playerSizes = playerSizes;
+        this.maxDeaths = maxDeaths;
         this.world = Server.getWorld(worldName);
 
         if (this.world == null) {
@@ -92,7 +94,7 @@ public class StoryChapter implements Iterable<Quest> {
     }
 
     private StoryChapter(StoryReader reader, String name, String displayName, String endMessage,
-                         Diary diary, Quest firstQuest, List<Integer> playerSizes, ExWorld world,
+                         Diary diary, Quest firstQuest, List<Integer> playerSizes, Integer maxDeaths, ExWorld world,
                          LinkedHashMap<String, StoryCharacter<?>> characterByName) {
         this.name = name;
         this.displayName = displayName;
@@ -100,6 +102,7 @@ public class StoryChapter implements Iterable<Quest> {
         this.world = world;
         this.diary = diary.clone(reader);
         this.playerSizes = playerSizes;
+        this.maxDeaths = maxDeaths;
 
         for (StoryCharacter<?> character : characterByName.values()) {
             this.characterByName.put(character.getName(), character.clone(reader, this));
@@ -109,7 +112,7 @@ public class StoryChapter implements Iterable<Quest> {
     }
 
     public StoryChapter clone(StoryReader reader) {
-        return new StoryChapter(reader, this.name, this.displayName, this.endMessage, this.diary, this.firstQuest, this.playerSizes,
+        return new StoryChapter(reader, this.name, this.displayName, this.endMessage, this.diary, this.firstQuest, this.playerSizes, this.maxDeaths,
                 Server.getWorldManager().cloneWorld(this.world.getName() + "_" + reader.getId(), this.world), this.characterByName);
     }
 
@@ -192,6 +195,10 @@ public class StoryChapter implements Iterable<Quest> {
 
     public ExWorld getWorld() {
         return world;
+    }
+
+    public Integer getMaxDeaths() {
+        return maxDeaths;
     }
 
     @NotNull

@@ -70,7 +70,12 @@ public class UserManager implements Listener, UserInventoryInteractListener {
 
     @EventHandler
     public void onUserRespawn(UserRespawnEvent e) {
-        e.setRespawnLocation(((StoryUser) e.getUser()).getStoryRespawnLocation());
+        StoryUser user = (StoryUser) e.getUser();
+        e.setRespawnLocation(user.getStoryRespawnLocation());
+
+        if (user.getReaderGroup() != null) {
+            user.getReaderGroup().addDeath();
+        }
     }
 
     @EventHandler

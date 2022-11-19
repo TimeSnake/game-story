@@ -60,6 +60,7 @@ public abstract class TriggeredAction extends StoryAction {
             this.trigger(TriggerEvent.Type.START, this.reader.anyUser());
         } else {
             StoryServer.getEventManager().registerListeners(this.triggerEvent);
+            this.triggerEvent.start();
         }
     }
 

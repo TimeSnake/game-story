@@ -40,15 +40,17 @@ public abstract class LocationEvent<Action extends TriggeredAction> extends Trig
     public LocationEvent(Action action, StoryBookBuilder bookBuilder, Toml trigger) throws StoryParseException {
         super(action);
 
-        if (trigger.contains(CHARACTER)) {
-            this.character = bookBuilder.getCharacter(trigger.getString(CHARACTER));
+        if (trigger.contains("character")) {
+            this.character = bookBuilder.getCharacter(trigger.getString("character"));
         } else {
             this.character = null;
         }
 
-        if (trigger.contains(LOCATION)) {
-            this.location = ExLocation.fromList(trigger.getList(LOCATION));
-        } else if (trigger.contains(CHARACTER)) {
+        if (trigger.contains("trigger_location")) {
+            this.location = ExLocation.fromList(trigger.getList("trigger_location"));
+        } else if (trigger.contains("location")) {
+            this.location = ExLocation.fromList(trigger.getList("location"));
+        } else if (trigger.contains("character")) {
             this.location = this.character.getLocation();
         } else {
             throw new MissingArgumentException("location");

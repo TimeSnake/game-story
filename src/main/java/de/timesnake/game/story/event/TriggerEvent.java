@@ -27,9 +27,6 @@ import de.timesnake.game.story.user.StoryUser;
 
 public abstract class TriggerEvent<Action extends TriggeredAction> implements StoryEventListener {
 
-    public static final String LOCATION = "location";
-    public static final String CHARACTER = "character";
-
     protected Action action;
 
     protected TriggerEvent() {
@@ -50,6 +47,10 @@ public abstract class TriggerEvent<Action extends TriggeredAction> implements St
         return cloned;
     }
 
+    public void start() {
+
+    }
+
     protected abstract TriggerEvent<Action> clone(Quest section, StoryReader reader, StoryChapter chapter);
 
     public abstract Type getType();
@@ -61,6 +62,7 @@ public abstract class TriggerEvent<Action extends TriggeredAction> implements St
         DROP_ITEM_AT,
         START,
         SLEEP,
-        CHAT_CODE
+        CHAT_CODE,
+        DELAY
     }
 }

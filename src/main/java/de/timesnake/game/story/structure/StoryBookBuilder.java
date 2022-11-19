@@ -111,6 +111,8 @@ public class StoryBookBuilder {
                 playerSizes = List.of(1L);
             }
 
+            Long maxDeaths = chapter.getLong("max_deaths");
+
             String worldName = chapter.getString("world");
 
             Toml diaryTable = chapter.getTable("diary");
@@ -230,7 +232,8 @@ public class StoryBookBuilder {
             StoryChapter previousChapter = currentChapter;
 
             currentChapter = new StoryChapter(chapterName, chapterDisplayName, chapterEndMessage, diary,
-                    loadedQuestByName.get(startQuest), playerSizes.stream().map(Long::intValue).toList(), worldName, characters);
+                    loadedQuestByName.get(startQuest), playerSizes.stream().map(Long::intValue).toList(),
+                    maxDeaths != null ? maxDeaths.intValue() : null, worldName, characters);
 
             if (previousChapter != null) {
                 previousChapter.setNext(chapterName);
@@ -289,6 +292,8 @@ public class StoryBookBuilder {
             case SleepEvent.NAME -> triggeredAction.setTriggerEvent(new SleepEvent<>(triggeredAction));
             case ChatEvent.NAME ->
                     triggeredAction.setTriggerEvent(new ChatEvent<>(quest, triggeredAction, actionTable));
+            case DelayEvent.NAME ->
+                    triggeredAction.setTriggerEvent(new DelayEvent<>(quest, triggeredAction, actionTable));
             default -> Server.printWarning(Plugin.STORY, "Unknown trigger type: " + triggerType);
         }
 
