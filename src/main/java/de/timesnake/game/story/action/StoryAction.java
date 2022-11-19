@@ -31,8 +31,6 @@ import java.util.List;
 
 public abstract class StoryAction implements Iterator<StoryAction>, StoryEventListener {
 
-    public static final String DIARY = "diary";
-
     public static final String CHARACTER = "character";
     public static final String MESSAGES = "messages";
 
@@ -41,16 +39,10 @@ public abstract class StoryAction implements Iterator<StoryAction>, StoryEventLi
     public static final String AUDIO = "a";
 
     public static final String CHARACTER_LOOK_DIRECTION = "character_look_direction";
-    public static final String YAW = "yaw";
-    public static final String PITCH = "pitch";
 
     public static final String RADIUS = "radius";
 
     public static final String LOCATION = "location";
-
-    public static final String DELAY = "delay";
-
-    public static final String ITEM = "item";
 
     protected final int id;
     protected Quest quest;

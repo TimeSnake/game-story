@@ -54,8 +54,9 @@ public class StoryReader implements Iterable<StoryUser> {
     private StoryBook book;
     private StoryChapter chapter;
     private Quest quest;
+    private int deaths = 0;
 
-    private boolean perfomedPreChecks = false;
+    private boolean performedPreChecks = false;
 
     public StoryReader(StoryUser host, Collection<StoryUser> users) {
         this.host = host;
@@ -71,7 +72,7 @@ public class StoryReader implements Iterable<StoryUser> {
     }
 
     public boolean setTalkType(TalkType talkType) {
-        if (!this.perfomedPreChecks) {
+        if (!this.performedPreChecks) {
             this.talkType = talkType;
             return true;
         }
@@ -162,12 +163,6 @@ public class StoryReader implements Iterable<StoryUser> {
     }
 
     public void startBookChapter(Integer bookId, String chapterName) {
-        if (!this.perfomedPreChecks) {
-            if (this.runPreChecks()) {
-                return;
-            }
-        }
-
         StoryBook book = StoryServer.getBook(bookId);
 
         if (book == null) {
@@ -178,6 +173,12 @@ public class StoryReader implements Iterable<StoryUser> {
 
         if (chapter == null) {
             return;
+        }
+
+        if (!this.performedPreChecks) {
+            if (this.runPreChecks(book, chapter)) {
+                return;
+            }
         }
 
         this.book = book;
@@ -214,8 +215,12 @@ public class StoryReader implements Iterable<StoryUser> {
         this.quest.start(true, true);
     }
 
-    private boolean runPreChecks() {
+    private boolean runPreChecks(StoryBook book, StoryChapter chapter) {
         boolean checksDone = false;
+
+        if (chapter.getMaxDeaths() != null) {
+            this.forEach(u -> u.sendPluginMessage(Plugin.STORY, Component.text("Respawns: " + chapter.getMaxDeaths(), ExTextColor.WARNING)));
+        }
 
         if (this.talkType == TalkType.AUDIO) {
             this.forEach(u -> u.sendPluginMessage(Plugin.STORY,
@@ -228,7 +233,7 @@ public class StoryReader implements Iterable<StoryUser> {
             this.host.sendPluginMessage(Plugin.STORY, Component.text("Click on the start item if done", ExTextColor.WARNING));
         }
 
-        this.perfomedPreChecks = true;
+        this.performedPreChecks = true;
         return checksDone;
     }
 
@@ -238,9 +243,12 @@ public class StoryReader implements Iterable<StoryUser> {
             this.quest.clearEntities();
         }
 
+        this.forEach(u -> u.setReaderGroup(null));
+
         this.book = null;
         this.chapter = null;
         this.quest = null;
+        this.deaths = 0;
 
         Server.getWorldManager().deleteWorld(this.getWorld(), true);
     }
@@ -259,5 +267,27 @@ public class StoryReader implements Iterable<StoryUser> {
 
     public Quest getQuest() {
         return quest;
+    }
+
+    public void addDeath() {
+        this.deaths++;
+
+        int respawnsLeft = this.chapter.getMaxDeaths() - this.deaths;
+
+        if (respawnsLeft > 0) {
+            this.forEach(u -> u.showTitle(Component.empty(),
+                    Component.text(respawnsLeft + " respawns left", ExTextColor.WARNING),
+                    Duration.ofSeconds(3)));
+        } else {
+            this.forEach(u -> u.showTitle(Component.empty(),
+                    Component.text("Game Over", ExTextColor.WARNING),
+                    Duration.ofSeconds(3)));
+
+            Server.runTaskLaterSynchrony(() -> {
+                this.forEach(StoryUser::joinStoryHub);
+                this.chapter.despawnCharacters();
+                this.destroy();
+            }, 3 * 20, GameStory.getPlugin());
+        }
     }
 }

@@ -36,8 +36,6 @@ public class AreaEvent<Action extends TriggeredAction> extends LocationEvent<Act
 
     public static final String NAME = "area";
 
-    private static final String RADIUS = "radius";
-
     protected final double radius;
 
     protected AreaEvent(ExLocation location, StoryCharacter<?> character, double radius) {
@@ -50,9 +48,9 @@ public class AreaEvent<Action extends TriggeredAction> extends LocationEvent<Act
 
         Double radius;
         try {
-            radius = trigger.getDouble(RADIUS);
+            radius = trigger.getDouble("radius");
         } catch (ClassCastException e) {
-            radius = trigger.getLong(RADIUS).doubleValue();
+            radius = trigger.getLong("radius").doubleValue();
         }
 
         if (radius == null) {
