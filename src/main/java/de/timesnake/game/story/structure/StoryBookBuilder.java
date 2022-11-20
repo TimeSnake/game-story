@@ -125,6 +125,8 @@ public class StoryBookBuilder {
             Set<String> questsToLoad = new HashSet<>();
             Map<String, Quest> loadedQuestByName = new HashMap<>();
             Map<String, List<String>> nextQuestsByQuestName = new HashMap<>();
+            Map<String, List<String>> questsToSkipAtStartByQuestName = new HashMap<>();
+            Map<String, List<String>> questsToSkipAtEndByQuestName = new HashMap<>();
 
             questsToLoad.add(startQuest);
 
@@ -141,12 +143,17 @@ public class StoryBookBuilder {
 
                 Toml quest = chapter.getTable("quest." + questName);
 
-                String typeName = quest.getString("type").toUpperCase();
+                if (quest == null) {
+                    Server.printText(Plugin.STORY, "Referenced unknown quest '" + questName + "'");
+                    continue;
+                }
+
+                String typeName = quest.getString("type");
                 if (typeName == null) {
                     Server.printText(Plugin.STORY, "Missing type argument", "Book " + this.id,
                             "Chapter " + chapterName, "Quest " + questName);
                 }
-                Quest.Type type = Quest.Type.valueOf(typeName);
+                Quest.Type type = Quest.Type.valueOf(typeName.toUpperCase());
 
                 Quest currentQuest;
 
@@ -195,6 +202,17 @@ public class StoryBookBuilder {
                     previous = current;
                 }
 
+                List<String> questsToSkipAtStart = quest.getList("skip_at_start");
+                List<String> questsToSkipAtEnd = quest.getList("skip_at_end");
+
+                if (questsToSkipAtStart != null) {
+                    questsToSkipAtStartByQuestName.put(questName, questsToSkipAtStart);
+                }
+
+                if (questsToSkipAtEnd != null) {
+                    questsToSkipAtEndByQuestName.put(questName, questsToSkipAtEnd);
+                }
+
                 List<String> next = quest.getList("next");
                 nextQuestsByQuestName.put(questName, next);
 
@@ -202,7 +220,11 @@ public class StoryBookBuilder {
                     questsToLoad.addAll(next);
                 }
 
-                currentQuest.setFirstAction(first);
+                if (first != null) {
+                    currentQuest.setFirstAction(first);
+                } else {
+                    Server.printWarning(Plugin.STORY, "No actions found in quest '" + questName + "'");
+                }
 
                 Server.printText(Plugin.STORY, sb.toString(), "Book " + this.id, "Chapter " + chapterName,
                         "Quest " + questName);
@@ -212,7 +234,29 @@ public class StoryBookBuilder {
                 Quest quest = loadedQuestByName.get(entry.getKey());
                 if (entry.getValue() != null) {
                     for (String nextQuestName : entry.getValue()) {
-                        quest.addNextQuest(loadedQuestByName.get(nextQuestName));
+                        try {
+                            quest.addNextQuest(loadedQuestByName.get(nextQuestName));
+                        } catch (InvalidQuestException e) {
+                            Server.printWarning(Plugin.STORY, "Invalid type at quest '" + nextQuestName + "'");
+                        }
+                    }
+                }
+            }
+
+            for (Map.Entry<String, List<String>> entry : questsToSkipAtStartByQuestName.entrySet()) {
+                Quest quest = loadedQuestByName.get(entry.getKey());
+                if (entry.getValue() != null) {
+                    for (String nextQuestName : entry.getValue()) {
+                        quest.addQuestsToSkipAtStart(loadedQuestByName.get(nextQuestName));
+                    }
+                }
+            }
+
+            for (Map.Entry<String, List<String>> entry : questsToSkipAtEndByQuestName.entrySet()) {
+                Quest quest = loadedQuestByName.get(entry.getKey());
+                if (entry.getValue() != null) {
+                    for (String nextQuestName : entry.getValue()) {
+                        quest.addQuestsToSkipAtEnd(loadedQuestByName.get(nextQuestName));
                     }
                 }
             }

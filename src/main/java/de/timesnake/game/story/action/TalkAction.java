@@ -166,6 +166,7 @@ public class TalkAction extends RadiusAction {
     @Override
     public void trigger(TriggerEvent.Type type, StoryUser user) {
         if (this.partner == null) {
+            System.out.println("start");
             this.partner = user;
             this.messageIndex = 0;
             this.nextMessage(user);
@@ -192,6 +193,7 @@ public class TalkAction extends RadiusAction {
 
         if (!this.isAudio()) {
             Tuple<Speaker, Supplier<String>> messageBySpeaker = this.messages.get(this.messageIndex);
+            this.messageIndex++;
 
             if (messageBySpeaker.getA().equals(Speaker.CHARACTER)) {
                 this.sendMessage(user, messageBySpeaker.getB().get());
@@ -200,6 +202,7 @@ public class TalkAction extends RadiusAction {
             }
         } else {
             Tuple<Speaker, Supplier<String>> messageBySpeaker = this.audioMessages.get(this.messageIndex);
+            this.messageIndex++;
 
             if (messageBySpeaker.getA().equals(Speaker.AUDIO)) {
                 Server.getChannel().sendMessage(new ChannelUserMessage<>(user.getUniqueId(),
@@ -208,7 +211,6 @@ public class TalkAction extends RadiusAction {
                 this.sendSelfMessage(user, messageBySpeaker.getB().get());
             }
         }
-        this.messageIndex++;
     }
 
     private void sendSelfMessage(StoryUser user, String message) {
@@ -307,14 +309,11 @@ public class TalkAction extends RadiusAction {
         }
 
         this.delayingByUser.add(user);
-
-        if (this.isActive()) {
-            if (this.partner.equals(user)) {
-                this.nextMessage(user);
-            }
-        }
-
         Server.runTaskLaterSynchrony(() -> this.delayingByUser.remove(user), 10, GameStory.getPlugin());
+
+        if (this.partner.equals(user)) {
+            this.nextMessage(user);
+        }
     }
 
     @Override

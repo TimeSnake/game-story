@@ -117,7 +117,7 @@ public class StoryReader implements Iterable<StoryUser> {
     }
 
     public void onCompletedQuest(Quest quest) {
-        quest.stop();
+        quest.end();
         Server.printText(Plugin.STORY, Chat.listToString(this.users.stream()
                 .map(UserPlayerDelegation::getName).toList()) + " completed '" + quest.getName() + "'");
 
