@@ -71,7 +71,7 @@ public class ItemLootAction extends LocationAction {
                 try {
                     this.storyItems.add(bookBuilder.getItem(((String) name)));
                 } catch (ItemNotFoundException e) {
-                    Material material = Material.getMaterial(((String) name));
+                    Material material = Material.getMaterial(((String) name).toUpperCase());
                     if (material != null) {
                         this.items.add(new ItemStack(material));
                     } else {

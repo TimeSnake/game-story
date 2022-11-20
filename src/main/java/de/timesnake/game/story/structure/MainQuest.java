@@ -65,6 +65,8 @@ public non-sealed class MainQuest extends Quest {
             cloned.nextOptionalQuestByName.put(quest.getName(), next);
         }
 
+        this.cloneSkipQuests(cloned, visited);
+
         return cloned;
     }
 

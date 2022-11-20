@@ -95,6 +95,7 @@ public class StoryUser extends User {
         int slot = 0;
         for (StoryContentBook book : this.contentBookByStoryId.values()) {
             this.setItem(slot, book.getItem());
+            slot++;
         }
         this.teleport(StoryServer.getBaseWorld());
 

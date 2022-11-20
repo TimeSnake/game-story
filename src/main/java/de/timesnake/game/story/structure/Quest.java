@@ -49,6 +49,10 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
     protected StoryReader reader;
     protected String selectedQuest;
 
+    protected boolean skip;
+    protected Collection<Quest> questsToSkipAtStart = new LinkedList<>();
+    protected Collection<Quest> questsToSkipAtEnd = new LinkedList<>();
+
     protected Map<String, Supplier<?>> varSupplier;
 
     public Quest(StoryChapter chapter, String name, StoryReader reader, ExLocation startLocation,
@@ -89,6 +93,16 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
 
     public abstract Quest clone(StoryChapter chapter, StoryReader reader, Map<String, Quest> visited);
 
+    protected void cloneSkipQuests(Quest cloned, Map<String, Quest> visited) {
+        for (Quest quest : this.questsToSkipAtStart) {
+            cloned.questsToSkipAtStart.add(visited.get(quest.getName()));
+        }
+
+        for (Quest quest : this.questsToSkipAtEnd) {
+            cloned.questsToSkipAtEnd.add(visited.get(quest.getName()));
+        }
+    }
+
     public abstract void forEachNext(Consumer<Quest> consumer, Set<Quest> visited);
 
     public String getName() {
@@ -104,6 +118,15 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
     }
 
     public void start(boolean teleport, boolean spawnEntities) {
+        if (this.skip) {
+            this.nextQuest();
+            return;
+        }
+
+        for (Quest quest : this.questsToSkipAtStart) {
+            quest.skip();
+        }
+
         if (teleport) {
             this.reader.forEach(u -> u.teleport(this.startLocation));
 
@@ -146,7 +169,10 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
 
     }
 
-    public void stop() {
+    public void end() {
+        for (Quest quest : this.questsToSkipAtEnd) {
+            quest.skip();
+        }
         Server.runTaskLaterSynchrony(this::clearEntities, 10 * 20, GameStory.getPlugin());
     }
 
@@ -275,6 +301,18 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
     public abstract void addNextQuest(Quest quest);
 
     public abstract List<? extends Quest> getNextQuests();
+
+    public void skip() {
+        this.skip = true;
+    }
+
+    public void addQuestsToSkipAtStart(Quest quest) {
+        this.questsToSkipAtStart.add(quest);
+    }
+
+    public void addQuestsToSkipAtEnd(Quest quest) {
+        this.questsToSkipAtEnd.add(quest);
+    }
 
     public enum Type {
         MAIN,
