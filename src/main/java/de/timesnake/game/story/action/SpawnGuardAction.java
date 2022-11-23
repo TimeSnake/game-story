@@ -129,7 +129,7 @@ public class SpawnGuardAction extends LocationAction {
 
                 pillager.addPathfinderGoal(1, new ExCustomPathfinderGoalHurtByTarget(Monster.class));
                 pillager.addPathfinderGoal(2, new ExCustomPathfinderGoalNearestAttackableTarget(HumanEntity.class,
-                        20.0));
+                        15.0));
 
                 return pillager;
             }
@@ -152,7 +152,7 @@ public class SpawnGuardAction extends LocationAction {
 
                 vindicator.addPathfinderGoal(1, new ExCustomPathfinderGoalHurtByTarget(Monster.class));
                 vindicator.addPathfinderGoal(2, new ExCustomPathfinderGoalNearestAttackableTarget(HumanEntity.class,
-                        20.0));
+                        10.0));
 
                 return vindicator;
             }
@@ -174,7 +174,7 @@ public class SpawnGuardAction extends LocationAction {
 
                 vindicator.addPathfinderGoal(1, new ExCustomPathfinderGoalHurtByTarget(Monster.class));
                 vindicator.addPathfinderGoal(2, new ExCustomPathfinderGoalNearestAttackableTarget(HumanEntity.class,
-                        20.0));
+                        10.0));
 
                 return vindicator;
             }

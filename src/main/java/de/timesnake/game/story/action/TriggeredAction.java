@@ -19,7 +19,6 @@
 package de.timesnake.game.story.action;
 
 import de.timesnake.game.story.event.TriggerEvent;
-import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
@@ -59,17 +58,17 @@ public abstract class TriggeredAction extends StoryAction {
         if (this.triggerEvent == null) {
             this.trigger(TriggerEvent.Type.START, this.reader.anyUser());
         } else {
-            StoryServer.getEventManager().registerListeners(this.triggerEvent);
             this.triggerEvent.start();
         }
     }
 
     @Override
-    public void startNext() {
+    public void stop() {
+        super.stop();
+
         if (this.triggerEvent != null) {
-            StoryServer.getEventManager().unregisterListeners(this.triggerEvent);
+            this.triggerEvent.stop();
         }
-        super.startNext();
     }
 
     public abstract void trigger(TriggerEvent.Type type, StoryUser user);

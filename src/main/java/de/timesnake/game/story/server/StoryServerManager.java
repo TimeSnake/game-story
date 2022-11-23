@@ -60,6 +60,7 @@ public class StoryServerManager extends ServerManager implements Listener {
 
 
         this.baseWorld = Server.getWorld("world");
+        this.baseWorld.setSpawnLocation(0, 70, 0);
 
         this.baseWorld.restrict(ExWorld.Restriction.ENTITY_EXPLODE, true);
         this.baseWorld.restrict(ExWorld.Restriction.PLAYER_DAMAGE, false);

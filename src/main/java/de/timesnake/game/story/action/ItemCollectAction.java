@@ -56,10 +56,11 @@ public class ItemCollectAction extends LocationAction {
     private ExArmorStand entity;
 
     public ItemCollectAction(int id, StoryAction next, ExLocation location, StoryCharacter<?> character,
-                             StoryItem item, double itemAngle) {
+                             StoryItem item, Material material, double itemAngle) {
         super(id, next, location, character);
         this.item = item;
         this.itemAngle = itemAngle;
+        this.material = material;
     }
 
     public ItemCollectAction(StoryBookBuilder bookBuilder, Quest quest, Toml action, int id, List<Integer> diaryPages)
@@ -100,7 +101,7 @@ public class ItemCollectAction extends LocationAction {
     public ItemCollectAction clone(Quest quest, StoryReader reader, StoryAction clonedNext, StoryChapter chapter) {
         return new ItemCollectAction(this.id, clonedNext, this.location.clone().setExWorld(chapter.getWorld()),
                 this.character != null ? quest.getChapter().getCharacter(this.character.getName()) : null,
-                this.item.clone(reader), this.itemAngle);
+                this.item != null ? this.item.clone(reader) : null, this.material, this.itemAngle);
     }
 
     @Override
@@ -109,8 +110,18 @@ public class ItemCollectAction extends LocationAction {
         this.startNext();
     }
 
+    @Override
+    public void stop() {
+        super.stop();
+        this.despawnEntities();
+    }
+
     private void collectItem(StoryUser user) {
-        user.addItem(this.item.getItem());
+        if (this.item != null) {
+            user.addItem(this.item.getItem());
+        } else {
+            user.addItem(new ItemStack(this.material));
+        }
         this.despawnEntities();
     }
 

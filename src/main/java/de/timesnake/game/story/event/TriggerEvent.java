@@ -20,6 +20,7 @@ package de.timesnake.game.story.event;
 
 import de.timesnake.game.story.action.TriggeredAction;
 import de.timesnake.game.story.listener.StoryEventListener;
+import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
@@ -48,7 +49,11 @@ public abstract class TriggerEvent<Action extends TriggeredAction> implements St
     }
 
     public void start() {
+        StoryServer.getEventManager().registerListeners(this);
+    }
 
+    public void stop() {
+        StoryServer.getEventManager().unregisterListeners(this);
     }
 
     protected abstract TriggerEvent<Action> clone(Quest section, StoryReader reader, StoryChapter chapter);

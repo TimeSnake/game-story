@@ -19,6 +19,7 @@
 package de.timesnake.game.story.action;
 
 import com.moandjiezana.toml.Toml;
+import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.element.StoryItem;
@@ -26,6 +27,7 @@ import de.timesnake.game.story.event.TriggerEvent;
 import de.timesnake.game.story.exception.InvalidArgumentTypeException;
 import de.timesnake.game.story.exception.MissingArgumentException;
 import de.timesnake.game.story.exception.StoryParseException;
+import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
@@ -89,13 +91,15 @@ public class ItemGiveAction extends LocationAction {
 
     @Override
     public void trigger(TriggerEvent.Type type, StoryUser user) {
-        if (this.item != null) {
-            this.location.getWorld().dropItemNaturally(this.location.clone().add(0, 1, 0),
-                    this.item.getItem().asQuantity(this.amount.get()));
-        } else {
-            this.location.getWorld().dropItemNaturally(this.location.clone().add(0, 1, 0),
-                    new ItemStack(this.material, this.amount.get()));
-        }
+        Server.runTaskSynchrony(() -> {
+            if (this.item != null) {
+                this.location.getWorld().dropItemNaturally(this.location.clone().add(0, 1, 0),
+                        this.item.getItem().asQuantity(this.amount.get()));
+            } else {
+                this.location.getWorld().dropItemNaturally(this.location.clone().add(0, 1, 0),
+                        new ItemStack(this.material, this.amount.get()));
+            }
+        }, GameStory.getPlugin());
         this.startNext();
     }
 }

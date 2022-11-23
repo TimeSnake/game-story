@@ -52,11 +52,12 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
     protected boolean skip;
     protected Collection<Quest> questsToSkipAtStart = new LinkedList<>();
     protected Collection<Quest> questsToSkipAtEnd = new LinkedList<>();
+    protected int lastActionId;
 
     protected Map<String, Supplier<?>> varSupplier;
 
     public Quest(StoryChapter chapter, String name, StoryReader reader, ExLocation startLocation,
-                 Map<String, Supplier<?>> varSupplier, StoryAction firstAction) {
+                 Map<String, Supplier<?>> varSupplier, StoryAction firstAction, int lastActionId) {
         this.chapter = chapter;
         this.name = name;
         this.reader = reader;
@@ -68,6 +69,7 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
         }
 
         this.firstAction = firstAction.clone(this, reader, chapter);
+        this.lastActionId = lastActionId;
     }
 
     public Quest(StoryBookBuilder bookBuilder, Toml quest, String name) throws InvalidArgumentTypeException {
@@ -93,12 +95,14 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
 
     public abstract Quest clone(StoryChapter chapter, StoryReader reader, Map<String, Quest> visited);
 
-    protected void cloneSkipQuests(Quest cloned, Map<String, Quest> visited) {
+    protected void cloneSkipQuests(StoryChapter chapter, StoryReader reader, Quest cloned, Map<String, Quest> visited) {
         for (Quest quest : this.questsToSkipAtStart) {
+            visited.putIfAbsent(quest.getName(), quest.clone(chapter, reader, visited));
             cloned.questsToSkipAtStart.add(visited.get(quest.getName()));
         }
 
         for (Quest quest : this.questsToSkipAtEnd) {
+            visited.putIfAbsent(quest.getName(), quest.clone(chapter, reader, visited));
             cloned.questsToSkipAtEnd.add(visited.get(quest.getName()));
         }
     }
@@ -150,7 +154,7 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
 
             Server.runTaskLaterSynchrony(() -> {
                 this.reader.forEach(u -> u.lockLocation(false));
-            }, 20 * 6, GameStory.getPlugin());
+            }, 20 * 2, GameStory.getPlugin());
         }
 
         if (spawnEntities) {
@@ -213,7 +217,7 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
         if (value instanceof Long) {
             return () -> ((Long) value).intValue();
         } else {
-            String s = ((String) value);
+            String s = ((String) value).replace(" ", "");
             if (s.contains("..")) {
                 String[] bounds = s.split("\\.\\.");
                 int lower;
@@ -304,6 +308,12 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
 
     public void skip() {
         this.skip = true;
+        for (StoryAction action : this) {
+            action.stop();
+        }
+
+        Server.printText(Plugin.STORY, Chat.listToString(this.reader.getUsers().stream()
+                .map(UserPlayerDelegation::getName).toList()) + " skipped '" + this.getName() + "'");
     }
 
     public void addQuestsToSkipAtStart(Quest quest) {
@@ -312,6 +322,14 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
 
     public void addQuestsToSkipAtEnd(Quest quest) {
         this.questsToSkipAtEnd.add(quest);
+    }
+
+    public int getLastActionId() {
+        return lastActionId;
+    }
+
+    public void setLastActionId(int actionId) {
+        this.lastActionId = actionId;
     }
 
     public enum Type {

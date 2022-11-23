@@ -86,6 +86,10 @@ public class ThoughtAction extends TriggeredAction {
             return;
         }
 
+        if (!user.isSneaking()) {
+            return;
+        }
+
         if (!this.reader.containsUser(user)) {
             return;
         }

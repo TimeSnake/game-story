@@ -1,108 +1,192 @@
 # Story Wiki
 
+## Buch `book`
+
 ## Kapitel `chapter`
 
-**Aufbau** <br>
-`name: <name>` Jedes Kapital muss einen Namen haben, dieser wird im Inhaltsverzeichnis angezeigt.
-
-## Teile `parts`
-
-Ein Kapitel besteht aus mehreren Teilen. Jeder Teil kann von dem Spieler über das Inhaltsverzeichnis begonnen werden.
-
-**Aufbau** <br>
-`name: <name>` Name des Teils <br>
-`end_message: <text>` Nachricht bei Abschluss des Kapitels <br>
-`diary:` Tagebuch des Teils (siehe Tagebuch) <br>
-`sections:` Sektionen des Teils (siehe Sektionen)
+``` toml
+name = "<name>"
+end_message = "<message>"
+players = [<number1>,<number2>, ...]
+world = "<world_name>"
+start_quest = "<quest_name>"
+max_deaths = <number>
+```
 
 ### Tagebuch `diary`
 
-Das Tagebuch gilt immer für einen Teil. <br>
+## Quest `quest`
 
-**Aufbau** <br>
-`1:` _Seitennummer_ <br>
-&nbsp; `text:` _Text der Seite_ <br>
-&nbsp; &nbsp; `- Erste Zeile Text` <br>
-&nbsp; &nbsp; `- Zweite Zeile Text` <br>
-&nbsp; &nbsp; `- Dritte Zeile Text` <br>
-&nbsp; `date: x.y` _Veröffentlichung der Seite; x - section, y - action_
+``` toml
+[quest.<name>]
+type = "main/optional"
+next = ["<quest_name1>", "<quest_name2>"]
+location = [<x>, <y>, <z>]
+```
 
-### Sektionen `sections`
+**Variablen**
 
-Jede Sektion stellt ein Speicherpunkt der Story dar.
+``` toml
+[quest.<name>.var]
+<name1> = "<value1>" # <-- string variable
+<name2> = <number> # <-- int variable
+<name3> = "[<lower>..<upper>]" # <-- random int between lower and upper bound
+<name4> = "[<number1>,<number2>, ...]" # <-- random int from given list
+```
 
-**Aufbau** <br>
-`start:` <br>
-&nbsp; `location:` _Startposition und Respawnposition_ <br>
-&nbsp; &nbsp; `x: <x>` <br>
-&nbsp; &nbsp; `y: <y>` <br>
-&nbsp; &nbsp; `z: <z>` <br>
-
-`actions:` _Aktionen der Sektion (siehe Aktionen)_
-
-### Aktionen `actions`
+## Action `action`
 
 Alle Aktionen werden hintereinander ausgeführt. Der Trigger einer Aktion startet diese. Falls kein Trigger angegeben
-wird die Aktion direkt gestartet. Falls keine Aktion und nur ein Trigger angegeben wird, startet die nächste Aktion.
+wird die Aktion direkt gestartet. Falls keine Aktion und nur ein Trigger angegeben wird, startet die Aktion direkt.
 
-**Aufbau** <br>
-`1:` _Aktions ID_ <br>
-&nbsp; `trigger:` _Triggertyp der Aktion_ <br>
-&nbsp; `action:` _Aktionstyp der Aktion_ <br>
-&nbsp; `...` _Eigenschaften des Triggers und der Aktionen (siehe Trigger- und Aktionstypen)_
+``` toml
+[quest.<name>.1] # <-- action id 1
+# see action types
 
-**Positionen `location`** <br>
-Jede Position muss als `location` oder als `character` angegeben werden. Falls eine `location` angegeben ist, dann wird
-diese verwendet. Falls ein `character` angegeben ist und keine `location`, so wird die Position des Charakters
-verwendet.
+[quest.<name>.2] # <-- action id 2
+# see action types
+```
 
-`location:` _Koordinatenposition_ <br>
-&nbsp; `x: <x>` <br>
-&nbsp; `y: <y>` <br>
-&nbsp; `z: <z>` <br>
+### Aktionstypen
 
-`character: <id>` _ID des Charakters_
+**Gespräch `talk`**
 
-#### Triggertypen
+``` toml
+character = "<name>" # <-- defined in characters file
+messages = [
+    "c: <text>", # <-- spoken text by the character
+    "p: <text>" # <-- spoken text by the player
+]
+# optional
+location = [<x>,<y>,<z>] # <-- text location, if should not be above player
+character_look_direction = [<yaw>,<pitch>]
+```
 
-- Bereich `area` <br>
-  `location:` _Aktivierungsposition_ <br>
-  `radius: <radius>` _Aktivierungsradius_
-- Item-Drop an Position `drop_at` <br>
-  `location:` _Dropposition_ <br>
-  `item: <id>` _ID des zu droppenden Items_
-- Item-Drop `drop` <br>
-  `item: <id>` _ID des zu droppenden Items_ <br>
-  `clear: <true/false>` _Entfernen des gedroppten Items_ <br>
-- Chat-Code `chat_code` <br>
-  `code:` _Code_ <br>
-- Sleep `sleep` <br>
+**Gedanken `thought`**
 
-#### Aktionstypen
+``` toml
+messages = [
+    "<text>", # <--- spoken text by the player
+    "<text>" # <--/
+]
+```
 
-- Gespräch `talk` <br>
-  `location:` _Aktivierungsposition (optional)_ <br>
-  `radius: <radius>` _Aktivierungsradius_ <br>
-  `character: <id>` _Gesprächspartner_ <br>
-  `messages: ` _Gesprächstext_ <br>
-  `- c: <text>` _Charakter spricht_ <br>
-  `- p: <text>` _Spieler spricht_ <br>
-- Gedanken `thought` <br>
-  `messages:` _Gedankentext_ <br>
-  `- <text>` _Textteile_
-- Item-Suche `item_search` <br>
-  `location:` _Itemposition_ <br>
-  `radius: <radius>` _Einsammelradius_ <br>
-  `item: <id>` _ID des zu droppenden Items_ <br>
-  `angle: <angle>` _Item-Winkel_
-- Item-Übergabe `item_give` <br>
-  `item: <id>` _ID des zu droppenden Items_ <br>
-  `radius: <radius>` _Aktivierungsradius_ <br>
-  `character: <id>` _Itemgeber_ <br>
-- Item-Loot `item_loot` <br>
-  `location:` _Kistenposition_ <br>
-  `item: [id1, id2, ...]` _IDs der Kistenitems_ <br>
-- Clear-Inventory `clear_inventory` <br>
+**Item-Suche `item_collect`**
+
+``` toml
+item = "<material/story_item>"
+angle = <angle>` # <--- Item-Winkel (held by an armorstand)
+```
+
+**Item-Übergabe `item_give`**
+
+``` toml
+item = <material/story_item>
+location = [<x>,<y>,<z>] # <-- drop location
+```
+
+**Item-Loot `item_loot`**
+
+``` toml
+items = ["<material1/story_item1>", "<material2/story_item2>", ...]
+location = [<x>,<y>,<z>] # <-- location of the block with an inventory, like chests
+```
+
+**Block-Abbauen `block_break`**
+
+``` toml
+materials = ["<material1>", "<material2>", ...]
+min_height = <number>
+max_height = <number>
+
+polygon = [[<x1>, <z1>], [<x2>, <z2>], ...]
+# or
+block = [<x>,<y>,<z>]
+```
+
+**Wachen-Spawnen `spawn_guard`**
+
+``` toml
+action = "spawn_guard"
+location = [<x>,<y>,<z>]
+type = "<pillager/vindicator/ravager>"
+amount = <number>
+
+```
+
+**Verzögerung `delay`**
+
+``` toml
+delay = <seconds>
+```
+
+**Wetter `weather`**
+
+``` toml
+weather = "<clear/downfall>"
+```
+
+**Block-Interaktion `block_interact`**
+
+Interagiert mit Türen Hebel, Knöpfen, ...
+
+``` toml
+location = [<x>,<y>,<z>]
+```
+
+### Tirgger-Typen
+
+**Bereich `area`**
+
+``` toml
+location = [<x>,<y>,<z>]
+# or (if not equal with action location)
+trigger_location = [<x>,<y>,<z>]
+
+radius = <number>
+```
+
+**Item-Drop an Position `drop_at`**
+
+``` toml 
+location = [<x>,<y>,<z>]
+# or (if not equal with action location)
+trigger_location = [<x>,<y>,<z>]
+
+item = "<material/story_item>"
+
+# optional
+amount = <number>
+```
+
+**Item-Drop `drop`**
+
+``` toml
+item = "<material/story_item>"
+
+# optional
+amount = <number>
+```
+
+**Chat-Code `drop_at`**
+
+``` toml
+code = "<code>"
+# or
+code = ["<code1>", "<code2>", ...]
+```
+
+**Sleep `sleep`**
+
+``` toml
+# nothing
+```
+
+**Delay `delay`**
+
+``` toml
+delay = <seconds>
+```
 
 ## License
 

@@ -97,16 +97,10 @@ public class TalkAction extends RadiusAction {
 
         for (String messageText : messageTexts) {
             if (messageText.startsWith(MESSAGE_PLAYER + ":")) {
-                messageText = messageText.replaceFirst(MESSAGE_PLAYER + ":", "");
-                if (messageText.startsWith(" ")) {
-                    messageText = messageText.replaceFirst(" ", "");
-                }
+                messageText = messageText.replaceFirst(MESSAGE_PLAYER + ":", "").trim();
                 this.messages.add(new Tuple<>(Speaker.PLAYER, quest.parseString(messageText)));
             } else if (messageText.startsWith(MESSAGE_CHARACTER + ":")) {
-                messageText = messageText.replaceFirst(MESSAGE_CHARACTER + ":", "");
-                if (messageText.startsWith(" ")) {
-                    messageText = messageText.replaceFirst(" ", "");
-                }
+                messageText = messageText.replaceFirst(MESSAGE_CHARACTER + ":", "").trim();
                 this.messages.add(new Tuple<>(Speaker.CHARACTER, quest.parseString(messageText)));
             } else {
                 Server.printWarning(Plugin.STORY, "Unknown speaker in " + id, "Action");
@@ -126,16 +120,10 @@ public class TalkAction extends RadiusAction {
         if (audioTexts != null) {
             for (String audioText : audioTexts) {
                 if (audioText.startsWith(AUDIO + ":")) {
-                    audioText = audioText.replaceFirst(AUDIO + ":", "");
-                    if (audioText.startsWith(" ")) {
-                        audioText = audioText.replaceFirst(" ", "");
-                    }
+                    audioText = audioText.replaceFirst(AUDIO + ":", "").trim();
                     this.audioMessages.add(new Tuple<>(Speaker.AUDIO, quest.parseString(audioText)));
                 } else if (audioText.startsWith(MESSAGE_PLAYER + ":")) {
-                    audioText = audioText.replaceFirst(MESSAGE_CHARACTER + ":", "");
-                    if (audioText.startsWith(" ")) {
-                        audioText = audioText.replaceFirst(" ", "");
-                    }
+                    audioText = audioText.replaceFirst(MESSAGE_CHARACTER + ":", "").trim();
                     this.audioMessages.add(new Tuple<>(Speaker.CHARACTER, quest.parseString(audioText)));
                 }
             }
@@ -166,7 +154,6 @@ public class TalkAction extends RadiusAction {
     @Override
     public void trigger(TriggerEvent.Type type, StoryUser user) {
         if (this.partner == null) {
-            System.out.println("start");
             this.partner = user;
             this.messageIndex = 0;
             this.nextMessage(user);
@@ -174,9 +161,12 @@ public class TalkAction extends RadiusAction {
     }
 
     @Override
-    public void startNext() {
+    public void stop() {
+        super.stop();
+        if (this.display != null) {
+            Server.getEntityManager().unregisterEntity(this.display);
+        }
         this.partner = null;
-        super.startNext();
     }
 
     private void nextMessage(StoryUser user) {
@@ -186,12 +176,13 @@ public class TalkAction extends RadiusAction {
 
         user.resetTitle();
 
-        if (this.messageIndex >= this.messages.size() && this.reader.containsUser(user)) {
-            this.startNext();
-            return;
-        }
 
         if (!this.isAudio()) {
+            if (this.messageIndex >= this.messages.size() && this.reader.containsUser(user)) {
+                this.startNext();
+                return;
+            }
+
             Tuple<Speaker, Supplier<String>> messageBySpeaker = this.messages.get(this.messageIndex);
             this.messageIndex++;
 
@@ -201,6 +192,11 @@ public class TalkAction extends RadiusAction {
                 this.sendSelfMessage(user, messageBySpeaker.getB().get());
             }
         } else {
+            if (this.messageIndex >= this.audioMessages.size() && this.reader.containsUser(user)) {
+                this.startNext();
+                return;
+            }
+
             Tuple<Speaker, Supplier<String>> messageBySpeaker = this.audioMessages.get(this.messageIndex);
             this.messageIndex++;
 

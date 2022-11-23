@@ -22,6 +22,8 @@ import de.timesnake.basic.bukkit.core.user.UserPlayerDelegation;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.user.ExItemStack;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
+import de.timesnake.channel.util.message.ChannelUserMessage;
+import de.timesnake.channel.util.message.MessageType;
 import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.element.TalkType;
 import de.timesnake.game.story.main.GameStory;
@@ -33,6 +35,9 @@ import de.timesnake.library.basic.util.chat.ExTextColor;
 import de.timesnake.library.extension.util.chat.Chat;
 import de.timesnake.library.extension.util.player.UserList;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.GameMode;
 import org.jetbrains.annotations.NotNull;
 
@@ -101,12 +106,25 @@ public class StoryReader implements Iterable<StoryUser> {
 
     public void removeUser(StoryUser user) {
         this.users.remove(user);
+        user.setReaderGroup(null);
+        Server.getChannel().sendMessage(new ChannelUserMessage<>(user.getUniqueId(), MessageType.User.STORY_END,
+                Server.getChannel().getHost().getPort()));
 
         if (this.getUsers().isEmpty()) {
             this.destroy();
         } else {
             this.saveProgress();
         }
+    }
+
+    public void clearUsers() {
+        for (StoryUser user : this) {
+            user.setReaderGroup(null);
+            Server.getChannel().sendMessage(new ChannelUserMessage<>(user.getUniqueId(), MessageType.User.STORY_END,
+                    Server.getChannel().getHost().getPort()));
+        }
+
+        this.users.clear();
     }
 
     public ExWorld getWorld() {
@@ -132,10 +150,8 @@ public class StoryReader implements Iterable<StoryUser> {
             return;
         }
 
-        Quest previous = this.quest;
         this.quest = next;
 
-        previous.clearEntities();
         this.saveProgress();
 
         this.quest.start(false, true);
@@ -148,7 +164,7 @@ public class StoryReader implements Iterable<StoryUser> {
 
         Server.runTaskLaterSynchrony(() -> {
             this.forEach(StoryUser::joinStoryHub);
-            this.chapter.despawnCharacters();
+            this.destroy();
         }, 5 * 20, GameStory.getPlugin());
     }
 
@@ -219,13 +235,18 @@ public class StoryReader implements Iterable<StoryUser> {
         boolean checksDone = false;
 
         if (chapter.getMaxDeaths() != null) {
-            this.forEach(u -> u.sendPluginMessage(Plugin.STORY, Component.text("Respawns: " + chapter.getMaxDeaths(), ExTextColor.WARNING)));
+            this.forEach(u -> u.sendPluginMessage(Plugin.STORY, Component.text("Max. Respawns: " +
+                    chapter.getMaxDeaths(), ExTextColor.WARNING)));
         }
 
         if (this.talkType == TalkType.AUDIO) {
             this.forEach(u -> u.sendPluginMessage(Plugin.STORY,
                     Component.text("Login to our website and start the audio check now. ", ExTextColor.PERSONAL)
-                            .append(Component.text("https://timesnake.de/story/interface/?story=", ExTextColor.VALUE))));
+                            .append(Component.text("https://timesnake.de/story/interface/?story=" + book.getId(), ExTextColor.VALUE, TextDecoration.UNDERLINED)
+                                    .hoverEvent(HoverEvent.showText(Component.text("Click to copy")))
+                                    .clickEvent(ClickEvent.copyToClipboard("https://timesnake.de/story/interface/?story=\"")))));
+            this.forEach(u -> Server.getChannel().sendMessage(new ChannelUserMessage<>(u.getUniqueId(),
+                    MessageType.User.STORY_START, Server.getChannel().getHost().getPort())));
             checksDone = true;
         }
 
@@ -239,18 +260,21 @@ public class StoryReader implements Iterable<StoryUser> {
 
     public void destroy() {
         this.saveProgress();
+
+        this.clearUsers();
+
         if (this.quest != null) {
             this.quest.clearEntities();
         }
 
         this.forEach(u -> u.setReaderGroup(null));
+        Server.getWorldManager().deleteWorld(this.getWorld(), true);
 
         this.book = null;
         this.chapter = null;
         this.quest = null;
         this.deaths = 0;
 
-        Server.getWorldManager().deleteWorld(this.getWorld(), true);
     }
 
     public void saveProgress() {
@@ -270,6 +294,10 @@ public class StoryReader implements Iterable<StoryUser> {
     }
 
     public void addDeath() {
+        if (this.chapter.getMaxDeaths() == null) {
+            return;
+        }
+
         this.deaths++;
 
         int respawnsLeft = this.chapter.getMaxDeaths() - this.deaths;
