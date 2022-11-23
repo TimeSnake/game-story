@@ -48,7 +48,6 @@ public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
         this.skinSignature = skinSignature;
         this.entity = new ExPlayer(this.location.getWorld(), this.displayName);
         this.entity.setPosition(this.location.getX(), this.location.getY(), this.location.getZ());
-
         this.entity.setTextures(this.skinValue, this.skinSignature);
     }
 

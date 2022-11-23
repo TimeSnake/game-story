@@ -106,8 +106,6 @@ public class ItemLootAction extends LocationAction {
         if (this.location.getBlock().getState() instanceof InventoryHolder) {
             Inventory inv = ((InventoryHolder) this.location.getBlock().getState()).getInventory();
 
-            inv.clear();
-
             switch (this.order) {
                 case ORDERED -> {
                     inv.addItem(this.storyItems.stream().map(StoryItem::getItem).toArray(ItemStack[]::new));

@@ -44,6 +44,7 @@ public abstract class StoryCharacter<Entity extends de.timesnake.library.entitie
     private static final String NAME = "name";
     private static final String TYPE = "type";
     private static final String LOCATION = "location";
+
     protected final String name;
     protected final String displayName;
     protected final ExLocation location;

@@ -34,8 +34,8 @@ public non-sealed class OptionalQuest extends Quest {
     private final Map<String, OptionalQuest> nextQuestByName = new HashMap<>();
 
     public OptionalQuest(StoryChapter chapter, String name, StoryReader reader, ExLocation startLocation,
-                         Map<String, Supplier<?>> varSupplier, StoryAction firstAction) {
-        super(chapter, name, reader, startLocation, varSupplier, firstAction);
+                         Map<String, Supplier<?>> varSupplier, StoryAction firstAction, int lastActionId) {
+        super(chapter, name, reader, startLocation, varSupplier, firstAction, lastActionId);
     }
 
     public OptionalQuest(StoryBookBuilder bookBuilder, Toml quest, String name) throws InvalidArgumentTypeException {
@@ -45,7 +45,7 @@ public non-sealed class OptionalQuest extends Quest {
     @Override
     public OptionalQuest clone(StoryChapter chapter, StoryReader reader, Map<String, Quest> visited) {
         OptionalQuest cloned = new OptionalQuest(chapter, this.name, reader, this.startLocation,
-                this.varSupplier, this.firstAction);
+                this.varSupplier, this.firstAction, this.lastActionId);
 
         visited.put(this.getName(), cloned);
 
@@ -53,6 +53,9 @@ public non-sealed class OptionalQuest extends Quest {
             OptionalQuest next = visited.containsKey(quest.getName()) ? (OptionalQuest) visited.get(quest.getName()) : quest.clone(chapter, reader, visited);
             cloned.nextQuestByName.put(quest.getName(), next);
         }
+
+        this.cloneSkipQuests(chapter, reader, cloned, visited);
+
         return cloned;
     }
 

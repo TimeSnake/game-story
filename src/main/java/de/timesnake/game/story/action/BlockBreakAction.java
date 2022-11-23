@@ -26,6 +26,7 @@ import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.exception.InvalidArgumentTypeException;
 import de.timesnake.game.story.exception.MissingArgumentException;
 import de.timesnake.game.story.listener.StoryEvent;
+import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
@@ -91,10 +92,19 @@ public class BlockBreakAction extends StoryAction {
         super.startNext();
     }
 
+    @Override
+    public void stop() {
+        super.stop();
+        StoryServer.getEventManager().registerListeners(this);
+    }
+
     @StoryEvent
     public void onUserBreakBlock(UserBlockBreakEvent e) {
-        if (!this.isActive() && !this.getNext().isActive()) {
-            return;
+        if (!this.isActive()) {
+            if (!this.getNext().isActive()) {
+                StoryServer.getEventManager().unregisterListeners(this);
+                return;
+            }
         }
 
         StoryUser user = ((StoryUser) e.getUser());

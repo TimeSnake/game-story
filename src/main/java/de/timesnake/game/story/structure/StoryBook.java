@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -22,12 +22,14 @@ import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.element.StoryItem;
 import de.timesnake.game.story.exception.CharacterNotFoundException;
 import de.timesnake.game.story.exception.ItemNotFoundException;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class StoryBook {
+public class StoryBook implements Iterable<StoryChapter> {
 
     private final int id;
 
@@ -108,5 +110,11 @@ public class StoryBook {
         }
 
         return item;
+    }
+
+    @NotNull
+    @Override
+    public Iterator<StoryChapter> iterator() {
+        return this.chapterByName.values().iterator();
     }
 }

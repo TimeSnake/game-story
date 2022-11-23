@@ -97,7 +97,7 @@ public class StoryUser extends User {
             this.setItem(slot, book.getItem());
             slot++;
         }
-        this.teleport(StoryServer.getBaseWorld());
+        this.teleport(StoryServer.getBaseWorld().getSpawnLocation());
 
         this.playing = false;
     }

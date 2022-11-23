@@ -106,7 +106,7 @@ public class StoryBookBuilder {
             String chapterEndMessage = chapter.getString(END_MESSAGE);
             List<Long> playerSizes = chapter.getList("players");
             if (playerSizes == null) {
-                Server.printText(Plugin.STORY, "Missing argument 'players'", "Book " + this.id,
+                Server.printWarning(Plugin.STORY, "Missing argument 'players'", "Book " + this.id,
                         "Chapter " + chapterName);
                 playerSizes = List.of(1L);
             }
@@ -130,9 +130,6 @@ public class StoryBookBuilder {
 
             questsToLoad.add(startQuest);
 
-            Server.printText(Plugin.STORY, "Start-Quest: " + startQuest, "Book " + this.id,
-                    "Chapter " + chapterName);
-
             while (!questsToLoad.isEmpty()) {
                 String questName = questsToLoad.iterator().next();
                 questsToLoad.remove(questName);
@@ -144,13 +141,13 @@ public class StoryBookBuilder {
                 Toml quest = chapter.getTable("quest." + questName);
 
                 if (quest == null) {
-                    Server.printText(Plugin.STORY, "Referenced unknown quest '" + questName + "'");
+                    Server.printWarning(Plugin.STORY, "Referenced unknown quest '" + questName + "'");
                     continue;
                 }
 
                 String typeName = quest.getString("type");
                 if (typeName == null) {
-                    Server.printText(Plugin.STORY, "Missing type argument", "Book " + this.id,
+                    Server.printWarning(Plugin.STORY, "Missing type argument", "Book " + this.id,
                             "Chapter " + chapterName, "Quest " + questName);
                 }
                 Quest.Type type = Quest.Type.valueOf(typeName.toUpperCase());
@@ -175,9 +172,8 @@ public class StoryBookBuilder {
                 StoryAction previous = null;
                 StoryAction current;
 
-                StringBuilder sb = new StringBuilder("Actions: ");
-
-                for (int actionId = 1; quest.contains(String.valueOf(actionId)); actionId++) {
+                int actionId = 1;
+                for (; quest.contains(String.valueOf(actionId)); actionId++) {
                     Toml action = quest.getTable(String.valueOf(actionId));
                     try {
                         current = this.getActionFromFile(currentQuest, action, actionId);
@@ -186,8 +182,6 @@ public class StoryBookBuilder {
                                 "Chapter " + chapterName, "Quest " + questName, "Action " + actionId);
                         continue;
                     }
-
-                    sb.append(actionId).append(", ");
 
                     characterNames.addAll(current.getCharacterNames());
 
@@ -201,6 +195,8 @@ public class StoryBookBuilder {
 
                     previous = current;
                 }
+
+                actionId--;
 
                 List<String> questsToSkipAtStart = quest.getList("skip_at_start");
                 List<String> questsToSkipAtEnd = quest.getList("skip_at_end");
@@ -226,8 +222,7 @@ public class StoryBookBuilder {
                     Server.printWarning(Plugin.STORY, "No actions found in quest '" + questName + "'");
                 }
 
-                Server.printText(Plugin.STORY, sb.toString(), "Book " + this.id, "Chapter " + chapterName,
-                        "Quest " + questName);
+                currentQuest.setLastActionId(actionId);
             }
 
             for (Map.Entry<String, List<String>> entry : nextQuestsByQuestName.entrySet()) {
@@ -237,7 +232,8 @@ public class StoryBookBuilder {
                         try {
                             quest.addNextQuest(loadedQuestByName.get(nextQuestName));
                         } catch (InvalidQuestException e) {
-                            Server.printWarning(Plugin.STORY, "Invalid type at quest '" + nextQuestName + "'");
+                            Server.printWarning(Plugin.STORY, "Invalid type at quest '" + nextQuestName + "'",
+                                    "Book " + this.id, "Chapter " + chapterName, "Quest " + quest.getName());
                         }
                     }
                 }
@@ -246,8 +242,15 @@ public class StoryBookBuilder {
             for (Map.Entry<String, List<String>> entry : questsToSkipAtStartByQuestName.entrySet()) {
                 Quest quest = loadedQuestByName.get(entry.getKey());
                 if (entry.getValue() != null) {
-                    for (String nextQuestName : entry.getValue()) {
-                        quest.addQuestsToSkipAtStart(loadedQuestByName.get(nextQuestName));
+                    for (String toSkipName : entry.getValue()) {
+                        Quest toSkip = loadedQuestByName.get(toSkipName);
+                        if (toSkip != null) {
+                            quest.addQuestsToSkipAtStart(toSkip);
+                        } else {
+                            Server.printWarning(Plugin.STORY, "Unknown quest to skip at start '" + toSkipName + "'",
+                                    "Book " + this.id, "Chapter " + chapterName,
+                                    "Quest " + quest.getName());
+                        }
                     }
                 }
             }
@@ -255,8 +258,15 @@ public class StoryBookBuilder {
             for (Map.Entry<String, List<String>> entry : questsToSkipAtEndByQuestName.entrySet()) {
                 Quest quest = loadedQuestByName.get(entry.getKey());
                 if (entry.getValue() != null) {
-                    for (String nextQuestName : entry.getValue()) {
-                        quest.addQuestsToSkipAtEnd(loadedQuestByName.get(nextQuestName));
+                    for (String toSkipName : entry.getValue()) {
+                        Quest toSkip = loadedQuestByName.get(toSkipName);
+                        if (toSkip != null) {
+                            quest.addQuestsToSkipAtEnd(toSkip);
+                        } else {
+                            Server.printWarning(Plugin.STORY, "Unknown quest to skip at end '" + toSkipName + "'",
+                                    "Book " + this.id, "Chapter " + chapterName,
+                                    "Quest " + quest.getName());
+                        }
                     }
                 }
             }
@@ -285,12 +295,61 @@ public class StoryBookBuilder {
             }
 
             chapterByName.put(chapterName, currentChapter);
-
-            Server.printText(Plugin.STORY, "Loaded chapter " + chapterName, "Book " + this.id);
         }
 
-        return new StoryBook(this.id, bookName, chapterByName, characterByName, itemByName);
+        StoryBook book = new StoryBook(this.id, bookName, chapterByName, characterByName, itemByName);
+        this.printBookTree(book);
+        return book;
     }
+
+    private void printBookTree(StoryBook book) {
+
+        for (StoryChapter chapter : book) {
+            LinkedList<String> lines = new LinkedList<>();
+            this.print(lines, chapter.getFirstQuest(), "", false, new HashSet<>());
+            Server.printSection(Plugin.STORY, chapter.getName(), lines);
+        }
+    }
+
+    private void print(LinkedList<String> lines, Quest quest, String prefix, boolean hasNext, Collection<String> visitedQuests) {
+        if (visitedQuests.contains(quest.getName())) {
+            lines.add(prefix + (hasNext ? "|--" : "\\--") + "& " + quest.getName());
+            return;
+        }
+
+        visitedQuests.add(quest.getName());
+
+        if (quest instanceof MainQuest) {
+            lines.add(prefix + (hasNext ? "|--" : "\\--") + "+ " + quest.getName() + ": " + quest.getLastActionId() + " actions" +
+                    (!quest.questsToSkipAtStart.isEmpty() ? ", start skip:" + String.join(",",
+                            quest.questsToSkipAtStart.stream().map(Quest::getName).toList()) : "") +
+                    (!quest.questsToSkipAtEnd.isEmpty() ? ", end skip:" + String.join(",",
+                            quest.questsToSkipAtEnd.stream().map(Quest::getName).toList()) : ""));
+            prefix += (hasNext ? "|  " : "   ");
+            boolean hasOptional = !((MainQuest) quest).getNextOptionalQuests().isEmpty();
+            for (Iterator<MainQuest> iterator = ((MainQuest) quest).getNextMainQuests().iterator(); iterator.hasNext(); ) {
+                Quest nextMain = iterator.next();
+                this.print(lines, nextMain, prefix, iterator.hasNext() || hasOptional, visitedQuests);
+            }
+
+            for (Iterator<OptionalQuest> iterator = ((MainQuest) quest).getNextOptionalQuests().iterator(); iterator.hasNext(); ) {
+                OptionalQuest nextOptional = iterator.next();
+                this.print(lines, nextOptional, prefix, iterator.hasNext(), visitedQuests);
+            }
+        } else {
+            lines.add(prefix + (hasNext ? "|-- " : "\\-- ") + quest.getName() + ": " + quest.getLastActionId() + " actions" +
+                    (!quest.questsToSkipAtStart.isEmpty() ? ", start skip:" + String.join(",",
+                            quest.questsToSkipAtStart.stream().map(Quest::getName).toList()) : "") +
+                    (!quest.questsToSkipAtEnd.isEmpty() ? ", end skip:" + String.join(",",
+                            quest.questsToSkipAtEnd.stream().map(Quest::getName).toList()) : ""));
+            prefix += (hasNext ? "|  " : "   ");
+            for (Iterator<? extends Quest> iterator = quest.getNextQuests().iterator(); iterator.hasNext(); ) {
+                Quest nextOptional = iterator.next();
+                this.print(lines, nextOptional, prefix, iterator.hasNext(), visitedQuests);
+            }
+        }
+    }
+
 
     private StoryAction getActionFromFile(Quest quest, Toml actionTable, int id) throws StoryParseException {
 

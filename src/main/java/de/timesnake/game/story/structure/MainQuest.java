@@ -26,10 +26,7 @@ import de.timesnake.game.story.exception.InvalidArgumentTypeException;
 import de.timesnake.game.story.exception.InvalidQuestException;
 import de.timesnake.game.story.user.StoryReader;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -41,8 +38,8 @@ public non-sealed class MainQuest extends Quest {
     protected boolean finished = false;
 
     public MainQuest(StoryChapter chapter, String name, StoryReader reader, ExLocation startLocation,
-                     Map<String, Supplier<?>> varSupplier, StoryAction firstAction) {
-        super(chapter, name, reader, startLocation, varSupplier, firstAction);
+                     Map<String, Supplier<?>> varSupplier, StoryAction firstAction, int lastActionId) {
+        super(chapter, name, reader, startLocation, varSupplier, firstAction, lastActionId);
     }
 
     public MainQuest(StoryBookBuilder bookBuilder, Toml quest, String name) throws InvalidArgumentTypeException {
@@ -51,7 +48,7 @@ public non-sealed class MainQuest extends Quest {
 
     @Override
     public MainQuest clone(StoryChapter chapter, StoryReader reader, Map<String, Quest> visited) {
-        MainQuest cloned = new MainQuest(chapter, this.name, reader, this.startLocation, this.varSupplier, this.firstAction);
+        MainQuest cloned = new MainQuest(chapter, this.name, reader, this.startLocation, this.varSupplier, this.firstAction, this.lastActionId);
 
         visited.put(this.getName(), cloned);
 
@@ -65,7 +62,7 @@ public non-sealed class MainQuest extends Quest {
             cloned.nextOptionalQuestByName.put(quest.getName(), next);
         }
 
-        this.cloneSkipQuests(cloned, visited);
+        this.cloneSkipQuests(chapter, reader, cloned, visited);
 
         return cloned;
     }
@@ -136,5 +133,13 @@ public non-sealed class MainQuest extends Quest {
         if (!this.finished) {
             super.start(teleport, spawnEntities);
         }
+    }
+
+    public Collection<MainQuest> getNextMainQuests() {
+        return this.nextMainQuestByName.values();
+    }
+
+    public Collection<OptionalQuest> getNextOptionalQuests() {
+        return this.nextOptionalQuestByName.values();
     }
 }

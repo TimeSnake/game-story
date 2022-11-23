@@ -100,14 +100,17 @@ public abstract class StoryAction implements Iterator<StoryAction>, StoryEventLi
         return this.next != null;
     }
 
-    public void startNext() {
+    public void stop() {
         this.active = false;
         StoryServer.getEventManager().unregisterListeners(this);
 
         if (this.diaryPages != null) {
             this.quest.getChapter().getDiary().loadPage(this.diaryPages.toArray(new Integer[0]));
         }
+    }
 
+    public void startNext() {
+        this.stop();
         if (this.hasNext()) {
             this.next.start();
         } else {

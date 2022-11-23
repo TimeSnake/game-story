@@ -76,9 +76,11 @@ public class StoryCharacterMob extends StoryCharacter<Mob> {
     @Override
     public void spawn() {
         Server.runTaskSynchrony(() -> {
+            this.entity.setCustomNameVisible(false);
             this.entity.setPersistent(true);
             this.entity.setInvulnerable(true);
             this.entity.setPosition(this.location.getX(), this.location.getY(), this.location.getZ());
+            this.entity.setRotation(this.location.getYaw(), this.location.getPitch());
             this.entity.setRemoveWhenFarAway(false);
             EntityManager.spawnEntity(location.getWorld(), this.entity);
         }, GameStory.getPlugin());
@@ -116,7 +118,7 @@ public class StoryCharacterMob extends StoryCharacter<Mob> {
             public Mob initEntity(ExLocation location) {
                 ExVillager entity = new ExVillager(location.getWorld(), ExVillager.Type.PLAINS, false, false, false);
 
-                entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class, 1));
+                entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class, 0.5f));
                 entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
                         location.getZ(), 1, 16, 0.1));
 
@@ -128,7 +130,7 @@ public class StoryCharacterMob extends StoryCharacter<Mob> {
             public Mob initEntity(ExLocation location) {
                 ExPillager entity = new ExPillager(location.getWorld(), false, false);
 
-                entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class, 1));
+                entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class, 0.5f));
                 entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
                         location.getZ(), 1, 16, 0.1));
 
@@ -140,7 +142,7 @@ public class StoryCharacterMob extends StoryCharacter<Mob> {
             public Mob initEntity(ExLocation location) {
                 ExVindicator entity = new ExVindicator(location.getWorld(), false, false);
 
-                entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class, 1));
+                entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class, 0.5f));
                 entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
                         location.getZ(), 1, 16, 0.1));
 
