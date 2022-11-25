@@ -80,6 +80,7 @@ public class UserManager implements Listener, UserInventoryInteractListener {
 
     @EventHandler
     public void onUserDeath(UserDeathEvent e) {
+        e.setBroadcastDeathMessage(false);
         e.setAutoRespawn(true);
         e.setKeepInventory(true);
         e.getDrops().clear();
