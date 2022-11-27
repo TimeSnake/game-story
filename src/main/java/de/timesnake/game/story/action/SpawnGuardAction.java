@@ -47,6 +47,7 @@ import de.timesnake.library.entities.pathfinder.custom.*;
 import de.timesnake.library.reflection.wrapper.ExEnumItemSlot;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.HashSet;
@@ -119,11 +120,15 @@ public class SpawnGuardAction extends LocationAction {
                 ExPillager pillager = new ExPillager(location.getWorld(), false, false);
                 pillager.setPosition(location.getX(), location.getY(), location.getZ());
 
-                pillager.setSlot(ExEnumItemSlot.MAIN_HAND, new ItemStack(Material.CROSSBOW));
+                ItemStack crossBow = new ItemStack(Material.CROSSBOW);
+                if (difficulty == Difficulty.HARD) {
+                    crossBow.addEnchantment(Enchantment.QUICK_CHARGE, 3);
+                }
+                pillager.setSlot(ExEnumItemSlot.MAIN_HAND, crossBow);
 
                 pillager.addPathfinderGoal(0, new ExPathfinderGoalFloat());
                 pillager.addPathfinderGoal(3, new ExPathfinderGoalCrossbowAttack(1.0, 15.0F));
-                pillager.addPathfinderGoal(4, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
+                pillager.addPathfinderGoal(7, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
                         location.getZ(), 0.9, 32, 5));
                 pillager.addPathfinderGoal(8, new ExCustomPathfinderGoalRandomStroll(0.6));
                 pillager.addPathfinderGoal(9, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class));
@@ -142,11 +147,17 @@ public class SpawnGuardAction extends LocationAction {
             public Mob create(Location location, Difficulty difficulty) {
                 ExVindicator vindicator = new ExVindicator(location.getWorld(), false, false);
                 vindicator.setPosition(location.getX(), location.getY(), location.getZ());
+
                 vindicator.setSlot(ExEnumItemSlot.MAIN_HAND, new ItemStack(Material.IRON_AXE));
 
                 vindicator.addPathfinderGoal(0, new ExPathfinderGoalFloat());
-                vindicator.addPathfinderGoal(3, new ExCustomPathfinderGoalMeleeAttackVindicator(1.1));
-                vindicator.addPathfinderGoal(4, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
+                switch (difficulty) {
+                    case EASY -> vindicator.addPathfinderGoal(3, new ExCustomPathfinderGoalMeleeAttackVindicator(1));
+                    case NORMAL ->
+                            vindicator.addPathfinderGoal(3, new ExCustomPathfinderGoalMeleeAttackVindicator(1.1));
+                    case HARD -> vindicator.addPathfinderGoal(3, new ExCustomPathfinderGoalMeleeAttackVindicator(1.2));
+                }
+                vindicator.addPathfinderGoal(7, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
                         location.getZ(), 0.9, 32, 5));
                 vindicator.addPathfinderGoal(8, new ExCustomPathfinderGoalRandomStroll(0.6));
                 vindicator.addPathfinderGoal(9, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class));
@@ -167,11 +178,16 @@ public class SpawnGuardAction extends LocationAction {
                 vindicator.setPosition(location.getX(), location.getY(), location.getZ());
 
                 vindicator.addPathfinderGoal(0, new ExPathfinderGoalFloat());
-                vindicator.addPathfinderGoal(3, new ExCustomPathfinderGoalMeleeAttackRavager(1));
-                vindicator.addPathfinderGoal(4, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
+
+                if (difficulty == Difficulty.HARD) {
+                    vindicator.addPathfinderGoal(3, new ExCustomPathfinderGoalMeleeAttackRavager(1.1));
+                } else {
+                    vindicator.addPathfinderGoal(3, new ExCustomPathfinderGoalMeleeAttackRavager(1));
+                }
+                vindicator.addPathfinderGoal(7, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
                         location.getZ(), 0.9, 32, 5));
-                vindicator.addPathfinderGoal(5, new ExPathfinderGoalRandomStrollLand(0.4));
-                vindicator.addPathfinderGoal(6, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class, 6.0F));
+                vindicator.addPathfinderGoal(8, new ExPathfinderGoalRandomStrollLand(0.4));
+                vindicator.addPathfinderGoal(9, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class, 6.0F));
                 vindicator.addPathfinderGoal(10, new ExCustomPathfinderGoalLookAtPlayer(Mob.class, 8.0F));
 
                 vindicator.addPathfinderGoal(1, new ExCustomPathfinderGoalHurtByTarget(Monster.class));
