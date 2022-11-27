@@ -26,13 +26,8 @@ import de.timesnake.basic.bukkit.util.user.scoreboard.TablistBuilder;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.database.util.Database;
 import de.timesnake.game.story.book.StoryContentBook;
-import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.StoryBook;
-import de.timesnake.library.basic.util.chat.ExTextColor;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.entity.Player;
 
 import java.util.*;
@@ -138,29 +133,11 @@ public class StoryUser extends User {
         this.selectedUsers.clear();
         this.joinedUsers.clear();
 
-        StoryReader readerGroup = new StoryReader(this, users);
+        StoryReader readerGroup = new StoryReader(this, users, bookId, chapterName);
         users.forEach(u -> u.setReaderGroup(readerGroup));
-
-        this.sendPluginMessage(Plugin.STORY, Component.text("Select talk type: ", ExTextColor.PERSONAL)
-                .append(Component.text("[ AUDIO ]", ExTextColor.VALUE)
-                        .hoverEvent(HoverEvent.showText(Component.text("Plays audio for the characters")))
-                        .clickEvent(ClickEvent.runCommand("/story talk audio")))
-                .append(Component.text(" [ TEXT ]", ExTextColor.VALUE)
-                        .hoverEvent(HoverEvent.showText(Component.text("Displays text above the characters")))
-                        .clickEvent(ClickEvent.runCommand("/story talk text"))));
 
         this.selectedBookId = bookId;
         this.selectedChapterName = chapterName;
-
-        this.setItem(8, UserManager.START_ITEM);
-    }
-
-    public void startStory() {
-        if (this.readerGroup == null || this.selectedBookId == null || this.selectedChapterName == null) {
-            return;
-        }
-
-        this.readerGroup.startBookChapter(this.selectedBookId, this.selectedChapterName);
     }
 
     public UserProgress getProgress() {

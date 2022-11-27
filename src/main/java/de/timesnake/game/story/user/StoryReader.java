@@ -20,7 +20,13 @@ package de.timesnake.game.story.user;
 
 import de.timesnake.basic.bukkit.core.user.UserPlayerDelegation;
 import de.timesnake.basic.bukkit.util.Server;
+import de.timesnake.basic.bukkit.util.user.ExInventory;
 import de.timesnake.basic.bukkit.util.user.ExItemStack;
+import de.timesnake.basic.bukkit.util.user.User;
+import de.timesnake.basic.bukkit.util.user.event.UserInventoryClickEvent;
+import de.timesnake.basic.bukkit.util.user.event.UserInventoryClickListener;
+import de.timesnake.basic.bukkit.util.user.event.UserInventoryInteractEvent;
+import de.timesnake.basic.bukkit.util.user.event.UserInventoryInteractListener;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
 import de.timesnake.channel.util.message.ChannelUserMessage;
 import de.timesnake.channel.util.message.MessageType;
@@ -28,6 +34,7 @@ import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.element.TalkType;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.server.StoryServer;
+import de.timesnake.game.story.structure.Difficulty;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBook;
 import de.timesnake.game.story.structure.StoryChapter;
@@ -39,6 +46,9 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.GameMode;
+import org.bukkit.Material;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -54,7 +64,11 @@ public class StoryReader implements Iterable<StoryUser> {
 
     private final StoryUser host;
     private final UserList<StoryUser> users;
+
+    private final StartInventory startInventory;
+
     private TalkType talkType = TalkType.TEXT;
+    private Difficulty difficulty = Difficulty.NORMAL;
 
     private StoryBook book;
     private StoryChapter chapter;
@@ -63,9 +77,16 @@ public class StoryReader implements Iterable<StoryUser> {
 
     private boolean performedPreChecks = false;
 
-    public StoryReader(StoryUser host, Collection<StoryUser> users) {
+    public StoryReader(StoryUser host, Collection<StoryUser> users, int bookId, String chapterName) {
         this.host = host;
         this.users = new UserList<>(users);
+
+        this.book = StoryServer.getBook(bookId);
+        this.chapter = this.book.getChapter(chapterName).clone(this);
+
+        this.startInventory = new StartInventory();
+        this.host.openInventory(this.startInventory.getInventory());
+        this.forEach(User::clearInventory);
     }
 
     public UUID getId() {
@@ -76,12 +97,8 @@ public class StoryReader implements Iterable<StoryUser> {
         return talkType;
     }
 
-    public boolean setTalkType(TalkType talkType) {
-        if (!this.performedPreChecks) {
-            this.talkType = talkType;
-            return true;
-        }
-        return false;
+    public Difficulty getDifficulty() {
+        return difficulty;
     }
 
     public boolean matchAnyUser(Predicate<StoryUser> predicate) {
@@ -178,29 +195,14 @@ public class StoryReader implements Iterable<StoryUser> {
         return this.users.iterator();
     }
 
-    public void startBookChapter(Integer bookId, String chapterName) {
-        StoryBook book = StoryServer.getBook(bookId);
-
-        if (book == null) {
-            return;
-        }
-
-        StoryChapter chapter = book.getChapter(chapterName);
-
-        if (chapter == null) {
-            return;
-        }
-
+    public void startReading() {
         if (!this.performedPreChecks) {
-            if (this.runPreChecks(book, chapter)) {
+            if (this.runPreChecks()) {
                 return;
             }
         }
 
-        this.book = book;
-        this.chapter = chapter.clone(this);
-
-        String savedQuestName = this.host.getProgress().getQuest(bookId, chapterName);
+        String savedQuestName = this.host.getProgress().getQuest(this.book.getId(), this.chapter.getName());
         if (savedQuestName != null) {
             this.quest = this.chapter.getQuest(savedQuestName);
         } else {
@@ -222,40 +224,48 @@ public class StoryReader implements Iterable<StoryUser> {
             u.setItem(0, diary);
             u.setItem(1, UserManager.FOOD);
             u.setItem(2, UserManager.DRINK);
-            u.setItem(8, UserManager.CHECKPOINT);
+            //u.setItem(8, UserManager.CHECKPOINT);
 
             u.setPlaying(true);
         });
+
+        if (this.difficulty == Difficulty.EASY) {
+            this.chapter.getWorld().setDifficulty(org.bukkit.Difficulty.EASY);
+        } else if (this.difficulty == Difficulty.NORMAL) {
+            this.chapter.getWorld().setDifficulty(org.bukkit.Difficulty.NORMAL);
+        } else if (this.difficulty == Difficulty.HARD) {
+            this.chapter.getWorld().setDifficulty(org.bukkit.Difficulty.HARD);
+        }
 
         this.chapter.spawnCharacters();
         this.quest.start(true, true);
     }
 
-    private boolean runPreChecks(StoryBook book, StoryChapter chapter) {
-        boolean checksDone = false;
+    private boolean runPreChecks() {
+        boolean checksPerformed = false;
 
-        if (chapter.getMaxDeaths() != null) {
+        if (chapter.getMaxDeaths(this.difficulty) != null) {
             this.forEach(u -> u.sendPluginMessage(Plugin.STORY, Component.text("Max. Respawns: " +
-                    chapter.getMaxDeaths(), ExTextColor.WARNING)));
+                    chapter.getMaxDeaths(this.difficulty), ExTextColor.WARNING)));
         }
 
         if (this.talkType == TalkType.AUDIO) {
             this.forEach(u -> u.sendPluginMessage(Plugin.STORY,
-                    Component.text("Login to our website and start the audio check now. ", ExTextColor.PERSONAL)
-                            .append(Component.text("https://timesnake.de/story/interface/?story=" + book.getId(), ExTextColor.VALUE, TextDecoration.UNDERLINED)
+                    Component.text("Login to our website and start the audio check now: ", ExTextColor.PERSONAL)
+                            .append(Component.text("https://timesnake.de/story", ExTextColor.VALUE, TextDecoration.UNDERLINED)
                                     .hoverEvent(HoverEvent.showText(Component.text("Click to copy")))
-                                    .clickEvent(ClickEvent.copyToClipboard("https://timesnake.de/story/interface/?story=\"")))));
+                                    .clickEvent(ClickEvent.openUrl("https://timesnake.de/story/interface/?story=" + book.getId())))));
             this.forEach(u -> Server.getChannel().sendMessage(new ChannelUserMessage<>(u.getUniqueId(),
                     MessageType.User.STORY_START, Server.getChannel().getHost().getPort())));
-            checksDone = true;
+            checksPerformed = true;
         }
 
-        if (checksDone) {
-            this.host.sendPluginMessage(Plugin.STORY, Component.text("Click on the start item if done", ExTextColor.WARNING));
-        }
+        this.host.setItem(8, this.startInventory.start);
+        this.host.sendPluginMessage(Plugin.STORY, Component.text("Click on the start item if you are ready",
+                ExTextColor.WARNING));
 
         this.performedPreChecks = true;
-        return checksDone;
+        return checksPerformed;
     }
 
     public void destroy() {
@@ -294,13 +304,13 @@ public class StoryReader implements Iterable<StoryUser> {
     }
 
     public void addDeath() {
-        if (this.chapter.getMaxDeaths() == null) {
+        if (this.chapter.getMaxDeaths(this.difficulty) == null) {
             return;
         }
 
         this.deaths++;
 
-        int respawnsLeft = this.chapter.getMaxDeaths() - this.deaths;
+        int respawnsLeft = this.chapter.getMaxDeaths(this.difficulty) - this.deaths;
 
         if (respawnsLeft > 0) {
             this.forEach(u -> u.showTitle(Component.empty(),
@@ -316,6 +326,103 @@ public class StoryReader implements Iterable<StoryUser> {
                 this.chapter.despawnCharacters();
                 this.destroy();
             }, 3 * 20, GameStory.getPlugin());
+        }
+    }
+
+    public class StartInventory implements InventoryHolder, UserInventoryClickListener, UserInventoryInteractListener {
+
+        private static final ExItemStack TALK_TYPE = new ExItemStack(Material.COMPASS).setDisplayName("§9Talk Type")
+                .setSlot(9).setMoveable(false).setDropable(false).immutable();
+        private static final ExItemStack DIFFICULTY = new ExItemStack(Material.COMPASS).setDisplayName("§9Difficulty")
+                .setSlot(27).setMoveable(false).setDropable(false).immutable();
+
+        private final ExItemStack talkTypeText = new ExItemStack(Material.PAPER).setDisplayName("§fText")
+                .setSlot(10).setMoveable(false).setDropable(false).enchant();
+        private final ExItemStack talkTypeAudio = new ExItemStack(Material.GOAT_HORN).setDisplayName("§fAudio")
+                .setSlot(11).setMoveable(false).setDropable(false);
+
+        private final ExItemStack difficultyEasy = new ExItemStack(Material.GREEN_DYE).setDisplayName("§fEasy")
+                .setSlot(28).setMoveable(false).setDropable(false);
+        private final ExItemStack difficultyNormal = new ExItemStack(Material.YELLOW_DYE).setDisplayName("§fNormal")
+                .setSlot(29).setMoveable(false).setDropable(false).enchant();
+        private final ExItemStack difficultyHard = new ExItemStack(Material.RED_DYE).setDisplayName("§fHard")
+                .setSlot(30).setMoveable(false).setDropable(false);
+
+        private final ExItemStack start = new ExItemStack(Material.CLOCK).setDisplayName("§cStart")
+                .setSlot(53).setMoveable(false).setDropable(false);
+
+        private final ExInventory inventory;
+
+        public StartInventory() {
+            this.inventory = Server.createExInventory(6 * 9, "Start Menu", this);
+            this.inventory.setItemStack(TALK_TYPE);
+            this.inventory.setItemStack(DIFFICULTY);
+            this.inventory.setItemStack(talkTypeText);
+            this.inventory.setItemStack(talkTypeAudio);
+            this.inventory.setItemStack(difficultyEasy);
+            this.inventory.setItemStack(difficultyNormal);
+            this.inventory.setItemStack(difficultyHard);
+            this.inventory.setItemStack(start);
+
+            Server.getInventoryEventManager().addClickListener(this, this);
+            Server.getInventoryEventManager().addInteractListener(this, this.start);
+        }
+
+        @NotNull
+        @Override
+        public Inventory getInventory() {
+            return inventory.getInventory();
+        }
+
+        @Override
+        public void onUserInventoryClick(UserInventoryClickEvent event) {
+            ExItemStack item = event.getClickedItem();
+
+            if (item.equals(this.talkTypeText)) {
+                StoryReader.this.talkType = TalkType.TEXT;
+                this.talkTypeAudio.disenchant();
+                this.talkTypeText.enchant();
+            } else if (item.equals(this.talkTypeAudio)) {
+                StoryReader.this.talkType = TalkType.AUDIO;
+                this.talkTypeText.disenchant();
+                this.talkTypeAudio.enchant();
+            } else if (item.equals(this.difficultyEasy)) {
+                StoryReader.this.difficulty = Difficulty.EASY;
+                this.difficultyEasy.enchant();
+                this.difficultyNormal.disenchant();
+                this.difficultyHard.disenchant();
+            } else if (item.equals(this.difficultyNormal)) {
+                StoryReader.this.difficulty = Difficulty.NORMAL;
+                this.difficultyNormal.enchant();
+                this.difficultyEasy.disenchant();
+                this.difficultyHard.disenchant();
+            } else if (item.equals(this.difficultyHard)) {
+                StoryReader.this.difficulty = Difficulty.HARD;
+                this.difficultyHard.enchant();
+                this.difficultyEasy.disenchant();
+                this.difficultyNormal.disenchant();
+            } else if (item.equals(this.start)) {
+                event.getUser().closeInventory();
+                StoryReader.this.runPreChecks();
+            }
+
+            this.inventory.setItemStack(this.talkTypeText);
+            this.inventory.setItemStack(this.talkTypeAudio);
+            this.inventory.setItemStack(this.difficultyEasy);
+            this.inventory.setItemStack(this.difficultyNormal);
+            this.inventory.setItemStack(this.difficultyHard);
+            this.inventory.setItemStack(this.start);
+
+            this.inventory.update();
+        }
+
+        @Override
+        public void onUserInventoryInteract(UserInventoryInteractEvent event) {
+            ExItemStack item = event.getClickedItem();
+
+            if (item.equals(this.start)) {
+                StoryReader.this.startReading();
+            }
         }
     }
 }
