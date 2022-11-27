@@ -27,6 +27,7 @@ import de.timesnake.game.story.exception.MissingArgumentException;
 import de.timesnake.game.story.exception.StoryParseException;
 import de.timesnake.game.story.exception.UnknownGuardTypeException;
 import de.timesnake.game.story.main.GameStory;
+import de.timesnake.game.story.structure.Difficulty;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
@@ -100,9 +101,10 @@ public class SpawnGuardAction extends LocationAction {
     private void spawn() {
         Server.runTaskSynchrony(() -> {
             for (int i = 0; i < this.amount.get(); i++) {
-                Mob mob = type.create(this.location);
+                Mob mob = type.create(this.location, this.reader.getDifficulty());
                 mob.setPersistent(true);
                 mob.setRemoveWhenFarAway(false);
+                mob.setDeathLoot(List.of());
                 this.guards.add(mob);
                 EntityManager.spawnEntity(mob);
             }
@@ -113,7 +115,7 @@ public class SpawnGuardAction extends LocationAction {
 
         PILLAGER() {
             @Override
-            public Mob create(Location location) {
+            public Mob create(Location location, Difficulty difficulty) {
                 ExPillager pillager = new ExPillager(location.getWorld(), false, false);
                 pillager.setPosition(location.getX(), location.getY(), location.getZ());
 
@@ -137,7 +139,7 @@ public class SpawnGuardAction extends LocationAction {
 
         VINDICATOR() {
             @Override
-            public Mob create(Location location) {
+            public Mob create(Location location, Difficulty difficulty) {
                 ExVindicator vindicator = new ExVindicator(location.getWorld(), false, false);
                 vindicator.setPosition(location.getX(), location.getY(), location.getZ());
                 vindicator.setSlot(ExEnumItemSlot.MAIN_HAND, new ItemStack(Material.IRON_AXE));
@@ -160,7 +162,7 @@ public class SpawnGuardAction extends LocationAction {
 
         RAVAGER() {
             @Override
-            public Mob create(Location location) {
+            public Mob create(Location location, Difficulty difficulty) {
                 ExRavager vindicator = new ExRavager(location.getWorld(), false, false);
                 vindicator.setPosition(location.getX(), location.getY(), location.getZ());
 
@@ -184,6 +186,6 @@ public class SpawnGuardAction extends LocationAction {
             return GuardType.valueOf(name.toUpperCase());
         }
 
-        public abstract Mob create(Location location);
+        public abstract Mob create(Location location, Difficulty difficulty);
     }
 }

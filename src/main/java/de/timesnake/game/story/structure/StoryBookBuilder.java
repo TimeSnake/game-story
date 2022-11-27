@@ -111,7 +111,12 @@ public class StoryBookBuilder {
                 playerSizes = List.of(1L);
             }
 
-            Long maxDeaths = chapter.getLong("max_deaths");
+            Map<Difficulty, Integer> maxDeathsByDifficulty = new HashMap<>();
+
+            for (Difficulty difficulty : Difficulty.values()) {
+                Long maxDeaths = chapter.getLong(difficulty.name().toLowerCase() + ".max_deaths");
+                maxDeathsByDifficulty.put(difficulty, maxDeaths != null ? maxDeaths.intValue() : null);
+            }
 
             String worldName = chapter.getString("world");
 
@@ -287,7 +292,7 @@ public class StoryBookBuilder {
 
             currentChapter = new StoryChapter(chapterName, chapterDisplayName, chapterEndMessage, diary,
                     loadedQuestByName.get(startQuest), playerSizes.stream().map(Long::intValue).toList(),
-                    maxDeaths != null ? maxDeaths.intValue() : null, worldName, characters);
+                    maxDeathsByDifficulty, worldName, characters);
 
             if (previousChapter != null) {
                 previousChapter.setNext(chapterName);

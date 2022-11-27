@@ -48,14 +48,11 @@ public class UserManager implements Listener, UserInventoryInteractListener {
     public static final ExItemStack CHECKPOINT =
             new ExItemStack(Material.RED_DYE, "§cTeleport to last checkpoint").setDropable(false).setMoveable(false);
 
-    public static final ExItemStack START_ITEM = new ExItemStack(Material.CLOCK).setDisplayName("§cStart")
-            .setLore("", "§7Click to start").setDropable(false).setMoveable(false).immutable();
-
     private final Set<StoryUser> checkpointUsers = new HashSet<>();
 
     public UserManager() {
         Server.registerListener(this, GameStory.getPlugin());
-        Server.getInventoryEventManager().addInteractListener(this, CHECKPOINT, START_ITEM);
+        Server.getInventoryEventManager().addInteractListener(this, CHECKPOINT);
     }
 
     @EventHandler
@@ -154,8 +151,6 @@ public class UserManager implements Listener, UserInventoryInteractListener {
             user.getReaderGroup().getQuest().start(true, false);
 
             Server.runTaskLaterSynchrony(() -> this.checkpointUsers.remove(user), 2 * 20, GameStory.getPlugin());
-        } else if (item.equals(START_ITEM)) {
-            user.startStory();
         }
     }
 
