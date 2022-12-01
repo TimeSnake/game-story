@@ -1,5 +1,5 @@
 /*
- * timesnake.game-story.main
+ * workspace.game-story.main
  * Copyright (C) 2022 timesnake
  *
  * This program is free software; you can redistribute it and/or
@@ -34,7 +34,6 @@ public class UserProgress {
     public static final String FINISHED_QUEST_NAME = "FINISHED";
 
     private final DbStoryUser database;
-
     private final Map<Integer, Set<String>> boughtChaptersByBook = new HashMap<>();
     private final Map<Integer, Map<String, String>> questByChapterByBook = new HashMap<>();
 
@@ -56,6 +55,7 @@ public class UserProgress {
 
             this.questByChapterByBook.put(bookId, questByChapter);
         }
+
     }
 
     public Map<Integer, Set<String>> getBoughtChaptersByBook() {

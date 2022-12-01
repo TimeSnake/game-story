@@ -28,6 +28,7 @@ import de.timesnake.database.util.Database;
 import de.timesnake.game.story.book.StoryContentBook;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.StoryBook;
+import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 
 import java.util.*;
@@ -42,6 +43,7 @@ public class StoryUser extends User {
     private StoryReader readerGroup;
 
     private boolean playing = false;
+    private boolean spectator = false;
 
     private Integer selectedBookId;
     private String selectedChapterName;
@@ -86,6 +88,11 @@ public class StoryUser extends User {
     }
 
     public void joinStoryHub() {
+        this.spectator = false;
+        for (User u : Server.getUsers()) {
+            u.showUser(this);
+        }
+
         this.setDefault();
         int slot = 0;
         for (StoryContentBook book : this.contentBookByStoryId.values()) {
@@ -94,7 +101,23 @@ public class StoryUser extends User {
         }
         this.teleport(StoryServer.getBaseWorld().getSpawnLocation());
 
+        if (this.hasPermission("game.story.spectator")) {
+            this.setItem(8, UserManager.SPECTATOR_TOOL);
+        }
+
         this.playing = false;
+    }
+
+    public void joinSpectator() {
+        this.spectator = true;
+        this.clearInventory();
+        this.setGameMode(GameMode.CREATIVE);
+        for (User u : Server.getUsers()) {
+            if (!((StoryUser) u).isSpectator()) {
+                u.hideUser(this);
+            }
+        }
+        this.setItem(8, UserManager.SPECTATOR_TOOL);
     }
 
     public boolean isPlaying() {
@@ -103,6 +126,14 @@ public class StoryUser extends User {
 
     public void setPlaying(boolean playing) {
         this.playing = playing;
+    }
+
+    public boolean isSpectator() {
+        return spectator;
+    }
+
+    public void setSpectator(boolean spectator) {
+        this.spectator = spectator;
     }
 
     public Set<String> getBoughtChapters(Integer bookId) {

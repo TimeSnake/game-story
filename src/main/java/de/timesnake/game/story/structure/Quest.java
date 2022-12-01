@@ -271,7 +271,9 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
         for (int i = 1; i < splitByVars.length; i++) {
             String[] splitByBlank = splitByVars[i].split(" ", 2);
             result.add(this.getVars().get(splitByBlank[0]));
-            result.add(" " + splitByBlank[1]);
+            if (splitByBlank.length >= 2) {
+                result.add(" " + splitByBlank[1]);
+            }
         }
         return () -> {
             StringBuilder sb = new StringBuilder();
