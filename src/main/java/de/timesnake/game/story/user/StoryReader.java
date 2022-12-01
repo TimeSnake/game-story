@@ -312,7 +312,7 @@ public class StoryReader implements Iterable<StoryUser> {
 
         int respawnsLeft = this.chapter.getMaxDeaths(this.difficulty) - this.deaths;
 
-        if (respawnsLeft > 0) {
+        if (respawnsLeft >= 0) {
             this.forEach(u -> u.showTitle(Component.empty(),
                     Component.text(respawnsLeft + " respawns left", ExTextColor.WARNING),
                     Duration.ofSeconds(3)));

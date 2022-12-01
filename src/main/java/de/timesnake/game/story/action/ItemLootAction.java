@@ -91,6 +91,12 @@ public class ItemLootAction extends LocationAction {
             this.order = Order.RANDOM;
         }
 
+        if (this.order == null) {
+            throw new InvalidArgumentTypeException("Invalid item order '" + orderString + "'");
+        }
+
+        System.out.println(this.items.size());
+
         this.triggerEvent = new AreaEvent<>(this, bookBuilder, action, RADIUS);
     }
 
@@ -103,6 +109,10 @@ public class ItemLootAction extends LocationAction {
 
     @Override
     public void trigger(TriggerEvent.Type type, StoryUser user) {
+        if (!this.isActive()) {
+            return;
+        }
+
         if (this.location.getBlock().getState() instanceof InventoryHolder) {
             Inventory inv = ((InventoryHolder) this.location.getBlock().getState()).getInventory();
 
@@ -120,6 +130,7 @@ public class ItemLootAction extends LocationAction {
                         }
                         inv.setItem(slot, item.getItem());
                     }
+                    System.out.println(this.items.size());
                     for (ItemStack item : this.items) {
                         while (inv.getItem(slot) != null) {
                             slot = random.nextInt(inv.getSize());

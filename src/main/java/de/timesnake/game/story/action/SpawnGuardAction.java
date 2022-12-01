@@ -40,10 +40,11 @@ import de.timesnake.library.entities.entity.bukkit.ExVindicator;
 import de.timesnake.library.entities.entity.bukkit.HumanEntity;
 import de.timesnake.library.entities.entity.extension.Mob;
 import de.timesnake.library.entities.entity.extension.Monster;
-import de.timesnake.library.entities.pathfinder.ExPathfinderGoalCrossbowAttack;
-import de.timesnake.library.entities.pathfinder.ExPathfinderGoalFloat;
-import de.timesnake.library.entities.pathfinder.ExPathfinderGoalRandomStrollLand;
-import de.timesnake.library.entities.pathfinder.custom.*;
+import de.timesnake.library.entities.pathfinder.*;
+import de.timesnake.library.entities.pathfinder.custom.ExCustomPathfinderGoalLocation;
+import de.timesnake.library.entities.pathfinder.custom.ExCustomPathfinderGoalMeleeAttackRavager;
+import de.timesnake.library.entities.pathfinder.custom.ExCustomPathfinderGoalMeleeAttackVindicator;
+import de.timesnake.library.entities.pathfinder.custom.ExCustomPathfinderGoalNearestAttackableTarget;
 import de.timesnake.library.reflection.wrapper.ExEnumItemSlot;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -130,11 +131,11 @@ public class SpawnGuardAction extends LocationAction {
                 pillager.addPathfinderGoal(3, new ExPathfinderGoalCrossbowAttack(1.0, 15.0F));
                 pillager.addPathfinderGoal(7, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
                         location.getZ(), 0.9, 32, 5));
-                pillager.addPathfinderGoal(8, new ExCustomPathfinderGoalRandomStroll(0.6));
-                pillager.addPathfinderGoal(9, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class));
-                pillager.addPathfinderGoal(10, new ExCustomPathfinderGoalLookAtPlayer(Mob.class));
+                pillager.addPathfinderGoal(8, new ExPathfinderGoalRandomStroll(0.6));
+                pillager.addPathfinderGoal(9, new ExPathfinderGoalLookAtPlayer(HumanEntity.class, 15.0F, 1.0F, true));
+                pillager.addPathfinderGoal(10, new ExPathfinderGoalLookAtPlayer(Mob.class, 15.0F));
 
-                pillager.addPathfinderGoal(1, new ExCustomPathfinderGoalHurtByTarget(Monster.class));
+                pillager.addPathfinderGoal(1, new ExPathfinderGoalHurtByTarget(Monster.class));
                 pillager.addPathfinderGoal(2, new ExCustomPathfinderGoalNearestAttackableTarget(HumanEntity.class,
                         15.0));
 
@@ -159,11 +160,11 @@ public class SpawnGuardAction extends LocationAction {
                 }
                 vindicator.addPathfinderGoal(7, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
                         location.getZ(), 0.9, 32, 5));
-                vindicator.addPathfinderGoal(8, new ExCustomPathfinderGoalRandomStroll(0.6));
-                vindicator.addPathfinderGoal(9, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class));
-                vindicator.addPathfinderGoal(10, new ExCustomPathfinderGoalLookAtPlayer(Mob.class));
+                vindicator.addPathfinderGoal(8, new ExPathfinderGoalRandomStroll(0.6));
+                vindicator.addPathfinderGoal(9, new ExPathfinderGoalLookAtPlayer(HumanEntity.class, 3.0F, 1.0F));
+                vindicator.addPathfinderGoal(10, new ExPathfinderGoalLookAtPlayer(Mob.class, 8.0F));
 
-                vindicator.addPathfinderGoal(1, new ExCustomPathfinderGoalHurtByTarget(Monster.class));
+                vindicator.addPathfinderGoal(1, new ExPathfinderGoalHurtByTarget(Monster.class));
                 vindicator.addPathfinderGoal(2, new ExCustomPathfinderGoalNearestAttackableTarget(HumanEntity.class,
                         10.0));
 
@@ -187,10 +188,10 @@ public class SpawnGuardAction extends LocationAction {
                 vindicator.addPathfinderGoal(7, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
                         location.getZ(), 0.9, 32, 5));
                 vindicator.addPathfinderGoal(8, new ExPathfinderGoalRandomStrollLand(0.4));
-                vindicator.addPathfinderGoal(9, new ExCustomPathfinderGoalLookAtPlayer(HumanEntity.class, 6.0F));
-                vindicator.addPathfinderGoal(10, new ExCustomPathfinderGoalLookAtPlayer(Mob.class, 8.0F));
+                vindicator.addPathfinderGoal(9, new ExPathfinderGoalLookAtPlayer(HumanEntity.class, 6.0F));
+                vindicator.addPathfinderGoal(10, new ExPathfinderGoalLookAtPlayer(Mob.class, 8.0F));
 
-                vindicator.addPathfinderGoal(1, new ExCustomPathfinderGoalHurtByTarget(Monster.class));
+                vindicator.addPathfinderGoal(1, new ExPathfinderGoalHurtByTarget(Monster.class));
                 vindicator.addPathfinderGoal(2, new ExCustomPathfinderGoalNearestAttackableTarget(HumanEntity.class,
                         10.0));
 

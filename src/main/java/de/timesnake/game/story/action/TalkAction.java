@@ -23,6 +23,9 @@ import de.timesnake.basic.bukkit.core.user.UserPlayerDelegation;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.basic.bukkit.util.world.entity.HoloDisplay;
+import de.timesnake.channel.util.listener.ChannelHandler;
+import de.timesnake.channel.util.listener.ChannelListener;
+import de.timesnake.channel.util.listener.ListenerType;
 import de.timesnake.channel.util.message.ChannelUserMessage;
 import de.timesnake.channel.util.message.MessageType;
 import de.timesnake.game.story.chat.Plugin;
@@ -49,7 +52,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.function.Supplier;
 
-public class TalkAction extends RadiusAction {
+public class TalkAction extends RadiusAction implements ChannelListener {
 
     public static final String NAME = "talk";
 
@@ -157,6 +160,8 @@ public class TalkAction extends RadiusAction {
             this.partner = user;
             this.messageIndex = 0;
             this.nextMessage(user);
+
+            Server.getChannel().addListener(this, () -> Collections.singleton(this.partner.getUniqueId()));
         }
     }
 
@@ -167,6 +172,7 @@ public class TalkAction extends RadiusAction {
             Server.getEntityManager().unregisterEntity(this.display);
         }
         this.partner = null;
+        Server.getChannel().removeListener(this);
     }
 
     private void nextMessage(StoryUser user) {
@@ -290,6 +296,12 @@ public class TalkAction extends RadiusAction {
             return;
         }
 
+        if (this.reader.getTalkType().equals(TalkType.AUDIO)) {
+            if (this.messageIndex > 0 && this.audioMessages.get(this.messageIndex - 1).getA().equals(Speaker.AUDIO)) {
+                return;
+            }
+        }
+
         boolean delaying = this.delayingByUser.contains(user);
 
         if (delaying) {
@@ -309,6 +321,13 @@ public class TalkAction extends RadiusAction {
 
         if (this.partner.equals(user)) {
             this.nextMessage(user);
+        }
+    }
+
+    @ChannelHandler(type = {ListenerType.USER_STORY_END_AUDIO})
+    public void onStoryMessage(ChannelUserMessage<String> msg) {
+        if (this.messageIndex > 0 && msg.getValue().equals(this.audioMessages.get(this.messageIndex--).getB().get())) {
+            this.nextMessage(this.partner);
         }
     }
 
