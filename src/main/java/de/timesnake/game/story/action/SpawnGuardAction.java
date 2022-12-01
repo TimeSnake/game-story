@@ -45,7 +45,7 @@ import de.timesnake.library.entities.pathfinder.custom.ExCustomPathfinderGoalLoc
 import de.timesnake.library.entities.pathfinder.custom.ExCustomPathfinderGoalMeleeAttackRavager;
 import de.timesnake.library.entities.pathfinder.custom.ExCustomPathfinderGoalMeleeAttackVindicator;
 import de.timesnake.library.entities.pathfinder.custom.ExCustomPathfinderGoalNearestAttackableTarget;
-import de.timesnake.library.reflection.wrapper.ExEnumItemSlot;
+import de.timesnake.library.entities.wrapper.ExEnumItemSlot;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
