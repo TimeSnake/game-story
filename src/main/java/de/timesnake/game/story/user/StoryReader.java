@@ -354,7 +354,7 @@ public class StoryReader implements Iterable<StoryUser> {
         private final ExInventory inventory;
 
         public StartInventory() {
-            this.inventory = Server.createExInventory(6 * 9, "Start Menu", this);
+            this.inventory = new ExInventory(6 * 9, Component.text("Start Menu"), this);
             this.inventory.setItemStack(TALK_TYPE);
             this.inventory.setItemStack(DIFFICULTY);
             this.inventory.setItemStack(talkTypeText);
