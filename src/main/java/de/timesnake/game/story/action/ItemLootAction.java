@@ -95,8 +95,6 @@ public class ItemLootAction extends LocationAction {
             throw new InvalidArgumentTypeException("Invalid item order '" + orderString + "'");
         }
 
-        System.out.println(this.items.size());
-
         this.triggerEvent = new AreaEvent<>(this, bookBuilder, action, RADIUS);
     }
 
@@ -130,7 +128,6 @@ public class ItemLootAction extends LocationAction {
                         }
                         inv.setItem(slot, item.getItem());
                     }
-                    System.out.println(this.items.size());
                     for (ItemStack item : this.items) {
                         while (inv.getItem(slot) != null) {
                             slot = random.nextInt(inv.getSize());
