@@ -5,7 +5,7 @@
 package de.timesnake.game.story.element;
 
 import com.moandjiezana.toml.Toml;
-import de.timesnake.basic.bukkit.util.user.ExItemStack;
+import de.timesnake.basic.bukkit.util.user.inventory.ExItemStack;
 import de.timesnake.game.story.user.StoryReader;
 import org.bukkit.Material;
 

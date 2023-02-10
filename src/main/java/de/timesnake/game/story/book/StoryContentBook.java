@@ -4,7 +4,7 @@
 
 package de.timesnake.game.story.book;
 
-import de.timesnake.basic.bukkit.util.user.ExItemStack;
+import de.timesnake.basic.bukkit.util.user.inventory.ExItemStack;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.StoryBook;
 import de.timesnake.game.story.structure.StoryChapter;
