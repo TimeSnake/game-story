@@ -5,9 +5,11 @@
 package de.timesnake.game.story.user;
 
 import de.timesnake.basic.bukkit.util.Server;
-import de.timesnake.basic.bukkit.util.user.ExItemStack;
+import de.timesnake.basic.bukkit.util.user.inventory.ExItemStack;
 import de.timesnake.basic.bukkit.util.user.User;
 import de.timesnake.basic.bukkit.util.user.event.*;
+import de.timesnake.basic.bukkit.util.user.inventory.UserInventoryInteractEvent;
+import de.timesnake.basic.bukkit.util.user.inventory.UserInventoryInteractListener;
 import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.library.basic.util.chat.ExTextColor;

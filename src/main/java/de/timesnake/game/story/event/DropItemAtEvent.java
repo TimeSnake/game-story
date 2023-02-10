@@ -6,7 +6,7 @@ package de.timesnake.game.story.event;
 
 import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.Server;
-import de.timesnake.basic.bukkit.util.user.ExItemStack;
+import de.timesnake.basic.bukkit.util.user.inventory.ExItemStack;
 import de.timesnake.basic.bukkit.util.user.event.UserDropItemEvent;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.action.TriggeredAction;

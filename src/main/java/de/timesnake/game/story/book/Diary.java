@@ -5,7 +5,7 @@
 package de.timesnake.game.story.book;
 
 import com.moandjiezana.toml.Toml;
-import de.timesnake.basic.bukkit.util.user.ExItemStack;
+import de.timesnake.basic.bukkit.util.user.inventory.ExItemStack;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.library.basic.util.chat.ExTextColor;
 import net.kyori.adventure.text.Component;
