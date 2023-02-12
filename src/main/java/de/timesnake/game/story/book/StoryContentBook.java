@@ -9,7 +9,7 @@ import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.StoryBook;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.UserProgress;
-import de.timesnake.library.basic.util.chat.ExTextColor;
+import de.timesnake.library.chat.ExTextColor;
 import de.timesnake.library.extension.util.chat.Chat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
