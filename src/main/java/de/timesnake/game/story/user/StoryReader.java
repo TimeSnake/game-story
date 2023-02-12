@@ -24,7 +24,7 @@ import de.timesnake.game.story.structure.Difficulty;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBook;
 import de.timesnake.game.story.structure.StoryChapter;
-import de.timesnake.library.basic.util.chat.ExTextColor;
+import de.timesnake.library.chat.ExTextColor;
 import de.timesnake.library.extension.util.chat.Chat;
 import de.timesnake.library.extension.util.player.UserList;
 import net.kyori.adventure.text.Component;
