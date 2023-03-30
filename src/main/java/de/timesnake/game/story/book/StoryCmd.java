@@ -8,22 +8,22 @@ import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.chat.Argument;
 import de.timesnake.basic.bukkit.util.chat.CommandListener;
 import de.timesnake.basic.bukkit.util.chat.Sender;
-import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.StoryBook;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryUser;
+import de.timesnake.library.basic.util.Loggers;
 import de.timesnake.library.chat.ExTextColor;
 import de.timesnake.library.extension.util.cmd.Arguments;
 import de.timesnake.library.extension.util.cmd.ExCommand;
-import net.kyori.adventure.text.Component;
-
 import java.util.List;
+import net.kyori.adventure.text.Component;
 
 public class StoryCmd implements CommandListener {
 
     @Override
-    public void onCommand(Sender sender, ExCommand<Sender, Argument> cmd, Arguments<Argument> args) {
+    public void onCommand(Sender sender, ExCommand<Sender, Argument> cmd,
+            Arguments<Argument> args) {
 
         if (!sender.isPlayer(true)) {
             return;
@@ -84,12 +84,14 @@ public class StoryCmd implements CommandListener {
 
                 user.buyChapter(bookId, chapterName);
                 sender.sendPluginMessage(Component.text("Bought chapter for ", ExTextColor.PERSONAL)
-                        .append(Component.text(StoryServer.PART_PRICE + " TimeCoins", ExTextColor.VALUE)));
-                Server.printText(Plugin.STORY, user.getName() + " bought chapter " + bookId + "." + chapterName, "Buy");
+                        .append(Component.text(StoryServer.PART_PRICE + " TimeCoins",
+                                ExTextColor.VALUE)));
+                Loggers.GAME.info(user.getName() + " bought chapter " + bookId + "." + chapterName);
             }
 
             if (!user.getProgress().canPlayChapter(bookId, chapterName)) {
-                sender.sendPluginMessage(Component.text("You can not play this chapter", ExTextColor.WARNING));
+                sender.sendPluginMessage(
+                        Component.text("You can not play this chapter", ExTextColor.WARNING));
                 return;
             }
 
@@ -112,22 +114,22 @@ public class StoryCmd implements CommandListener {
                 return;
             }
 
-
             for (StoryUser member : user.getJoinedUsers()) {
                 if (!member.getProgress().canPlayChapter(bookId, chapterName)) {
                     sender.sendPluginMessage(member.getChatNameComponent()
-                            .append(Component.text("can not play this chapter", ExTextColor.WARNING)));
+                            .append(Component.text("can not play this chapter",
+                                    ExTextColor.WARNING)));
                     return;
                 }
             }
-
 
             user.prepareStoryChapter(bookId, chapterName);
         }
     }
 
     @Override
-    public List<String> getTabCompletion(ExCommand<Sender, Argument> cmd, Arguments<Argument> args) {
+    public List<String> getTabCompletion(ExCommand<Sender, Argument> cmd,
+            Arguments<Argument> args) {
         if (args.length() == 1) {
             return List.of("add", "remove");
         } else if (args.length() == 2) {
