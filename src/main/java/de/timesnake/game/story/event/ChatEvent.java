@@ -15,13 +15,14 @@ import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
+import de.timesnake.library.basic.util.Loggers;
 import de.timesnake.library.chat.ExTextColor;
-import net.kyori.adventure.text.Component;
-
 import java.util.List;
 import java.util.function.Supplier;
+import net.kyori.adventure.text.Component;
 
-public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Action> implements UserChatCommandListener {
+public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Action> implements
+        UserChatCommandListener {
 
     public static final String NAME = "chat_code";
 
@@ -43,7 +44,8 @@ public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Acti
         if (trigger.containsPrimitive(CODE)) {
             this.codes = List.of(quest.parseString(trigger.getString(CODE)));
         } else {
-            this.codes = trigger.getList(CODE).stream().map(m -> quest.parseString(((String) m))).toList();
+            this.codes = trigger.getList(CODE).stream().map(m -> quest.parseString(((String) m)))
+                    .toList();
         }
 
         if (this.codes == null) {
@@ -69,17 +71,21 @@ public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Acti
             return;
         }
 
-        Server.printText(Plugin.STORY, Server.getChatManager().getSenderMember(event.getUser()) + event.getMessage());
+        Loggers.GAME.info(
+                Server.getChatManager().getSenderMember(event.getUser()) + event.getMessage());
 
         if (this.codes.stream().anyMatch(c -> c.get().equals(event.getMessage()))) {
             event.removeLisener(false);
             event.setCancelled(true);
-            event.getUser().sendMessage(Server.getChat().getSenderMember(event.getUser()) + "§7" + event.getMessage());
-            event.getUser().sendPluginMessage(Plugin.STORY, Component.text("Leider falsch", ExTextColor.WARNING));
+            event.getUser().sendMessage(
+                    Server.getChat().getSenderMember(event.getUser()) + "§7" + event.getMessage());
+            event.getUser().sendPluginMessage(Plugin.STORY,
+                    Component.text("Leider falsch", ExTextColor.WARNING));
             return;
         }
 
-        event.getUser().sendPluginMessage(Plugin.STORY, Component.text("Richtig", ExTextColor.GREEN));
+        event.getUser()
+                .sendPluginMessage(Plugin.STORY, Component.text("Richtig", ExTextColor.GREEN));
         this.triggerAction((StoryUser) event.getUser());
 
         event.removeLisener(true);

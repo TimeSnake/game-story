@@ -7,7 +7,6 @@ package de.timesnake.game.story.server;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.ServerManager;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
-import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.listener.EventManager;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.StoryBook;
@@ -15,6 +14,7 @@ import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryFile;
 import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.game.story.user.UserManager;
+import de.timesnake.library.basic.util.Loggers;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -68,7 +68,7 @@ public class StoryServerManager extends ServerManager implements Listener {
 
             this.bookById.put(id.intValue(), book);
 
-            Server.printText(Plugin.STORY, "Loaded book '" + id + "'");
+            Loggers.GAME.info("Loaded story book '" + id + "'");
         }
 
         Server.registerListener(this, GameStory.getPlugin());

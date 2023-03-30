@@ -24,6 +24,7 @@ import de.timesnake.game.story.structure.Difficulty;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBook;
 import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.library.basic.util.Loggers;
 import de.timesnake.library.chat.ExTextColor;
 import de.timesnake.library.extension.util.chat.Chat;
 import de.timesnake.library.extension.util.player.UserSet;
@@ -142,7 +143,7 @@ public class StoryReader implements Iterable<StoryUser> {
 
     public void onCompletedQuest(Quest quest) {
         quest.end();
-        Server.printText(Plugin.STORY, Chat.listToString(this.users.stream()
+        Loggers.GAME.info(Chat.listToString(this.users.stream()
                 .map(UserPlayerDelegation::getName).toList()) + " completed '" + quest.getName()
                 + "'");
 

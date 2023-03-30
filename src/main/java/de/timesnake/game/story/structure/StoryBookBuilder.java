@@ -5,20 +5,49 @@
 package de.timesnake.game.story.structure;
 
 import com.moandjiezana.toml.Toml;
-import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.file.ExToml;
-import de.timesnake.game.story.action.*;
+import de.timesnake.game.story.action.BlockBreakAction;
+import de.timesnake.game.story.action.BlockInteractAction;
+import de.timesnake.game.story.action.ClearInventoryAction;
+import de.timesnake.game.story.action.DelayAction;
+import de.timesnake.game.story.action.ItemCollectAction;
+import de.timesnake.game.story.action.ItemGiveAction;
+import de.timesnake.game.story.action.ItemLootAction;
+import de.timesnake.game.story.action.SpawnGuardAction;
+import de.timesnake.game.story.action.StoryAction;
+import de.timesnake.game.story.action.TalkAction;
+import de.timesnake.game.story.action.ThoughtAction;
+import de.timesnake.game.story.action.TriggerAction;
+import de.timesnake.game.story.action.TriggeredAction;
+import de.timesnake.game.story.action.WeatherAction;
 import de.timesnake.game.story.book.Diary;
-import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.element.CharacterFile;
 import de.timesnake.game.story.element.ItemFile;
 import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.element.StoryItem;
-import de.timesnake.game.story.event.*;
-import de.timesnake.game.story.exception.*;
-
+import de.timesnake.game.story.event.AreaEvent;
+import de.timesnake.game.story.event.ChatEvent;
+import de.timesnake.game.story.event.DelayEvent;
+import de.timesnake.game.story.event.DropItemAtEvent;
+import de.timesnake.game.story.event.DropItemEvent;
+import de.timesnake.game.story.event.SleepEvent;
+import de.timesnake.game.story.exception.CharacterNotFoundException;
+import de.timesnake.game.story.exception.InvalidArgumentTypeException;
+import de.timesnake.game.story.exception.InvalidQuestException;
+import de.timesnake.game.story.exception.ItemNotFoundException;
+import de.timesnake.game.story.exception.MissingArgumentException;
+import de.timesnake.game.story.exception.StoryParseException;
+import de.timesnake.library.basic.util.Loggers;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class StoryBookBuilder {
 
@@ -37,7 +66,7 @@ public class StoryBookBuilder {
     }
 
     public StoryBook parseToBook() {
-        Server.printText(Plugin.STORY, "Loading book " + this.id);
+        Loggers.GAME.info("Loading book " + this.id);
 
         String bookName = this.bookToml.getString(NAME);
 
@@ -50,20 +79,20 @@ public class StoryBookBuilder {
             try {
                 character = StoryCharacter.initCharacter(characterName, entry.getValue());
             } catch (MissingArgumentException | InvalidArgumentTypeException e) {
-                Server.printText(Plugin.STORY, e.getMessage(), "Character");
+                Loggers.GAME.info("Character: " + e.getMessage());
             }
 
             if (character != null) {
                 if (characterByName.containsKey(characterName)) {
-                    Server.printWarning(Plugin.STORY, "Duplicate character name '" +
-                            characterName + "'", "Character");
+                    Loggers.GAME.warning("Duplicate character name '" +
+                            characterName + "'");
                     continue;
                 }
                 characterByName.put(characterName, character);
-                Server.printText(Plugin.STORY, "Loaded character " + characterName);
+                Loggers.GAME.info("Loaded character " + characterName);
             } else {
-                Server.printWarning(Plugin.STORY, "Could not load type of character '" +
-                        characterName + "'", "Character");
+                Loggers.GAME.warning("Could not load type of character '" +
+                        characterName + "'");
             }
 
         }
@@ -75,7 +104,7 @@ public class StoryBookBuilder {
             String itemName = entry.getKey();
             itemByName.put(itemName, new StoryItem(entry.getValue(), itemName));
 
-            Server.printText(Plugin.STORY, "Loaded item '" + itemName + "'");
+            Loggers.GAME.info("Loaded item '" + itemName + "'");
         }
 
         // load chapters
@@ -86,14 +115,15 @@ public class StoryBookBuilder {
         StoryChapter currentChapter = null;
 
         for (String chapterName : chapterNames) {
-            ExToml chapter = new ExToml(this.folder.resolve("chapter_" + chapterName + ".toml").toFile());
+            ExToml chapter = new ExToml(
+                    this.folder.resolve("chapter_" + chapterName + ".toml").toFile());
 
             String chapterDisplayName = chapter.getString(NAME);
             String chapterEndMessage = chapter.getString(END_MESSAGE);
             List<Long> playerSizes = chapter.getList("players");
             if (playerSizes == null) {
-                Server.printWarning(Plugin.STORY, "Missing argument 'players'", "Book " + this.id,
-                        "Chapter " + chapterName);
+                Loggers.GAME.warning("Book " + this.id + " Chapter " + chapterName
+                        + ": Missing argument 'players'");
                 playerSizes = List.of(1L);
             }
 
@@ -101,7 +131,8 @@ public class StoryBookBuilder {
 
             for (Difficulty difficulty : Difficulty.values()) {
                 Long maxDeaths = chapter.getLong(difficulty.name().toLowerCase() + ".max_deaths");
-                maxDeathsByDifficulty.put(difficulty, maxDeaths != null ? maxDeaths.intValue() : null);
+                maxDeathsByDifficulty.put(difficulty,
+                        maxDeaths != null ? maxDeaths.intValue() : null);
             }
 
             String worldName = chapter.getString("world");
@@ -132,14 +163,15 @@ public class StoryBookBuilder {
                 Toml quest = chapter.getTable("quest." + questName);
 
                 if (quest == null) {
-                    Server.printWarning(Plugin.STORY, "Referenced unknown quest '" + questName + "'");
+                    Loggers.GAME.warning("Referenced unknown quest '" + questName + "'");
                     continue;
                 }
 
                 String typeName = quest.getString("type");
                 if (typeName == null) {
-                    Server.printWarning(Plugin.STORY, "Missing type argument", "Book " + this.id,
-                            "Chapter " + chapterName, "Quest " + questName);
+                    Loggers.GAME.warning(
+                            "Book " + this.id + " Chapter " + chapterName + " Quest " + questName
+                                    + ": Missing type argument");
                 }
                 Quest.Type type = Quest.Type.valueOf(typeName.toUpperCase());
 
@@ -152,8 +184,9 @@ public class StoryBookBuilder {
                         currentQuest = new OptionalQuest(this, quest, questName);
                     }
                 } catch (StoryParseException e) {
-                    Server.printWarning(Plugin.STORY, e.getMessage(), "Book " + this.id,
-                            "Chapter " + chapterName, "Quest " + questName);
+                    Loggers.GAME.warning("Book " + this.id +
+                            " Chapter " + chapterName + " Quest " + questName + ": "
+                            + e.getMessage());
                     continue;
                 }
 
@@ -169,8 +202,9 @@ public class StoryBookBuilder {
                     try {
                         current = this.getActionFromFile(currentQuest, action, actionId);
                     } catch (StoryParseException e) {
-                        Server.printWarning(Plugin.STORY, e.getMessage(), "Book " + this.id,
-                                "Chapter " + chapterName, "Quest " + questName, "Action " + actionId);
+                        Loggers.GAME.warning("Book " + this.id +
+                                " Chapter " + chapterName + " Quest " + questName +
+                                " Action " + actionId + ": " + e.getMessage());
                         continue;
                     }
 
@@ -210,7 +244,7 @@ public class StoryBookBuilder {
                 if (first != null) {
                     currentQuest.setFirstAction(first);
                 } else {
-                    Server.printWarning(Plugin.STORY, "No actions found in quest '" + questName + "'");
+                    Loggers.GAME.warning("No actions found in quest '" + questName + "'");
                 }
 
                 currentQuest.setLastActionId(actionId);
@@ -223,8 +257,10 @@ public class StoryBookBuilder {
                         try {
                             quest.addNextQuest(loadedQuestByName.get(nextQuestName));
                         } catch (InvalidQuestException e) {
-                            Server.printWarning(Plugin.STORY, "Invalid type at quest '" + nextQuestName + "'",
-                                    "Book " + this.id, "Chapter " + chapterName, "Quest " + quest.getName());
+                            Loggers.GAME.warning(
+                                    "Book " + this.id + " Chapter " + chapterName + " Quest "
+                                            + quest.getName() + ": Invalid type at quest '"
+                                            + nextQuestName + "'");
                         }
                     }
                 }
@@ -238,9 +274,10 @@ public class StoryBookBuilder {
                         if (toSkip != null) {
                             quest.addQuestsToSkipAtStart(toSkip);
                         } else {
-                            Server.printWarning(Plugin.STORY, "Unknown quest to skip at start '" + toSkipName + "'",
-                                    "Book " + this.id, "Chapter " + chapterName,
-                                    "Quest " + quest.getName());
+                            Loggers.GAME.warning(
+                                    "Book " + this.id + " Chapter " + chapterName + " Quest "
+                                            + quest.getName() + ": Unknown quest to skip at start '"
+                                            + toSkipName + "'");
                         }
                     }
                 }
@@ -254,9 +291,10 @@ public class StoryBookBuilder {
                         if (toSkip != null) {
                             quest.addQuestsToSkipAtEnd(toSkip);
                         } else {
-                            Server.printWarning(Plugin.STORY, "Unknown quest to skip at end '" + toSkipName + "'",
-                                    "Book " + this.id, "Chapter " + chapterName,
-                                    "Quest " + quest.getName());
+                            Loggers.GAME.warning(
+                                    "Book " + this.id + " Chapter " + chapterName + " Quest "
+                                            + quest.getName() + ": Unknown quest to skip at end '"
+                                            + toSkipName + "'");
                         }
                     }
                 }
@@ -269,15 +307,17 @@ public class StoryBookBuilder {
                 if (character != null) {
                     characters.add(character);
                 } else {
-                    Server.printWarning(Plugin.STORY, "Could not find character '" + name + "'",
-                            "Book " + this.id, "Chapter " + chapterName);
+                    Loggers.GAME.warning("Book " + this.id + " Chapter " + chapterName
+                            + ": Could not find character '" + name + "'");
                 }
             }
 
             StoryChapter previousChapter = currentChapter;
 
-            currentChapter = new StoryChapter(chapterName, chapterDisplayName, chapterEndMessage, diary,
-                    loadedQuestByName.get(startQuest), playerSizes.stream().map(Long::intValue).toList(),
+            currentChapter = new StoryChapter(chapterName, chapterDisplayName, chapterEndMessage,
+                    diary,
+                    loadedQuestByName.get(startQuest),
+                    playerSizes.stream().map(Long::intValue).toList(),
                     maxDeathsByDifficulty, worldName, characters);
 
             if (previousChapter != null) {
@@ -288,7 +328,8 @@ public class StoryBookBuilder {
             chapterByName.put(chapterName, currentChapter);
         }
 
-        StoryBook book = new StoryBook(this.id, bookName, chapterByName, characterByName, itemByName);
+        StoryBook book = new StoryBook(this.id, bookName, chapterByName, characterByName,
+                itemByName);
         this.printBookTree(book);
         return book;
     }
@@ -298,11 +339,14 @@ public class StoryBookBuilder {
         for (StoryChapter chapter : book) {
             LinkedList<String> lines = new LinkedList<>();
             this.print(lines, chapter.getFirstQuest(), "", false, new HashSet<>());
-            Server.printSection(Plugin.STORY, chapter.getName(), lines);
+            for (String line : lines) {
+                Loggers.GAME.info(chapter.getName() + ": " + line);
+            }
         }
     }
 
-    private void print(LinkedList<String> lines, Quest quest, String prefix, boolean hasNext, Collection<String> visitedQuests) {
+    private void print(LinkedList<String> lines, Quest quest, String prefix, boolean hasNext,
+            Collection<String> visitedQuests) {
         if (visitedQuests.contains(quest.getName())) {
             lines.add(prefix + (hasNext ? "|--" : "\\--") + "& " + quest.getName());
             return;
@@ -311,30 +355,36 @@ public class StoryBookBuilder {
         visitedQuests.add(quest.getName());
 
         if (quest instanceof MainQuest) {
-            lines.add(prefix + (hasNext ? "|--" : "\\--") + "+ " + quest.getName() + ": " + quest.getLastActionId() + " actions" +
+            lines.add(prefix + (hasNext ? "|--" : "\\--") + "+ " + quest.getName() + ": "
+                    + quest.getLastActionId() + " actions" +
                     (!quest.questsToSkipAtStart.isEmpty() ? ", start skip:" + String.join(",",
                             quest.questsToSkipAtStart.stream().map(Quest::getName).toList()) : "") +
                     (!quest.questsToSkipAtEnd.isEmpty() ? ", end skip:" + String.join(",",
                             quest.questsToSkipAtEnd.stream().map(Quest::getName).toList()) : ""));
             prefix += (hasNext ? "|  " : "   ");
             boolean hasOptional = !((MainQuest) quest).getNextOptionalQuests().isEmpty();
-            for (Iterator<MainQuest> iterator = ((MainQuest) quest).getNextMainQuests().iterator(); iterator.hasNext(); ) {
+            for (Iterator<MainQuest> iterator = ((MainQuest) quest).getNextMainQuests().iterator();
+                    iterator.hasNext(); ) {
                 Quest nextMain = iterator.next();
-                this.print(lines, nextMain, prefix, iterator.hasNext() || hasOptional, visitedQuests);
+                this.print(lines, nextMain, prefix, iterator.hasNext() || hasOptional,
+                        visitedQuests);
             }
 
-            for (Iterator<OptionalQuest> iterator = ((MainQuest) quest).getNextOptionalQuests().iterator(); iterator.hasNext(); ) {
+            for (Iterator<OptionalQuest> iterator = ((MainQuest) quest).getNextOptionalQuests()
+                    .iterator(); iterator.hasNext(); ) {
                 OptionalQuest nextOptional = iterator.next();
                 this.print(lines, nextOptional, prefix, iterator.hasNext(), visitedQuests);
             }
         } else {
-            lines.add(prefix + (hasNext ? "|-- " : "\\-- ") + quest.getName() + ": " + quest.getLastActionId() + " actions" +
+            lines.add(prefix + (hasNext ? "|-- " : "\\-- ") + quest.getName() + ": "
+                    + quest.getLastActionId() + " actions" +
                     (!quest.questsToSkipAtStart.isEmpty() ? ", start skip:" + String.join(",",
                             quest.questsToSkipAtStart.stream().map(Quest::getName).toList()) : "") +
                     (!quest.questsToSkipAtEnd.isEmpty() ? ", end skip:" + String.join(",",
                             quest.questsToSkipAtEnd.stream().map(Quest::getName).toList()) : ""));
             prefix += (hasNext ? "|  " : "   ");
-            for (Iterator<? extends Quest> iterator = quest.getNextQuests().iterator(); iterator.hasNext(); ) {
+            for (Iterator<? extends Quest> iterator = quest.getNextQuests().iterator();
+                    iterator.hasNext(); ) {
                 Quest nextOptional = iterator.next();
                 this.print(lines, nextOptional, prefix, iterator.hasNext(), visitedQuests);
             }
@@ -342,7 +392,8 @@ public class StoryBookBuilder {
     }
 
 
-    private StoryAction getActionFromFile(Quest quest, Toml actionTable, int id) throws StoryParseException {
+    private StoryAction getActionFromFile(Quest quest, Toml actionTable, int id)
+            throws StoryParseException {
 
         String actionType = actionTable.getString("action");
 
@@ -354,15 +405,22 @@ public class StoryBookBuilder {
 
         StoryAction action = switch (actionType.toLowerCase()) {
             case TalkAction.NAME -> new TalkAction(this, quest, actionTable, id, diaryPages);
-            case ItemCollectAction.NAME -> new ItemCollectAction(this, quest, actionTable, id, diaryPages);
-            case ItemGiveAction.NAME -> new ItemGiveAction(this, quest, actionTable, id, diaryPages);
+            case ItemCollectAction.NAME ->
+                    new ItemCollectAction(this, quest, actionTable, id, diaryPages);
+            case ItemGiveAction.NAME ->
+                    new ItemGiveAction(this, quest, actionTable, id, diaryPages);
             case DelayAction.NAME -> new DelayAction(quest, actionTable, id, diaryPages);
             case ThoughtAction.NAME -> new ThoughtAction(quest, actionTable, id, diaryPages);
-            case ClearInventoryAction.NAME -> new ClearInventoryAction(quest, actionTable, id, diaryPages);
-            case ItemLootAction.NAME -> new ItemLootAction(this, quest, actionTable, id, diaryPages);
-            case SpawnGuardAction.NAME -> new SpawnGuardAction(this, quest, actionTable, id, diaryPages);
-            case BlockInteractAction.NAME -> new BlockInteractAction(this, quest, actionTable, id, diaryPages);
-            case BlockBreakAction.NAME -> new BlockBreakAction(this, quest, actionTable, id, diaryPages);
+            case ClearInventoryAction.NAME ->
+                    new ClearInventoryAction(quest, actionTable, id, diaryPages);
+            case ItemLootAction.NAME ->
+                    new ItemLootAction(this, quest, actionTable, id, diaryPages);
+            case SpawnGuardAction.NAME ->
+                    new SpawnGuardAction(this, quest, actionTable, id, diaryPages);
+            case BlockInteractAction.NAME ->
+                    new BlockInteractAction(this, quest, actionTable, id, diaryPages);
+            case BlockBreakAction.NAME ->
+                    new BlockBreakAction(this, quest, actionTable, id, diaryPages);
             case WeatherAction.NAME -> new WeatherAction(actionTable, id, diaryPages);
             default -> new TriggerAction(quest, actionTable, id, diaryPages);
         };
@@ -378,17 +436,19 @@ public class StoryBookBuilder {
         }
 
         switch (triggerType.toLowerCase()) {
-            case AreaEvent.NAME -> triggeredAction.setTriggerEvent(new AreaEvent<>(triggeredAction, this, actionTable));
-            case DropItemAtEvent.NAME ->
-                    triggeredAction.setTriggerEvent(new DropItemAtEvent<>(quest, triggeredAction, this, actionTable));
-            case DropItemEvent.NAME ->
-                    triggeredAction.setTriggerEvent(new DropItemEvent<>(quest, triggeredAction, this, actionTable));
-            case SleepEvent.NAME -> triggeredAction.setTriggerEvent(new SleepEvent<>(triggeredAction));
-            case ChatEvent.NAME ->
-                    triggeredAction.setTriggerEvent(new ChatEvent<>(quest, triggeredAction, actionTable));
-            case DelayEvent.NAME ->
-                    triggeredAction.setTriggerEvent(new DelayEvent<>(quest, triggeredAction, actionTable));
-            default -> Server.printWarning(Plugin.STORY, "Unknown trigger type: " + triggerType);
+            case AreaEvent.NAME -> triggeredAction.setTriggerEvent(
+                    new AreaEvent<>(triggeredAction, this, actionTable));
+            case DropItemAtEvent.NAME -> triggeredAction.setTriggerEvent(
+                    new DropItemAtEvent<>(quest, triggeredAction, this, actionTable));
+            case DropItemEvent.NAME -> triggeredAction.setTriggerEvent(
+                    new DropItemEvent<>(quest, triggeredAction, this, actionTable));
+            case SleepEvent.NAME ->
+                    triggeredAction.setTriggerEvent(new SleepEvent<>(triggeredAction));
+            case ChatEvent.NAME -> triggeredAction.setTriggerEvent(
+                    new ChatEvent<>(quest, triggeredAction, actionTable));
+            case DelayEvent.NAME -> triggeredAction.setTriggerEvent(
+                    new DelayEvent<>(quest, triggeredAction, actionTable));
+            default -> Loggers.GAME.warning("Unknown trigger type: " + triggerType);
         }
 
         return action;
