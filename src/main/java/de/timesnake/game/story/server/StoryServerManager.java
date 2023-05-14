@@ -64,7 +64,7 @@ public class StoryServerManager extends ServerManager implements Listener {
         // load chapters from file
         for (Long id : this.file.getBookIds()) {
             StoryBook book = new StoryBookBuilder(id.intValue(),
-                    Path.of("plugins", "game-story", id + "")).parseToBook();
+                    Path.of("plugins", "game-story", String.valueOf(id))).parseToBook();
 
             this.bookById.put(id.intValue(), book);
 
