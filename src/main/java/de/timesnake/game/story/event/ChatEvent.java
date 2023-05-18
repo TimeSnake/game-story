@@ -22,75 +22,75 @@ import java.util.function.Supplier;
 import net.kyori.adventure.text.Component;
 
 public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Action> implements
-        UserChatCommandListener {
+    UserChatCommandListener {
 
-    public static final String NAME = "chat_code";
+  public static final String NAME = "chat_code";
 
-    private static final String CODE = "code";
+  private static final String CODE = "code";
 
-    private final List<Supplier<String>> codes;
-    private StoryReader reader;
+  private final List<Supplier<String>> codes;
+  private StoryReader reader;
 
-    protected ChatEvent(StoryReader reader, List<Supplier<String>> codes) {
-        super();
-        this.codes = codes;
-        this.reader = reader;
+  protected ChatEvent(StoryReader reader, List<Supplier<String>> codes) {
+    super();
+    this.codes = codes;
+    this.reader = reader;
 
-        this.reader.forEach(u -> Server.getUserEventManager().addUserChatCommand(u, this));
+    this.reader.forEach(u -> Server.getUserEventManager().addUserChatCommand(u, this));
+  }
+
+  public ChatEvent(Quest quest, Action action, Toml trigger) throws MissingArgumentException {
+    super(action);
+    if (trigger.containsPrimitive(CODE)) {
+      this.codes = List.of(quest.parseString(trigger.getString(CODE)));
+    } else {
+      this.codes = trigger.getList(CODE).stream().map(m -> quest.parseString(((String) m)))
+          .toList();
     }
 
-    public ChatEvent(Quest quest, Action action, Toml trigger) throws MissingArgumentException {
-        super(action);
-        if (trigger.containsPrimitive(CODE)) {
-            this.codes = List.of(quest.parseString(trigger.getString(CODE)));
-        } else {
-            this.codes = trigger.getList(CODE).stream().map(m -> quest.parseString(((String) m)))
-                    .toList();
-        }
+    if (this.codes == null) {
+      throw new MissingArgumentException("code");
+    }
+  }
 
-        if (this.codes == null) {
-            throw new MissingArgumentException("code");
-        }
+  @Override
+  protected TriggerEvent<Action> clone(Quest section, StoryReader reader, StoryChapter chapter) {
+    return new ChatEvent<>(reader, this.codes);
+  }
+
+  @Override
+  public Type getType() {
+    return Type.CHAT_CODE;
+  }
+
+  @Override
+  public void onUserChatCommand(UserChatCommandEvent event) {
+    if (!this.action.isActive()) {
+      event.removeLisener(false);
+      event.setCancelled(false);
+      return;
     }
 
-    @Override
-    protected TriggerEvent<Action> clone(Quest section, StoryReader reader, StoryChapter chapter) {
-        return new ChatEvent<>(reader, this.codes);
+    Loggers.GAME.info(
+        Server.getChatManager().getSenderMember(event.getUser()) + event.getMessage());
+
+    if (this.codes.stream().anyMatch(c -> c.get().equals(event.getMessage()))) {
+      event.removeLisener(false);
+      event.setCancelled(true);
+      event.getUser().sendMessage(
+          Server.getChat().getSenderMember(event.getUser()) + "§7" + event.getMessage());
+      event.getUser().sendPluginMessage(Plugin.STORY,
+          Component.text("Leider falsch", ExTextColor.WARNING));
+      return;
     }
 
-    @Override
-    public Type getType() {
-        return Type.CHAT_CODE;
-    }
+    event.getUser()
+        .sendPluginMessage(Plugin.STORY, Component.text("Richtig", ExTextColor.GREEN));
+    this.triggerAction((StoryUser) event.getUser());
 
-    @Override
-    public void onUserChatCommand(UserChatCommandEvent event) {
-        if (!this.action.isActive()) {
-            event.removeLisener(false);
-            event.setCancelled(false);
-            return;
-        }
+    event.removeLisener(true);
+    event.setCancelled(true);
 
-        Loggers.GAME.info(
-                Server.getChatManager().getSenderMember(event.getUser()) + event.getMessage());
-
-        if (this.codes.stream().anyMatch(c -> c.get().equals(event.getMessage()))) {
-            event.removeLisener(false);
-            event.setCancelled(true);
-            event.getUser().sendMessage(
-                    Server.getChat().getSenderMember(event.getUser()) + "§7" + event.getMessage());
-            event.getUser().sendPluginMessage(Plugin.STORY,
-                    Component.text("Leider falsch", ExTextColor.WARNING));
-            return;
-        }
-
-        event.getUser()
-                .sendPluginMessage(Plugin.STORY, Component.text("Richtig", ExTextColor.GREEN));
-        this.triggerAction((StoryUser) event.getUser());
-
-        event.removeLisener(true);
-        event.setCancelled(true);
-
-        this.reader.forEach(u -> Server.getUserEventManager().removeUserChatCommand(u, this));
-    }
+    this.reader.forEach(u -> Server.getUserEventManager().removeUserChatCommand(u, this));
+  }
 }

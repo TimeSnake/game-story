@@ -16,40 +16,40 @@ import org.bukkit.event.player.PlayerBedEnterEvent;
 
 public class SleepEvent<Action extends TriggeredAction> extends TriggerEvent<Action> {
 
-    public static final String NAME = "sleep";
+  public static final String NAME = "sleep";
 
-    public SleepEvent() {
-        super();
+  public SleepEvent() {
+    super();
+  }
+
+  public SleepEvent(Action action) {
+    super(action);
+  }
+
+  @Override
+  protected TriggerEvent<Action> clone(Quest section, StoryReader reader, StoryChapter chapter) {
+    return new SleepEvent<>();
+  }
+
+  @Override
+  public Type getType() {
+    return Type.SLEEP;
+  }
+
+  @StoryEvent
+  public void onPlayerSleep(PlayerBedEnterEvent e) {
+    if (!this.action.isActive()) {
+      return;
     }
 
-    public SleepEvent(Action action) {
-        super(action);
+    StoryUser user = (StoryUser) Server.getUser(e.getPlayer());
+
+    if (!this.action.getReader().containsUser(user)) {
+      return;
     }
 
-    @Override
-    protected TriggerEvent<Action> clone(Quest section, StoryReader reader, StoryChapter chapter) {
-        return new SleepEvent<>();
-    }
+    e.setUseBed(Event.Result.ALLOW);
 
-    @Override
-    public Type getType() {
-        return Type.SLEEP;
-    }
-
-    @StoryEvent
-    public void onPlayerSleep(PlayerBedEnterEvent e) {
-        if (!this.action.isActive()) {
-            return;
-        }
-
-        StoryUser user = (StoryUser) Server.getUser(e.getPlayer());
-
-        if (!this.action.getReader().containsUser(user)) {
-            return;
-        }
-
-        e.setUseBed(Event.Result.ALLOW);
-
-        super.triggerAction(user);
-    }
+    super.triggerAction(user);
+  }
 }

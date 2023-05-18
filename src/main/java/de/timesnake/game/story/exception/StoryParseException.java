@@ -6,7 +6,7 @@ package de.timesnake.game.story.exception;
 
 public class StoryParseException extends Exception {
 
-    public StoryParseException(String message) {
-        super(message);
-    }
+  public StoryParseException(String message) {
+    super(message);
+  }
 }

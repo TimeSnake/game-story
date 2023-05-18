@@ -7,28 +7,27 @@ package de.timesnake.game.story.server;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
 import de.timesnake.game.story.listener.EventManager;
 import de.timesnake.game.story.structure.StoryBook;
-
 import java.util.Collection;
 
 public class StoryServer {
 
-    public static final int PART_PRICE = 200;
+  public static final int PART_PRICE = 200;
 
-    public static StoryBook getBook(Integer id) {
-        return server.getBook(id);
-    }
+  public static StoryBook getBook(Integer id) {
+    return server.getBook(id);
+  }
 
-    public static Collection<StoryBook> getBooks() {
-        return server.getBooks();
-    }
+  public static Collection<StoryBook> getBooks() {
+    return server.getBooks();
+  }
 
-    public static ExWorld getBaseWorld() {
-        return server.getBaseWorld();
-    }
+  public static ExWorld getBaseWorld() {
+    return server.getBaseWorld();
+  }
 
-    public static EventManager getEventManager() {
-        return server.getEventManager();
-    }
+  public static EventManager getEventManager() {
+    return server.getEventManager();
+  }
 
-    private static final StoryServerManager server = StoryServerManager.getInstance();
+  private static final StoryServerManager server = StoryServerManager.getInstance();
 }

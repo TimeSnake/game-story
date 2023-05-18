@@ -6,11 +6,11 @@ package de.timesnake.game.story.exception;
 
 public class InvalidQuestException extends RuntimeException {
 
-    public InvalidQuestException() {
+  public InvalidQuestException() {
 
-    }
+  }
 
-    public InvalidQuestException(String message) {
-        super(message);
-    }
+  public InvalidQuestException(String message) {
+    super(message);
+  }
 }

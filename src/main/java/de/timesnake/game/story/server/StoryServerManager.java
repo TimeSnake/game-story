@@ -26,72 +26,72 @@ import org.bukkit.event.Listener;
 
 public class StoryServerManager extends ServerManager implements Listener {
 
-    public static StoryServerManager getInstance() {
-        return (StoryServerManager) ServerManager.getInstance();
+  public static StoryServerManager getInstance() {
+    return (StoryServerManager) ServerManager.getInstance();
+  }
+
+  private final Map<Integer, StoryBook> bookById = new HashMap<>();
+
+  private EventManager eventManager;
+  private UserManager userManager;
+  private StoryFile file;
+
+  private ExWorld baseWorld;
+
+  public void onStoryEnable() {
+    this.userManager = new UserManager();
+
+    this.file = new StoryFile(new File("plugins/game-story/story.toml"));
+
+    this.baseWorld = Server.getWorld("world");
+    this.baseWorld.setSpawnLocation(0, 70, 0);
+
+    this.baseWorld.restrict(ExWorld.Restriction.ENTITY_EXPLODE, true);
+    this.baseWorld.restrict(ExWorld.Restriction.NO_PLAYER_DAMAGE, false);
+    this.baseWorld.restrict(ExWorld.Restriction.FOOD_CHANGE, true);
+    this.baseWorld.restrict(ExWorld.Restriction.BLOCK_BURN_UP, true);
+    this.baseWorld.restrict(ExWorld.Restriction.ENTITY_BLOCK_BREAK, true);
+    this.baseWorld.restrict(ExWorld.Restriction.DROP_PICK_ITEM, true);
+    this.baseWorld.restrict(ExWorld.Restriction.BLOCK_BREAK, true);
+    this.baseWorld.setExceptService(true);
+    this.baseWorld.setPVP(false);
+    this.baseWorld.restrict(ExWorld.Restriction.NO_PLAYER_DAMAGE, true);
+    this.baseWorld.setGameRule(GameRule.DO_MOB_SPAWNING, false);
+    this.baseWorld.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
+
+    this.eventManager = new EventManager();
+
+    // load chapters from file
+    for (Long id : this.file.getBookIds()) {
+      StoryBook book = new StoryBookBuilder(id.intValue(),
+          Path.of("plugins", "game-story", String.valueOf(id))).parseToBook();
+
+      this.bookById.put(id.intValue(), book);
+
+      Loggers.GAME.info("Loaded story book '" + id + "'");
     }
 
-    private final Map<Integer, StoryBook> bookById = new HashMap<>();
+    Server.registerListener(this, GameStory.getPlugin());
+  }
 
-    private EventManager eventManager;
-    private UserManager userManager;
-    private StoryFile file;
+  @Override
+  public StoryUser loadUser(Player player) {
+    return new StoryUser(player);
+  }
 
-    private ExWorld baseWorld;
+  public StoryBook getBook(Integer id) {
+    return this.bookById.get(id);
+  }
 
-    public void onStoryEnable() {
-        this.userManager = new UserManager();
+  public Collection<StoryBook> getBooks() {
+    return this.bookById.values();
+  }
 
-        this.file = new StoryFile(new File("plugins/game-story/story.toml"));
+  public ExWorld getBaseWorld() {
+    return baseWorld;
+  }
 
-        this.baseWorld = Server.getWorld("world");
-        this.baseWorld.setSpawnLocation(0, 70, 0);
-
-        this.baseWorld.restrict(ExWorld.Restriction.ENTITY_EXPLODE, true);
-        this.baseWorld.restrict(ExWorld.Restriction.NO_PLAYER_DAMAGE, false);
-        this.baseWorld.restrict(ExWorld.Restriction.FOOD_CHANGE, true);
-        this.baseWorld.restrict(ExWorld.Restriction.BLOCK_BURN_UP, true);
-        this.baseWorld.restrict(ExWorld.Restriction.ENTITY_BLOCK_BREAK, true);
-        this.baseWorld.restrict(ExWorld.Restriction.DROP_PICK_ITEM, true);
-        this.baseWorld.restrict(ExWorld.Restriction.BLOCK_BREAK, true);
-        this.baseWorld.setExceptService(true);
-        this.baseWorld.setPVP(false);
-        this.baseWorld.restrict(ExWorld.Restriction.NO_PLAYER_DAMAGE, true);
-        this.baseWorld.setGameRule(GameRule.DO_MOB_SPAWNING, false);
-        this.baseWorld.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
-
-        this.eventManager = new EventManager();
-
-        // load chapters from file
-        for (Long id : this.file.getBookIds()) {
-            StoryBook book = new StoryBookBuilder(id.intValue(),
-                    Path.of("plugins", "game-story", String.valueOf(id))).parseToBook();
-
-            this.bookById.put(id.intValue(), book);
-
-            Loggers.GAME.info("Loaded story book '" + id + "'");
-        }
-
-        Server.registerListener(this, GameStory.getPlugin());
-    }
-
-    @Override
-    public StoryUser loadUser(Player player) {
-        return new StoryUser(player);
-    }
-
-    public StoryBook getBook(Integer id) {
-        return this.bookById.get(id);
-    }
-
-    public Collection<StoryBook> getBooks() {
-        return this.bookById.values();
-    }
-
-    public ExWorld getBaseWorld() {
-        return baseWorld;
-    }
-
-    public EventManager getEventManager() {
-        return eventManager;
-    }
+  public EventManager getEventManager() {
+    return eventManager;
+  }
 }

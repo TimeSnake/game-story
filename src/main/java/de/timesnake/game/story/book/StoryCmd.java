@@ -21,24 +21,24 @@ import net.kyori.adventure.text.Component;
 
 public class StoryCmd implements CommandListener {
 
-    @Override
-    public void onCommand(Sender sender, ExCommand<Sender, Argument> cmd,
-            Arguments<Argument> args) {
+  @Override
+  public void onCommand(Sender sender, ExCommand<Sender, Argument> cmd,
+      Arguments<Argument> args) {
 
-        if (!sender.isPlayer(true)) {
-            return;
-        }
+    if (!sender.isPlayer(true)) {
+      return;
+    }
 
-        StoryUser user = ((StoryUser) sender.getUser());
+    StoryUser user = ((StoryUser) sender.getUser());
 
-        if (!args.isLengthEquals(2, true)) {
-            return;
-        }
+    if (!args.isLengthEquals(2, true)) {
+      return;
+    }
 
-        if (args.getString(0).equalsIgnoreCase("add")) {
-            if (!args.get(1).isPlayerName(true)) {
-                return;
-            }
+    if (args.getString(0).equalsIgnoreCase("add")) {
+      if (!args.get(1).isPlayerName(true)) {
+        return;
+      }
 
             /*
             StoryUser listener = (StoryUser) args.get(1).toUser();
@@ -52,10 +52,10 @@ public class StoryCmd implements CommandListener {
             }
 
              */
-        } else if (args.getString(0).equalsIgnoreCase("remove")) {
-            if (!args.get(1).isPlayerName(true)) {
-                return;
-            }
+    } else if (args.getString(0).equalsIgnoreCase("remove")) {
+      if (!args.get(1).isPlayerName(true)) {
+        return;
+      }
             /*
             StoryUser listener = (StoryUser) args.get(1).toUser();
             boolean res = user.removeListener(listener);
@@ -68,80 +68,80 @@ public class StoryCmd implements CommandListener {
             }
 
              */
-        } else {
-            if (!args.get(0).isInt(true)) {
-                return;
-            }
+    } else {
+      if (!args.get(0).isInt(true)) {
+        return;
+      }
 
-            Integer bookId = args.get(0).toInt();
-            String chapterName = args.getString(1);
+      Integer bookId = args.get(0).toInt();
+      String chapterName = args.getString(1);
 
-            if (!user.getBoughtChapters(bookId).contains(chapterName)) {
-                if (user.getCoins() < StoryServer.PART_PRICE) {
-                    sender.sendNotEnoughCoinsMessage(StoryServer.PART_PRICE - user.getCoins());
-                    return;
-                }
-
-                user.buyChapter(bookId, chapterName);
-                sender.sendPluginMessage(Component.text("Bought chapter for ", ExTextColor.PERSONAL)
-                        .append(Component.text(StoryServer.PART_PRICE + " TimeCoins",
-                                ExTextColor.VALUE)));
-                Loggers.GAME.info(user.getName() + " bought chapter " + bookId + "." + chapterName);
-            }
-
-            if (!user.getProgress().canPlayChapter(bookId, chapterName)) {
-                sender.sendPluginMessage(
-                        Component.text("You can not play this chapter", ExTextColor.WARNING));
-                return;
-            }
-
-            StoryBook book = StoryServer.getBook(bookId);
-            if (book == null) {
-                sender.sendPluginMessage(Component.text("Unknown book", ExTextColor.WARNING));
-                return;
-            }
-
-            StoryChapter chapter = book.getChapter(chapterName);
-
-            if (chapter == null) {
-                sender.sendPluginMessage(Component.text("Unknown chapter", ExTextColor.WARNING));
-                return;
-            }
-
-            if (!chapter.getPlayerSizes().contains(user.getJoinedUsers().size() + 1)) {
-                sender.sendPluginMessage(Component.text("Invalid player size ", ExTextColor.WARNING)
-                        .append(Component.text(user.getJoinedUsers().size(), ExTextColor.VALUE)));
-                return;
-            }
-
-            for (StoryUser member : user.getJoinedUsers()) {
-                if (!member.getProgress().canPlayChapter(bookId, chapterName)) {
-                    sender.sendPluginMessage(member.getChatNameComponent()
-                            .append(Component.text("can not play this chapter",
-                                    ExTextColor.WARNING)));
-                    return;
-                }
-            }
-
-            user.prepareStoryChapter(bookId, chapterName);
+      if (!user.getBoughtChapters(bookId).contains(chapterName)) {
+        if (user.getCoins() < StoryServer.PART_PRICE) {
+          sender.sendNotEnoughCoinsMessage(StoryServer.PART_PRICE - user.getCoins());
+          return;
         }
-    }
 
-    @Override
-    public List<String> getTabCompletion(ExCommand<Sender, Argument> cmd,
-            Arguments<Argument> args) {
-        if (args.length() == 1) {
-            return List.of("add", "remove");
-        } else if (args.length() == 2) {
-            if (args.get(0).equalsIgnoreCase("add") || args.get(0).equalsIgnoreCase("remove")) {
-                return Server.getCommandManager().getTabCompleter().getPlayerNames();
-            }
+        user.buyChapter(bookId, chapterName);
+        sender.sendPluginMessage(Component.text("Bought chapter for ", ExTextColor.PERSONAL)
+            .append(Component.text(StoryServer.PART_PRICE + " TimeCoins",
+                ExTextColor.VALUE)));
+        Loggers.GAME.info(user.getName() + " bought chapter " + bookId + "." + chapterName);
+      }
+
+      if (!user.getProgress().canPlayChapter(bookId, chapterName)) {
+        sender.sendPluginMessage(
+            Component.text("You can not play this chapter", ExTextColor.WARNING));
+        return;
+      }
+
+      StoryBook book = StoryServer.getBook(bookId);
+      if (book == null) {
+        sender.sendPluginMessage(Component.text("Unknown book", ExTextColor.WARNING));
+        return;
+      }
+
+      StoryChapter chapter = book.getChapter(chapterName);
+
+      if (chapter == null) {
+        sender.sendPluginMessage(Component.text("Unknown chapter", ExTextColor.WARNING));
+        return;
+      }
+
+      if (!chapter.getPlayerSizes().contains(user.getJoinedUsers().size() + 1)) {
+        sender.sendPluginMessage(Component.text("Invalid player size ", ExTextColor.WARNING)
+            .append(Component.text(user.getJoinedUsers().size(), ExTextColor.VALUE)));
+        return;
+      }
+
+      for (StoryUser member : user.getJoinedUsers()) {
+        if (!member.getProgress().canPlayChapter(bookId, chapterName)) {
+          sender.sendPluginMessage(member.getChatNameComponent()
+              .append(Component.text("can not play this chapter",
+                  ExTextColor.WARNING)));
+          return;
         }
-        return List.of();
-    }
+      }
 
-    @Override
-    public void loadCodes(de.timesnake.library.extension.util.chat.Plugin plugin) {
-
+      user.prepareStoryChapter(bookId, chapterName);
     }
+  }
+
+  @Override
+  public List<String> getTabCompletion(ExCommand<Sender, Argument> cmd,
+      Arguments<Argument> args) {
+    if (args.length() == 1) {
+      return List.of("add", "remove");
+    } else if (args.length() == 2) {
+      if (args.get(0).equalsIgnoreCase("add") || args.get(0).equalsIgnoreCase("remove")) {
+        return Server.getCommandManager().getTabCompleter().getPlayerNames();
+      }
+    }
+    return List.of();
+  }
+
+  @Override
+  public void loadCodes(de.timesnake.library.extension.util.chat.Plugin plugin) {
+
+  }
 }
