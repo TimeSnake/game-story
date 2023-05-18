@@ -20,64 +20,69 @@ import de.timesnake.game.story.user.StoryUser;
 
 public class AreaEvent<Action extends TriggeredAction> extends LocationEvent<Action> {
 
-    public static final String NAME = "area";
+  public static final String NAME = "area";
 
-    protected final double radius;
+  protected final double radius;
 
-    protected AreaEvent(ExLocation location, StoryCharacter<?> character, double radius) {
-        super(location, character);
-        this.radius = radius;
+  protected AreaEvent(ExLocation location, StoryCharacter<?> character, double radius) {
+    super(location, character);
+    this.radius = radius;
+  }
+
+  public AreaEvent(Action action, StoryBookBuilder bookBuilder, Toml trigger)
+      throws StoryParseException {
+    super(action, bookBuilder, trigger);
+
+    Double radius;
+    try {
+      radius = trigger.getDouble("radius");
+    } catch (ClassCastException e) {
+      radius = trigger.getLong("radius").doubleValue();
     }
 
-    public AreaEvent(Action action, StoryBookBuilder bookBuilder, Toml trigger) throws StoryParseException {
-        super(action, bookBuilder, trigger);
-
-        Double radius;
-        try {
-            radius = trigger.getDouble("radius");
-        } catch (ClassCastException e) {
-            radius = trigger.getLong("radius").doubleValue();
-        }
-
-        if (radius == null) {
-            throw new MissingArgumentException("radius");
-        }
-
-        this.radius = radius;
-
+    if (radius == null) {
+      throw new MissingArgumentException("radius");
     }
 
-    public AreaEvent(Action action, StoryBookBuilder bookBuilder, Toml trigger, double radius) throws StoryParseException {
-        super(action, bookBuilder, trigger);
-        this.radius = radius;
+    this.radius = radius;
+
+  }
+
+  public AreaEvent(Action action, StoryBookBuilder bookBuilder, Toml trigger, double radius)
+      throws StoryParseException {
+    super(action, bookBuilder, trigger);
+    this.radius = radius;
+  }
+
+  @StoryEvent
+  public void onUserMove(AsyncUserMoveEvent e) {
+    if (this.action.getReader() == null || (
+        !this.action.getReader().containsUser(((StoryUser) e.getUser()))
+            && !this.action.getReader().containsUser((StoryUser) e.getUser()))
+        || !this.action.isActive()) {
+      return;
     }
 
-    @StoryEvent
-    public void onUserMove(AsyncUserMoveEvent e) {
-        if (this.action.getReader() == null || (!this.action.getReader().containsUser(((StoryUser) e.getUser()))
-                && !this.action.getReader().containsUser((StoryUser) e.getUser())) || !this.action.isActive()) {
-            return;
-        }
+    StoryUser user = ((StoryUser) e.getUser());
 
-        StoryUser user = ((StoryUser) e.getUser());
-
-        if (!user.getLocation().getWorld().equals(this.location.getWorld())) {
-            return;
-        }
-
-        if (user.getLocation().distance(this.location) <= this.radius) {
-            this.triggerAction(user);
-        }
+    if (!user.getLocation().getWorld().equals(this.location.getWorld())) {
+      return;
     }
 
-    @Override
-    protected AreaEvent<Action> clone(Quest section, StoryReader reader, StoryChapter chapter) {
-        return new AreaEvent<>(this.location.clone().setExWorld(chapter.getWorld()), this.character != null ?
-                section.getChapter().getCharacter(this.character.getName()) : null, this.radius);
+    if (user.getLocation().distance(this.location) <= this.radius) {
+      this.triggerAction(user);
     }
+  }
 
-    @Override
-    public Type getType() {
-        return Type.AREA;
-    }
+  @Override
+  protected AreaEvent<Action> clone(Quest section, StoryReader reader, StoryChapter chapter) {
+    return new AreaEvent<>(this.location.clone().setExWorld(chapter.getWorld()),
+        this.character != null ?
+            section.getChapter().getCharacter(this.character.getName()) : null, this.radius);
+  }
+
+  @Override
+  public Type getType() {
+    return Type.AREA;
+  }
 }

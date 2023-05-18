@@ -14,46 +14,48 @@ import de.timesnake.game.story.user.StoryUser;
 
 public abstract class TriggerEvent<Action extends TriggeredAction> implements StoryEventListener {
 
-    protected Action action;
+  protected Action action;
 
-    protected TriggerEvent() {
+  protected TriggerEvent() {
 
-    }
+  }
 
-    public TriggerEvent(Action action) {
-        this.action = action;
-    }
+  public TriggerEvent(Action action) {
+    this.action = action;
+  }
 
-    public void triggerAction(StoryUser user) {
-        this.action.trigger(this.getType(), user);
-    }
+  public void triggerAction(StoryUser user) {
+    this.action.trigger(this.getType(), user);
+  }
 
-    public TriggerEvent<Action> clone(Quest section, StoryReader reader, Action clonedAction, StoryChapter chapter) {
-        TriggerEvent<Action> cloned = this.clone(section, reader, chapter);
-        cloned.action = clonedAction;
-        return cloned;
-    }
+  public TriggerEvent<Action> clone(Quest section, StoryReader reader, Action clonedAction,
+      StoryChapter chapter) {
+    TriggerEvent<Action> cloned = this.clone(section, reader, chapter);
+    cloned.action = clonedAction;
+    return cloned;
+  }
 
-    public void start() {
-        StoryServer.getEventManager().registerListeners(this);
-    }
+  public void start() {
+    StoryServer.getEventManager().registerListeners(this);
+  }
 
-    public void stop() {
-        StoryServer.getEventManager().unregisterListeners(this);
-    }
+  public void stop() {
+    StoryServer.getEventManager().unregisterListeners(this);
+  }
 
-    protected abstract TriggerEvent<Action> clone(Quest section, StoryReader reader, StoryChapter chapter);
+  protected abstract TriggerEvent<Action> clone(Quest section, StoryReader reader,
+      StoryChapter chapter);
 
-    public abstract Type getType();
+  public abstract Type getType();
 
-    public enum Type {
-        AREA,
-        SNEAK,
-        DROP_ITEM,
-        DROP_ITEM_AT,
-        START,
-        SLEEP,
-        CHAT_CODE,
-        DELAY
-    }
+  public enum Type {
+    AREA,
+    SNEAK,
+    DROP_ITEM,
+    DROP_ITEM_AT,
+    START,
+    SLEEP,
+    CHAT_CODE,
+    DELAY
+  }
 }

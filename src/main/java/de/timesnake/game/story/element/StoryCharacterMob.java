@@ -21,122 +21,127 @@ import de.timesnake.library.entities.entity.extension.Mob;
 import de.timesnake.library.entities.pathfinder.ExPathfinderGoal;
 import de.timesnake.library.entities.pathfinder.ExPathfinderGoalLookAtPlayer;
 import de.timesnake.library.entities.pathfinder.custom.ExCustomPathfinderGoalLocation;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class StoryCharacterMob extends StoryCharacter<Mob> {
 
-    private final Type type;
-    protected List<ExPathfinderGoal> walkPathfinders = new ArrayList<>();
+  private final Type type;
+  protected List<ExPathfinderGoal> walkPathfinders = new ArrayList<>();
 
-    public StoryCharacterMob(String name, String displayName, ExLocation location, Type type) {
-        super(name, displayName, location);
-        this.type = type;
-        this.entity = this.type.initEntity(this.location);
+  public StoryCharacterMob(String name, String displayName, ExLocation location, Type type) {
+    super(name, displayName, location);
+    this.type = type;
+    this.entity = this.type.initEntity(this.location);
+  }
+
+  public StoryCharacterMob(String name, Toml character)
+      throws MissingArgumentException, InvalidArgumentTypeException {
+    super(name, character);
+
+    String typeString = character.getString("type");
+    if (typeString == null) {
+      throw new MissingArgumentException("type");
     }
 
-    public StoryCharacterMob(String name, Toml character) throws MissingArgumentException, InvalidArgumentTypeException {
-        super(name, character);
+    this.type = Type.valueOf(typeString.toUpperCase());
+    if (this.type == null) {
+      throw new InvalidArgumentTypeException(
+          "Could not load type '" + typeString + "' of character entity");
+    }
+  }
 
-        String typeString = character.getString("type");
-        if (typeString == null) {
-            throw new MissingArgumentException("type");
-        }
+  @Override
+  public StoryCharacter<Mob> clone(StoryReader reader, StoryChapter chapter) {
+    StoryCharacterMob character = new StoryCharacterMob(this.name, this.displayName,
+        this.location.clone().setExWorld(chapter.getWorld()), this.type);
+    character.reader = reader;
+    return character;
+  }
 
-        this.type = Type.valueOf(typeString.toUpperCase());
-        if (this.type == null) {
-            throw new InvalidArgumentTypeException("Could not load type '" + typeString + "' of character entity");
-        }
+  @Override
+  public void spawn() {
+    Server.runTaskSynchrony(() -> {
+      this.entity.setCustomNameVisible(false);
+      this.entity.setPersistent(true);
+      this.entity.setInvulnerable(true);
+      this.entity.setPosition(this.location.getX(), this.location.getY(), this.location.getZ());
+      this.entity.setRotation(this.location.getYaw(), this.location.getPitch());
+      this.entity.setRemoveWhenFarAway(false);
+      EntityManager.spawnEntity(location.getWorld(), this.entity);
+    }, GameStory.getPlugin());
+  }
+
+  public void setWalkPathfinders(ExPathfinderGoal... walkPathfinders) {
+
+    for (ExPathfinderGoal oldPathfinderGoal : this.walkPathfinders) {
+      this.entity.removePathfinderGoal(oldPathfinderGoal);
     }
 
-    @Override
-    public StoryCharacter<Mob> clone(StoryReader reader, StoryChapter chapter) {
-        StoryCharacterMob character = new StoryCharacterMob(this.name, this.displayName,
-                this.location.clone().setExWorld(chapter.getWorld()), this.type);
-        character.reader = reader;
-        return character;
+    this.walkPathfinders.clear();
+
+    for (ExPathfinderGoal newPathfinderGoal : walkPathfinders) {
+      this.entity.addPathfinderGoal(newPathfinderGoal.getPriority(), newPathfinderGoal);
     }
 
-    @Override
-    public void spawn() {
-        Server.runTaskSynchrony(() -> {
-            this.entity.setCustomNameVisible(false);
-            this.entity.setPersistent(true);
-            this.entity.setInvulnerable(true);
-            this.entity.setPosition(this.location.getX(), this.location.getY(), this.location.getZ());
-            this.entity.setRotation(this.location.getYaw(), this.location.getPitch());
-            this.entity.setRemoveWhenFarAway(false);
-            EntityManager.spawnEntity(location.getWorld(), this.entity);
-        }, GameStory.getPlugin());
-    }
+    this.walkPathfinders.addAll(Arrays.asList(walkPathfinders));
+  }
 
-    public void setWalkPathfinders(ExPathfinderGoal... walkPathfinders) {
+  @Override
+  public void despawn() {
+    this.entity.remove();
+  }
 
-        for (ExPathfinderGoal oldPathfinderGoal : this.walkPathfinders) {
-            this.entity.removePathfinderGoal(oldPathfinderGoal);
-        }
+  @Override
+  public boolean isRotateable() {
+    return false;
+  }
 
-        this.walkPathfinders.clear();
+  public enum Type {
 
-        for (ExPathfinderGoal newPathfinderGoal : walkPathfinders) {
-            this.entity.addPathfinderGoal(newPathfinderGoal.getPriority(), newPathfinderGoal);
-        }
+    VILLAGER() {
+      @Override
+      public Mob initEntity(ExLocation location) {
+        ExVillager entity = new ExVillager(location.getWorld(), ExVillager.Type.PLAINS, false,
+            false, false);
 
-        this.walkPathfinders.addAll(Arrays.asList(walkPathfinders));
-    }
+        entity.addPathfinderGoal(1, new ExPathfinderGoalLookAtPlayer(HumanEntity.class, 8.0f));
+        entity.addPathfinderGoal(1,
+            new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
+                location.getZ(), 1, 16, 0.1));
 
-    @Override
-    public void despawn() {
-        this.entity.remove();
-    }
+        return entity;
+      }
+    },
+    PILLAGER() {
+      @Override
+      public Mob initEntity(ExLocation location) {
+        ExPillager entity = new ExPillager(location.getWorld(), false, false);
 
-    @Override
-    public boolean isRotateable() {
-        return false;
-    }
+        entity.addPathfinderGoal(1, new ExPathfinderGoalLookAtPlayer(HumanEntity.class, 8.0f));
+        entity.addPathfinderGoal(1,
+            new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
+                location.getZ(), 1, 16, 0.1));
 
-    public enum Type {
+        return entity;
+      }
+    },
+    VINDICATOR() {
+      @Override
+      public Mob initEntity(ExLocation location) {
+        ExVindicator entity = new ExVindicator(location.getWorld(), false, false);
 
-        VILLAGER() {
-            @Override
-            public Mob initEntity(ExLocation location) {
-                ExVillager entity = new ExVillager(location.getWorld(), ExVillager.Type.PLAINS, false, false, false);
+        entity.addPathfinderGoal(1, new ExPathfinderGoalLookAtPlayer(HumanEntity.class, 8.0f));
+        entity.addPathfinderGoal(1,
+            new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
+                location.getZ(), 1, 16, 0.1));
 
-                entity.addPathfinderGoal(1, new ExPathfinderGoalLookAtPlayer(HumanEntity.class, 8.0f));
-                entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
-                        location.getZ(), 1, 16, 0.1));
-
-                return entity;
-            }
-        },
-        PILLAGER() {
-            @Override
-            public Mob initEntity(ExLocation location) {
-                ExPillager entity = new ExPillager(location.getWorld(), false, false);
-
-                entity.addPathfinderGoal(1, new ExPathfinderGoalLookAtPlayer(HumanEntity.class, 8.0f));
-                entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
-                        location.getZ(), 1, 16, 0.1));
-
-                return entity;
-            }
-        },
-        VINDICATOR() {
-            @Override
-            public Mob initEntity(ExLocation location) {
-                ExVindicator entity = new ExVindicator(location.getWorld(), false, false);
-
-                entity.addPathfinderGoal(1, new ExPathfinderGoalLookAtPlayer(HumanEntity.class, 8.0f));
-                entity.addPathfinderGoal(1, new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
-                        location.getZ(), 1, 16, 0.1));
-
-                return entity;
-            }
-        };
+        return entity;
+      }
+    };
 
 
-        public abstract Mob initEntity(ExLocation location);
-    }
+    public abstract Mob initEntity(ExLocation location);
+  }
 }

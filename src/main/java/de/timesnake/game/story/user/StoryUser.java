@@ -14,150 +14,156 @@ import de.timesnake.database.util.Database;
 import de.timesnake.game.story.book.StoryContentBook;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.StoryBook;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 
-import java.util.*;
-
 public class StoryUser extends User {
 
-    private final UserProgress progress;
-    private final Map<Integer, StoryContentBook> contentBookByStoryId = new HashMap<>();
-    private final List<StoryUser> selectedUsers = new LinkedList<>();
-    private final List<StoryUser> joinedUsers = new LinkedList<>();
+  private final UserProgress progress;
+  private final Map<Integer, StoryContentBook> contentBookByStoryId = new HashMap<>();
+  private final List<StoryUser> selectedUsers = new LinkedList<>();
+  private final List<StoryUser> joinedUsers = new LinkedList<>();
 
-    private StoryReader readerGroup;
+  private StoryReader readerGroup;
 
-    private boolean playing = false;
-    private boolean spectator = false;
+  private boolean playing = false;
+  private boolean spectator = false;
 
-    private Integer selectedBookId;
-    private String selectedChapterName;
+  private Integer selectedBookId;
+  private String selectedChapterName;
 
-    public StoryUser(Player player) {
-        super(player);
+  public StoryUser(Player player) {
+    super(player);
 
-        Tablist tablist = Server.getScoreboardManager().registerGroupTablist(new TablistBuilder(this.getName())
-                .groupTypes(DisplayGroup.MAIN_TABLIST_GROUPS)
-                .userJoin((e, t) -> {})
-                .userQuit((e, t) -> {}));
+    Tablist tablist = Server.getScoreboardManager()
+        .registerGroupTablist(new TablistBuilder(this.getName())
+            .groupTypes(DisplayGroup.MAIN_TABLIST_GROUPS)
+            .userJoin((e, t) -> {
+            })
+            .userQuit((e, t) -> {
+            }));
 
-        tablist.setHeader("§6Time§2Snake§9.de");
-        tablist.setFooter("§7Server: " + Server.getName() + "\n§cSupport: /ticket or \n" + Server.SUPPORT_EMAIL);
+    tablist.setHeader("§6Time§2Snake§9.de");
+    tablist.setFooter(
+        "§7Server: " + Server.getName() + "\n§cSupport: /ticket or \n" + Server.SUPPORT_EMAIL);
 
-        tablist.addEntry(this);
+    tablist.addEntry(this);
 
-        this.setTablist(tablist);
+    this.setTablist(tablist);
 
+    this.progress = new UserProgress(Database.getStory().getUser(this.getUniqueId()));
 
-        this.progress = new UserProgress(Database.getStory().getUser(this.getUniqueId()));
+    for (StoryBook book : StoryServer.getBooks()) {
+      this.contentBookByStoryId.put(book.getId(), new StoryContentBook(this.progress, book));
+    }
+  }
 
-        for (StoryBook book : StoryServer.getBooks()) {
-            this.contentBookByStoryId.put(book.getId(), new StoryContentBook(this.progress, book));
-        }
+  public StoryReader getReaderGroup() {
+    return readerGroup;
+  }
+
+  public void setReaderGroup(StoryReader readerGroup) {
+    this.readerGroup = readerGroup;
+  }
+
+  public void stopStory() {
+    if (this.readerGroup != null) {
+      this.readerGroup.removeUser(this);
     }
 
-    public StoryReader getReaderGroup() {
-        return readerGroup;
+    this.playing = false;
+  }
+
+  public void joinStoryHub() {
+    this.spectator = false;
+    for (User u : Server.getUsers()) {
+      u.showUser(this);
     }
 
-    public void setReaderGroup(StoryReader readerGroup) {
-        this.readerGroup = readerGroup;
+    this.setDefault();
+    int slot = 0;
+    for (StoryContentBook book : this.contentBookByStoryId.values()) {
+      this.setItem(slot, book.getItem());
+      slot++;
+    }
+    this.teleport(StoryServer.getBaseWorld().getSpawnLocation());
+
+    if (this.hasPermission("game.story.spectator")) {
+      this.setItem(8, UserManager.SPECTATOR_TOOL);
     }
 
-    public void stopStory() {
-        if (this.readerGroup != null) {
-            this.readerGroup.removeUser(this);
-        }
+    this.playing = false;
+  }
 
-        this.playing = false;
+  public void joinSpectator() {
+    this.spectator = true;
+    this.clearInventory();
+    this.setGameMode(GameMode.CREATIVE);
+    for (User u : Server.getUsers()) {
+      if (!((StoryUser) u).isSpectator()) {
+        u.hideUser(this);
+      }
     }
+    this.setItem(8, UserManager.SPECTATOR_TOOL);
+  }
 
-    public void joinStoryHub() {
-        this.spectator = false;
-        for (User u : Server.getUsers()) {
-            u.showUser(this);
-        }
+  public boolean isPlaying() {
+    return playing;
+  }
 
-        this.setDefault();
-        int slot = 0;
-        for (StoryContentBook book : this.contentBookByStoryId.values()) {
-            this.setItem(slot, book.getItem());
-            slot++;
-        }
-        this.teleport(StoryServer.getBaseWorld().getSpawnLocation());
+  public void setPlaying(boolean playing) {
+    this.playing = playing;
+  }
 
-        if (this.hasPermission("game.story.spectator")) {
-            this.setItem(8, UserManager.SPECTATOR_TOOL);
-        }
+  public boolean isSpectator() {
+    return spectator;
+  }
 
-        this.playing = false;
-    }
+  public void setSpectator(boolean spectator) {
+    this.spectator = spectator;
+  }
 
-    public void joinSpectator() {
-        this.spectator = true;
-        this.clearInventory();
-        this.setGameMode(GameMode.CREATIVE);
-        for (User u : Server.getUsers()) {
-            if (!((StoryUser) u).isSpectator()) {
-                u.hideUser(this);
-            }
-        }
-        this.setItem(8, UserManager.SPECTATOR_TOOL);
-    }
+  public Set<String> getBoughtChapters(Integer bookId) {
+    return this.progress.getBoughtChaptersByBook().get(bookId);
+  }
 
-    public boolean isPlaying() {
-        return playing;
-    }
+  public void buyChapter(int bookId, String chapterName) {
+    this.removeCoins(StoryServer.PART_PRICE, true);
+    this.progress.buyChapter(bookId, chapterName);
+  }
 
-    public void setPlaying(boolean playing) {
-        this.playing = playing;
-    }
+  public ExLocation getStoryRespawnLocation() {
+    return this.readerGroup.getQuest().getStartLocation();
+  }
 
-    public boolean isSpectator() {
-        return spectator;
-    }
+  public List<StoryUser> getJoinedUsers() {
+    return joinedUsers;
+  }
 
-    public void setSpectator(boolean spectator) {
-        this.spectator = spectator;
-    }
+  public List<StoryUser> getSelectedUsers() {
+    return selectedUsers;
+  }
 
-    public Set<String> getBoughtChapters(Integer bookId) {
-        return this.progress.getBoughtChaptersByBook().get(bookId);
-    }
+  public void prepareStoryChapter(int bookId, String chapterName) {
+    List<StoryUser> users = new LinkedList<>(this.joinedUsers);
+    users.add(this);
 
-    public void buyChapter(int bookId, String chapterName) {
-        this.removeCoins(StoryServer.PART_PRICE, true);
-        this.progress.buyChapter(bookId, chapterName);
-    }
+    this.selectedUsers.clear();
+    this.joinedUsers.clear();
 
-    public ExLocation getStoryRespawnLocation() {
-        return this.readerGroup.getQuest().getStartLocation();
-    }
+    StoryReader readerGroup = new StoryReader(this, users, bookId, chapterName);
+    users.forEach(u -> u.setReaderGroup(readerGroup));
 
-    public List<StoryUser> getJoinedUsers() {
-        return joinedUsers;
-    }
+    this.selectedBookId = bookId;
+    this.selectedChapterName = chapterName;
+  }
 
-    public List<StoryUser> getSelectedUsers() {
-        return selectedUsers;
-    }
-
-    public void prepareStoryChapter(int bookId, String chapterName) {
-        List<StoryUser> users = new LinkedList<>(this.joinedUsers);
-        users.add(this);
-
-        this.selectedUsers.clear();
-        this.joinedUsers.clear();
-
-        StoryReader readerGroup = new StoryReader(this, users, bookId, chapterName);
-        users.forEach(u -> u.setReaderGroup(readerGroup));
-
-        this.selectedBookId = bookId;
-        this.selectedChapterName = chapterName;
-    }
-
-    public UserProgress getProgress() {
-        return progress;
-    }
+  public UserProgress getProgress() {
+    return progress;
+  }
 }

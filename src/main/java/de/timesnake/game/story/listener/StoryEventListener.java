@@ -5,4 +5,5 @@
 package de.timesnake.game.story.listener;
 
 public interface StoryEventListener {
+
 }

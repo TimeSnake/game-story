@@ -5,6 +5,6 @@
 package de.timesnake.game.story.element;
 
 public enum TalkType {
-    AUDIO,
-    TEXT
+  AUDIO,
+  TEXT
 }

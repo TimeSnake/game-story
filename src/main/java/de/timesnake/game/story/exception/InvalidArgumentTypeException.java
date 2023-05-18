@@ -6,7 +6,7 @@ package de.timesnake.game.story.exception;
 
 public class InvalidArgumentTypeException extends StoryParseException {
 
-    public InvalidArgumentTypeException(String message) {
-        super(message);
-    }
+  public InvalidArgumentTypeException(String message) {
+    super(message);
+  }
 }

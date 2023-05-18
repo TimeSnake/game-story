@@ -9,54 +9,53 @@ import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
-
 import java.util.List;
 
 public abstract class TriggeredAction extends StoryAction {
 
-    protected TriggerEvent<TriggeredAction> triggerEvent;
+  protected TriggerEvent<TriggeredAction> triggerEvent;
 
-    protected TriggeredAction(int id, List<Integer> diaryPages) {
-        super(id, diaryPages);
+  protected TriggeredAction(int id, List<Integer> diaryPages) {
+    super(id, diaryPages);
+  }
+
+  protected TriggeredAction(int id, StoryAction next) {
+    super(id, next);
+  }
+
+  public void setTriggerEvent(TriggerEvent<TriggeredAction> triggerEvent) {
+    this.triggerEvent = triggerEvent;
+  }
+
+  @Override
+  public TriggeredAction clone(Quest quest, StoryReader reader, StoryChapter chapter) {
+    TriggeredAction cloned = (TriggeredAction) super.clone(quest, reader, chapter);
+    if (this.triggerEvent != null) {
+      cloned.triggerEvent = this.triggerEvent.clone(quest, reader, cloned, chapter);
     }
+    return cloned;
+  }
 
-    protected TriggeredAction(int id, StoryAction next) {
-        super(id, next);
+  @Override
+  public void start() {
+    super.start();
+
+    if (this.triggerEvent == null) {
+      this.trigger(TriggerEvent.Type.START, this.reader.anyUser());
+    } else {
+      this.triggerEvent.start();
     }
+  }
 
-    public void setTriggerEvent(TriggerEvent<TriggeredAction> triggerEvent) {
-        this.triggerEvent = triggerEvent;
+  @Override
+  public void stop() {
+    super.stop();
+
+    if (this.triggerEvent != null) {
+      this.triggerEvent.stop();
     }
+  }
 
-    @Override
-    public TriggeredAction clone(Quest quest, StoryReader reader, StoryChapter chapter) {
-        TriggeredAction cloned = (TriggeredAction) super.clone(quest, reader, chapter);
-        if (this.triggerEvent != null) {
-            cloned.triggerEvent = this.triggerEvent.clone(quest, reader, cloned, chapter);
-        }
-        return cloned;
-    }
-
-    @Override
-    public void start() {
-        super.start();
-
-        if (this.triggerEvent == null) {
-            this.trigger(TriggerEvent.Type.START, this.reader.anyUser());
-        } else {
-            this.triggerEvent.start();
-        }
-    }
-
-    @Override
-    public void stop() {
-        super.stop();
-
-        if (this.triggerEvent != null) {
-            this.triggerEvent.stop();
-        }
-    }
-
-    public abstract void trigger(TriggerEvent.Type type, StoryUser user);
+  public abstract void trigger(TriggerEvent.Type type, StoryUser user);
 
 }

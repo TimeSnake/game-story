@@ -5,14 +5,20 @@
 package de.timesnake.game.story.user;
 
 import de.timesnake.basic.bukkit.util.Server;
-import de.timesnake.basic.bukkit.util.user.inventory.ExItemStack;
 import de.timesnake.basic.bukkit.util.user.User;
-import de.timesnake.basic.bukkit.util.user.event.*;
+import de.timesnake.basic.bukkit.util.user.event.UserDamageByUserEvent;
+import de.timesnake.basic.bukkit.util.user.event.UserDeathEvent;
+import de.timesnake.basic.bukkit.util.user.event.UserJoinEvent;
+import de.timesnake.basic.bukkit.util.user.event.UserQuitEvent;
+import de.timesnake.basic.bukkit.util.user.event.UserRespawnEvent;
+import de.timesnake.basic.bukkit.util.user.inventory.ExItemStack;
 import de.timesnake.basic.bukkit.util.user.inventory.UserInventoryInteractEvent;
 import de.timesnake.basic.bukkit.util.user.inventory.UserInventoryInteractListener;
 import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.library.chat.ExTextColor;
+import java.util.HashSet;
+import java.util.Set;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -25,161 +31,164 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.potion.PotionType;
 
-import java.util.HashSet;
-import java.util.Set;
-
 public class UserManager implements Listener, UserInventoryInteractListener {
 
-    public static final ExItemStack FOOD = new ExItemStack(Material.COOKED_BEEF, "§6Cooked Beef").setDropable(false);
-    public static final ExItemStack DRINK =
-            ExItemStack.getPotion(Material.SPLASH_POTION, PotionType.WATER, false, false).setDisplayName("§6Water Bottle").hideAll().setDropable(false);
-    public static final ExItemStack CHECKPOINT =
-            new ExItemStack(Material.RED_DYE, "§cTeleport to last checkpoint").setDropable(false).setMoveable(false);
-    public static final ExItemStack SPECTATOR_TOOL = new ExItemStack(Material.CLOCK).setDisplayName("§cSpectator")
-            .setMoveable(false).setDropable(false).immutable();
+  public static final ExItemStack FOOD = new ExItemStack(Material.COOKED_BEEF,
+      "§6Cooked Beef").setDropable(false);
+  public static final ExItemStack DRINK =
+      ExItemStack.getPotion(Material.SPLASH_POTION, PotionType.WATER, false, false)
+          .setDisplayName("§6Water Bottle").hideAll().setDropable(false);
+  public static final ExItemStack CHECKPOINT =
+      new ExItemStack(Material.RED_DYE, "§cTeleport to last checkpoint").setDropable(false)
+          .setMoveable(false);
+  public static final ExItemStack SPECTATOR_TOOL = new ExItemStack(Material.CLOCK).setDisplayName(
+          "§cSpectator")
+      .setMoveable(false).setDropable(false).immutable();
 
-    private final Set<StoryUser> checkpointUsers = new HashSet<>();
+  private final Set<StoryUser> checkpointUsers = new HashSet<>();
 
-    public UserManager() {
-        Server.registerListener(this, GameStory.getPlugin());
-        Server.getInventoryEventManager().addInteractListener(this, CHECKPOINT, SPECTATOR_TOOL);
+  public UserManager() {
+    Server.registerListener(this, GameStory.getPlugin());
+    Server.getInventoryEventManager().addInteractListener(this, CHECKPOINT, SPECTATOR_TOOL);
+  }
+
+  @EventHandler
+  public void onUserJoin(UserJoinEvent e) {
+    ((StoryUser) e.getUser()).joinStoryHub();
+  }
+
+  @EventHandler
+  public void onUserQuit(UserQuitEvent e) {
+    ((StoryUser) e.getUser()).stopStory();
+  }
+
+  @EventHandler
+  public void onUserRespawn(UserRespawnEvent e) {
+    StoryUser user = (StoryUser) e.getUser();
+    e.setRespawnLocation(user.getStoryRespawnLocation());
+
+    if (user.getReaderGroup() != null) {
+      user.getReaderGroup().addDeath();
+    }
+  }
+
+  @EventHandler
+  public void onUserDeath(UserDeathEvent e) {
+    e.setBroadcastDeathMessage(false);
+    e.setAutoRespawn(true);
+    e.setKeepInventory(true);
+    e.getDrops().clear();
+  }
+
+  @EventHandler
+  public void onPlayerItemConsume(PlayerItemConsumeEvent e) {
+    User user = Server.getUser(e.getPlayer());
+
+    if (!FOOD.equals(ExItemStack.getItem(e.getItem(), false))) {
+      return;
     }
 
-    @EventHandler
-    public void onUserJoin(UserJoinEvent e) {
-        ((StoryUser) e.getUser()).joinStoryHub();
+    Server.runTaskLaterSynchrony(() -> {
+      if (!user.contains(FOOD)) {
+        user.addItem(FOOD);
+      }
+    }, 20, GameStory.getPlugin());
+
+  }
+
+  @EventHandler
+  public void onProjectileHit(ProjectileHitEvent e) {
+    if (!(e.getEntity() instanceof ThrownPotion)) {
+      return;
     }
 
-    @EventHandler
-    public void onUserQuit(UserQuitEvent e) {
-        ((StoryUser) e.getUser()).stopStory();
+    if (!((ThrownPotion) e.getEntity()).getEffects().isEmpty()) {
+      return;
     }
 
-    @EventHandler
-    public void onUserRespawn(UserRespawnEvent e) {
-        StoryUser user = (StoryUser) e.getUser();
-        e.setRespawnLocation(user.getStoryRespawnLocation());
+    User user = Server.getUser((Player) e.getEntity().getShooter());
 
-        if (user.getReaderGroup() != null) {
-            user.getReaderGroup().addDeath();
-        }
+    Server.runTaskLaterSynchrony(() -> {
+      if (!user.contains(DRINK)) {
+        user.addItem(DRINK);
+      }
+    }, 40, GameStory.getPlugin());
+  }
+
+  @EventHandler
+  public void onPlayerInteract(PlayerInteractEvent e) {
+    if (e.getItem() == null) {
+      return;
     }
 
-    @EventHandler
-    public void onUserDeath(UserDeathEvent e) {
-        e.setBroadcastDeathMessage(false);
-        e.setAutoRespawn(true);
-        e.setKeepInventory(true);
-        e.getDrops().clear();
+    if (Server.getUser(e.getPlayer()).isService()) {
+      return;
     }
 
-    @EventHandler
-    public void onPlayerItemConsume(PlayerItemConsumeEvent e) {
-        User user = Server.getUser(e.getPlayer());
-
-        if (!FOOD.equals(ExItemStack.getItem(e.getItem(), false))) {
-            return;
-        }
-
-        Server.runTaskLaterSynchrony(() -> {
-            if (!user.contains(FOOD)) {
-                user.addItem(FOOD);
-            }
-        }, 20, GameStory.getPlugin());
-
+    if (e.getItem().getType().equals(Material.ENDER_EYE)) {
+      if (e.getClickedBlock() != null && e.getClickedBlock().getType()
+          .equals(Material.END_PORTAL_FRAME)) {
+        return;
+      }
+      e.setUseItemInHand(Event.Result.DENY);
     }
+  }
 
-    @EventHandler
-    public void onProjectileHit(ProjectileHitEvent e) {
-        if (!(e.getEntity() instanceof ThrownPotion)) {
-            return;
-        }
+  @Override
+  public void onUserInventoryInteract(UserInventoryInteractEvent event) {
+    StoryUser user = ((StoryUser) event.getUser());
+    ExItemStack item = event.getClickedItem();
 
-        if (!((ThrownPotion) e.getEntity()).getEffects().isEmpty()) {
-            return;
-        }
+    if (item.equals(CHECKPOINT)) {
+      if (this.checkpointUsers.contains(((StoryUser) event.getUser()))) {
+        return;
+      }
 
-        User user = Server.getUser((Player) e.getEntity().getShooter());
+      this.checkpointUsers.add(user);
 
-        Server.runTaskLaterSynchrony(() -> {
-            if (!user.contains(DRINK)) {
-                user.addItem(DRINK);
-            }
-        }, 40, GameStory.getPlugin());
+      user.getReaderGroup().getQuest().start(true, false);
+
+      Server.runTaskLaterSynchrony(() -> this.checkpointUsers.remove(user), 2 * 20,
+          GameStory.getPlugin());
+    } else if (item.equals(SPECTATOR_TOOL)) {
+      if (user.isSpectator()) {
+        user.joinStoryHub();
+      } else {
+        user.joinSpectator();
+      }
     }
+  }
 
-    @EventHandler
-    public void onPlayerInteract(PlayerInteractEvent e) {
-        if (e.getItem() == null) {
-            return;
-        }
+  @EventHandler
+  public void onUserDamageByUser(UserDamageByUserEvent e) {
+    StoryUser user = ((StoryUser) e.getUser());
+    StoryUser userDamager = ((StoryUser) e.getUserDamager());
 
-        if (Server.getUser(e.getPlayer()).isService()) {
-            return;
-        }
+    if (user.getSelectedUsers().contains(userDamager)) {
+      if (!user.getJoinedUsers().contains(userDamager)) {
+        user.getJoinedUsers().add(userDamager);
+        user.sendPluginMessage(Plugin.STORY, Component.text("Added ", ExTextColor.PERSONAL)
+            .append(userDamager.getChatNameComponent()));
+        userDamager.sendPluginMessage(Plugin.STORY, Component.text("Joined ", ExTextColor.PERSONAL)
+            .append(user.getChatNameComponent()));
+      } else {
+        user.getJoinedUsers().remove(userDamager);
+        user.sendPluginMessage(Plugin.STORY, Component.text("Removed ", ExTextColor.PERSONAL)
+            .append(userDamager.getChatNameComponent()));
+      }
 
-        if (e.getItem().getType().equals(Material.ENDER_EYE)) {
-            if (e.getClickedBlock() != null && e.getClickedBlock().getType().equals(Material.END_PORTAL_FRAME)) {
-                return;
-            }
-            e.setUseItemInHand(Event.Result.DENY);
-        }
+    } else {
+      if (!userDamager.getSelectedUsers().contains(user)) {
+        userDamager.getSelectedUsers().add(user);
+        userDamager.sendPluginMessage(Plugin.STORY, Component.text("Invited ", ExTextColor.PERSONAL)
+            .append(user.getChatNameComponent()));
+        user.sendPluginMessage(Plugin.STORY, userDamager.getChatNameComponent()
+            .append(Component.text(" invited you. Hit to accept", ExTextColor.PERSONAL)));
+      } else {
+        userDamager.getSelectedUsers().remove(user);
+        userDamager.sendPluginMessage(Plugin.STORY, Component.text("Removed ", ExTextColor.PERSONAL)
+            .append(user.getChatNameComponent()));
+      }
     }
-
-    @Override
-    public void onUserInventoryInteract(UserInventoryInteractEvent event) {
-        StoryUser user = ((StoryUser) event.getUser());
-        ExItemStack item = event.getClickedItem();
-
-        if (item.equals(CHECKPOINT)) {
-            if (this.checkpointUsers.contains(((StoryUser) event.getUser()))) {
-                return;
-            }
-
-            this.checkpointUsers.add(user);
-
-            user.getReaderGroup().getQuest().start(true, false);
-
-            Server.runTaskLaterSynchrony(() -> this.checkpointUsers.remove(user), 2 * 20, GameStory.getPlugin());
-        } else if (item.equals(SPECTATOR_TOOL)) {
-            if (user.isSpectator()) {
-                user.joinStoryHub();
-            } else {
-                user.joinSpectator();
-            }
-        }
-    }
-
-    @EventHandler
-    public void onUserDamageByUser(UserDamageByUserEvent e) {
-        StoryUser user = ((StoryUser) e.getUser());
-        StoryUser userDamager = ((StoryUser) e.getUserDamager());
-
-        if (user.getSelectedUsers().contains(userDamager)) {
-            if (!user.getJoinedUsers().contains(userDamager)) {
-                user.getJoinedUsers().add(userDamager);
-                user.sendPluginMessage(Plugin.STORY, Component.text("Added ", ExTextColor.PERSONAL)
-                        .append(userDamager.getChatNameComponent()));
-                userDamager.sendPluginMessage(Plugin.STORY, Component.text("Joined ", ExTextColor.PERSONAL)
-                        .append(user.getChatNameComponent()));
-            } else {
-                user.getJoinedUsers().remove(userDamager);
-                user.sendPluginMessage(Plugin.STORY, Component.text("Removed ", ExTextColor.PERSONAL)
-                        .append(userDamager.getChatNameComponent()));
-            }
-
-        } else {
-            if (!userDamager.getSelectedUsers().contains(user)) {
-                userDamager.getSelectedUsers().add(user);
-                userDamager.sendPluginMessage(Plugin.STORY, Component.text("Invited ", ExTextColor.PERSONAL)
-                        .append(user.getChatNameComponent()));
-                user.sendPluginMessage(Plugin.STORY, userDamager.getChatNameComponent()
-                        .append(Component.text(" invited you. Hit to accept", ExTextColor.PERSONAL)));
-            } else {
-                userDamager.getSelectedUsers().remove(user);
-                userDamager.sendPluginMessage(Plugin.STORY, Component.text("Removed ", ExTextColor.PERSONAL)
-                        .append(user.getChatNameComponent()));
-            }
-        }
-    }
+  }
 }

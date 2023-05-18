@@ -16,49 +16,56 @@ import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
-import org.bukkit.block.data.*;
-
 import java.util.List;
+import org.bukkit.block.data.AnaloguePowerable;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Lightable;
+import org.bukkit.block.data.Openable;
+import org.bukkit.block.data.Powerable;
 
 public class BlockInteractAction extends LocationAction {
 
-    public static final String NAME = "block_interact";
+  public static final String NAME = "block_interact";
 
-    protected BlockInteractAction(int id, StoryAction next, ExLocation location, StoryCharacter<?> character) {
-        super(id, next, location, character);
-    }
+  protected BlockInteractAction(int id, StoryAction next, ExLocation location,
+      StoryCharacter<?> character) {
+    super(id, next, location, character);
+  }
 
-    public BlockInteractAction(StoryBookBuilder bookBuilder, Quest quest, Toml action, int id, List<Integer> diaryPages)
-            throws StoryParseException {
-        super(bookBuilder, action, id, diaryPages);
-    }
+  public BlockInteractAction(StoryBookBuilder bookBuilder, Quest quest, Toml action, int id,
+      List<Integer> diaryPages)
+      throws StoryParseException {
+    super(bookBuilder, action, id, diaryPages);
+  }
 
-    @Override
-    public StoryAction clone(Quest quest, StoryReader reader, StoryAction clonedNext, StoryChapter chapter) {
-        return new BlockInteractAction(this.id, clonedNext, this.location.clone().setExWorld(chapter.getWorld()),
-                this.character != null ? this.character.clone(reader, chapter) : null);
-    }
+  @Override
+  public StoryAction clone(Quest quest, StoryReader reader, StoryAction clonedNext,
+      StoryChapter chapter) {
+    return new BlockInteractAction(this.id, clonedNext,
+        this.location.clone().setExWorld(chapter.getWorld()),
+        this.character != null ? this.character.clone(reader, chapter) : null);
+  }
 
-    @Override
-    public void trigger(TriggerEvent.Type type, StoryUser user) {
-        this.interact();
-        this.startNext();
-    }
+  @Override
+  public void trigger(TriggerEvent.Type type, StoryUser user) {
+    this.interact();
+    this.startNext();
+  }
 
-    private void interact() {
-        Server.runTaskSynchrony(() -> {
-            BlockData blockData = this.location.getBlock().getBlockData();
-            if (blockData instanceof Openable openable) {
-                openable.setOpen(!openable.isOpen());
-            } else if (blockData instanceof Lightable lightable) {
-                lightable.setLit(!lightable.isLit());
-            } else if (blockData instanceof AnaloguePowerable powerable) {
-                powerable.setPower(powerable.getPower() == 0 ? 15 : 0);
-            } else if (blockData instanceof Powerable powerable) {
-                powerable.setPowered(!powerable.isPowered());
-            }
-            this.location.getBlock().setBlockData(blockData);
-        }, GameStory.getPlugin());
+  private void interact() {
+    Server.runTaskSynchrony(() -> {
+      BlockData blockData = this.location.getBlock().getBlockData();
+      if (blockData instanceof Openable openable) {
+        openable.setOpen(!openable.isOpen());
+      } else if (blockData instanceof Lightable lightable) {
+        lightable.setLit(!lightable.isLit());
+      } else if (blockData instanceof AnaloguePowerable powerable) {
+        powerable.setPower(powerable.getPower() == 0 ? 15 : 0);
+      } else if (blockData instanceof Powerable powerable) {
+        powerable.setPowered(!powerable.isPowered());
+      }
+      this.location.getBlock().setBlockData(blockData);
+    }, GameStory.getPlugin());
 
-    }
+  }
 }

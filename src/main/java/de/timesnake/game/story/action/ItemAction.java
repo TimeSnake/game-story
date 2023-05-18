@@ -8,5 +8,5 @@ import de.timesnake.game.story.element.StoryItem;
 
 public interface ItemAction {
 
-    StoryItem getItem();
+  StoryItem getItem();
 }

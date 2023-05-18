@@ -14,66 +14,68 @@ import de.timesnake.library.entities.entity.bukkit.ExPlayer;
 
 public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
 
-    public static final String NAME = "player";
+  public static final String NAME = "player";
 
-    private static final String SKIN = "skin";
-    private static final String SKIN_VALUE = "value";
-    private static final String SKIN_SIGNATURE = "signature";
+  private static final String SKIN = "skin";
+  private static final String SKIN_VALUE = "value";
+  private static final String SKIN_SIGNATURE = "signature";
 
 
-    private final String skinValue;
-    private final String skinSignature;
+  private final String skinValue;
+  private final String skinSignature;
 
-    private boolean spawned = false;
+  private boolean spawned = false;
 
-    private PacketPlayer packetPlayer;
+  private PacketPlayer packetPlayer;
 
-    public StoryCharacterPlayer(String name, String displayName, ExLocation location, String skinValue, String skinSignature) {
-        super(name, displayName, location);
-        this.skinValue = skinValue;
-        this.skinSignature = skinSignature;
-        this.entity = new ExPlayer(this.location.getWorld(), this.displayName);
-        this.entity.setPosition(this.location.getX(), this.location.getY(), this.location.getZ());
-        this.entity.setTextures(this.skinValue, this.skinSignature);
+  public StoryCharacterPlayer(String name, String displayName, ExLocation location,
+      String skinValue, String skinSignature) {
+    super(name, displayName, location);
+    this.skinValue = skinValue;
+    this.skinSignature = skinSignature;
+    this.entity = new ExPlayer(this.location.getWorld(), this.displayName);
+    this.entity.setPosition(this.location.getX(), this.location.getY(), this.location.getZ());
+    this.entity.setTextures(this.skinValue, this.skinSignature);
+  }
+
+  public StoryCharacterPlayer(String name, Toml character) {
+    super(name, character);
+
+    this.skinValue = character.getString(SKIN + "_" + SKIN_VALUE);
+    this.skinSignature = character.getString(SKIN + "_" + SKIN_SIGNATURE);
+  }
+
+  @Override
+  public StoryCharacter<ExPlayer> clone(StoryReader reader, StoryChapter chapter) {
+    StoryCharacterPlayer character = new StoryCharacterPlayer(this.name, this.displayName,
+        this.location.clone().setExWorld(chapter.getWorld()), this.skinValue, this.skinSignature);
+    character.reader = reader;
+    return character;
+  }
+
+  @Override
+  public boolean isRotateable() {
+    return true;
+  }
+
+  @Override
+  public void spawn() {
+    if (this.spawned) {
+      return;
     }
 
-    public StoryCharacterPlayer(String name, Toml character) {
-        super(name, character);
+    this.spawned = true;
 
-        this.skinValue = character.getString(SKIN + "_" + SKIN_VALUE);
-        this.skinSignature = character.getString(SKIN + "_" + SKIN_SIGNATURE);
-    }
+    this.packetPlayer = new PacketPlayer(this.entity,
+        new ExLocation(Server.getWorld(this.entity.getWorld()),
+            this.entity.getLocation()));
 
-    @Override
-    public StoryCharacter<ExPlayer> clone(StoryReader reader, StoryChapter chapter) {
-        StoryCharacterPlayer character = new StoryCharacterPlayer(this.name, this.displayName,
-                this.location.clone().setExWorld(chapter.getWorld()), this.skinValue, this.skinSignature);
-        character.reader = reader;
-        return character;
-    }
+    Server.getEntityManager().registerEntity(packetPlayer, this.reader.getUsers());
+  }
 
-    @Override
-    public boolean isRotateable() {
-        return true;
-    }
-
-    @Override
-    public void spawn() {
-        if (this.spawned) {
-            return;
-        }
-
-        this.spawned = true;
-
-        this.packetPlayer = new PacketPlayer(this.entity, new ExLocation(Server.getWorld(this.entity.getWorld()),
-                this.entity.getLocation()));
-
-        Server.getEntityManager().registerEntity(packetPlayer, this.reader.getUsers());
-    }
-
-    @Override
-    public void despawn() {
-        Server.getEntityManager().unregisterEntity(this.packetPlayer);
-        Server.getEntityManager().unregisterEntity(this.packetPlayer);
-    }
+  @Override
+  public void despawn() {
+    Server.getEntityManager().unregisterEntity(this.packetPlayer);
+    Server.getEntityManager().unregisterEntity(this.packetPlayer);
+  }
 }
