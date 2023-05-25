@@ -7,6 +7,7 @@ package de.timesnake.game.story.user;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.group.DisplayGroup;
 import de.timesnake.basic.bukkit.util.user.User;
+import de.timesnake.basic.bukkit.util.user.scoreboard.ScoreboardManager;
 import de.timesnake.basic.bukkit.util.user.scoreboard.Tablist;
 import de.timesnake.basic.bukkit.util.user.scoreboard.TablistBuilder;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
@@ -48,9 +49,8 @@ public class StoryUser extends User {
             .userQuit((e, t) -> {
             }));
 
-    tablist.setHeader("§6Time§2Snake§9.de");
-    tablist.setFooter(
-        "§7Server: " + Server.getName() + "\n§cSupport: /ticket or \n" + Server.SUPPORT_EMAIL);
+    tablist.setHeader("§6Story");
+    tablist.setFooter(ScoreboardManager.getDefaultFooter());
 
     tablist.addEntry(this);
 
