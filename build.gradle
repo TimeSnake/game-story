@@ -30,7 +30,6 @@ dependencies {
 
   compileOnly project(':library-entities')
   compileOnly project(':library-packets')
-  compileOnly project(':library-reflection')
   compileOnly project(':library-extension')
   compileOnly project(':library-basic')
   compileOnly project(':library-chat')
