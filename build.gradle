@@ -1,5 +1,10 @@
+plugins {
+  id("io.papermc.paperweight.userdev") version "1.5.5"
+  id("xyz.jpenilla.run-paper") version "2.1.0"
+}
+
 group = project.group
-version = '1.1-SNAPSHOT'
+version = '1.3'
 archivesBaseName = 'game-story'
 var projectId = 17
 
@@ -7,19 +12,15 @@ repositories {
   mavenLocal()
   mavenCentral()
   maven {
-    url = uri 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
-  }
-  maven {
     url = uri 'https://papermc.io/repo/repository/maven-public/'
-  }
-  maven {
-    url = uri 'https://repo.maven.apache.org/maven2/'
   }
 }
 
 dependencies {
-  compileOnly project.toml
+  implementation project.toml
 
+  compileOnly project(':basic-loungebridge')
+  compileOnly project(':basic-game')
   compileOnly project(':basic-bukkit')
 
   compileOnly project(':database-bukkit')
@@ -28,34 +29,47 @@ dependencies {
   compileOnly project(':channel-bukkit')
   compileOnly project(':channel-api')
 
-  compileOnly project(':library-entities')
+  compileOnly project(':library-game')
   compileOnly project(':library-packets')
+  compileOnly project(':library-entities')
   compileOnly project(':library-extension')
   compileOnly project(':library-basic')
   compileOnly project(':library-chat')
 
-  compileOnly project.paper_api
-  compileOnly project.spigot_api
-  compileOnly project.spigot
+  paperweight.paperDevBundle(project.paperweight_version)
 }
 
-task deleteOldPluginJar(type: Delete) {
-  delete fileTree(dir: "${project.plugins_dir}", include: "**/${archivesBaseName}-*.jar")
-  onlyIf {
-    !jar.state.upToDate
+tasks {
+  assemble {
+    dependsOn(reobfJar)
+  }
+
+  compileJava {
+    options.encoding = "UTF-8"
+    options.release.set(17)
+  }
+
+  javadoc {
+    options.encoding = "UTF-8"
+  }
+
+  processResources {
+    filteringCharset = "UTF-8"
+    def props = [
+        "name"      : archivesBaseName,
+        "version"   : project.version,
+        "apiVersion": "1.20.1"
+    ]
+    inputs.properties(props)
+    filesMatching("plugin.yml") {
+      expand(props)
+    }
+  }
+
+  reobfJar {
+    outputJar.set(layout.buildDirectory.file("${project.plugins_dir}/${archivesBaseName}-${project.version}.jar"))
   }
 }
-
-task copyJarToPlugins(type: Copy) {
-  from jar
-  into project.plugins_dir
-  onlyIf {
-    !jar.state.upToDate
-  }
-}
-
-copyJarToPlugins.dependsOn(deleteOldPluginJar)
-jar.finalizedBy(copyJarToPlugins)
 
 publishing {
   repositories {
@@ -65,6 +79,13 @@ publishing {
         username = deploy_token_name
         password = deploy_token_key
       }
+
+    }
+  }
+
+  publications {
+    mavenJava(MavenPublication) {
+      from components.java
     }
   }
 }
