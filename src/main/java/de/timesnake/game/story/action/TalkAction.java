@@ -5,8 +5,8 @@
 package de.timesnake.game.story.action;
 
 import com.moandjiezana.toml.Toml;
-import de.timesnake.basic.bukkit.core.user.UserPlayerDelegation;
 import de.timesnake.basic.bukkit.util.Server;
+import de.timesnake.basic.bukkit.util.user.User;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.basic.bukkit.util.world.entity.HoloDisplay;
 import de.timesnake.channel.util.listener.ChannelHandler;
@@ -29,20 +29,14 @@ import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.library.basic.util.Loggers;
 import de.timesnake.library.basic.util.Tuple;
-import de.timesnake.library.packets.util.packet.ExPacketPlayOutEntityHeadRotation;
-import de.timesnake.library.packets.util.packet.ExPacketPlayOutEntityLook;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.function.Supplier;
+import de.timesnake.library.packets.core.packet.out.entity.ClientboundMoveEntityPacketBuilder;
+import de.timesnake.library.packets.core.packet.out.entity.ClientboundRotateHeadPacketBuilder;
 import net.kyori.adventure.text.Component;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
+
+import java.time.Duration;
+import java.util.*;
+import java.util.function.Supplier;
 
 public class TalkAction extends RadiusAction implements ChannelListener {
 
@@ -56,15 +50,16 @@ public class TalkAction extends RadiusAction implements ChannelListener {
   private final float yaw;
   private final float pitch;
   private StoryUser partner;
-  private Integer messageIndex;
+  private Iterator<Tuple<Speaker, Supplier<String>>> messageIt;
+  private Tuple<Speaker, Supplier<String>> currentMessage;
   private HoloDisplay display;
 
 
   public TalkAction(int id, StoryAction next, StoryCharacter<?> speaker,
-      LinkedList<Tuple<Speaker, Supplier<String>>> messages,
-      LinkedList<Tuple<Speaker, Supplier<String>>> audioMessages,
-      ExLocation location, StoryCharacter<?> character, Double radius, float yaw,
-      float pitch) {
+                    LinkedList<Tuple<Speaker, Supplier<String>>> messages,
+                    LinkedList<Tuple<Speaker, Supplier<String>>> audioMessages,
+                    ExLocation location, StoryCharacter<?> character, Double radius, float yaw,
+                    float pitch) {
     super(id, next, location, character, radius);
     this.messages = messages;
     this.audioMessages = audioMessages;
@@ -74,7 +69,7 @@ public class TalkAction extends RadiusAction implements ChannelListener {
   }
 
   public TalkAction(StoryBookBuilder bookBuilder, Quest quest, Toml action, int id,
-      List<Integer> diaryPages) throws StoryParseException {
+                    List<Integer> diaryPages) throws StoryParseException {
     super(bookBuilder, action, id, diaryPages);
 
     String charId = action.getString(CHARACTER);
@@ -118,12 +113,10 @@ public class TalkAction extends RadiusAction implements ChannelListener {
       for (String audioText : audioTexts) {
         if (audioText.startsWith(AUDIO + ":")) {
           audioText = audioText.replaceFirst(AUDIO + ":", "").trim();
-          this.audioMessages.add(
-              new Tuple<>(Speaker.AUDIO, quest.parseString(audioText)));
+          this.audioMessages.add(new Tuple<>(Speaker.AUDIO, quest.parseString(audioText)));
         } else if (audioText.startsWith(MESSAGE_PLAYER + ":")) {
           audioText = audioText.replaceFirst(MESSAGE_CHARACTER + ":", "").trim();
-          this.audioMessages.add(
-              new Tuple<>(Speaker.CHARACTER, quest.parseString(audioText)));
+          this.audioMessages.add(new Tuple<>(Speaker.CHARACTER, quest.parseString(audioText)));
         }
       }
     }
@@ -131,24 +124,23 @@ public class TalkAction extends RadiusAction implements ChannelListener {
 
   @Override
   public StoryAction clone(Quest quest, StoryReader reader, StoryAction clonedNext,
-      StoryChapter chapter) {
+                           StoryChapter chapter) {
     return new TalkAction(this.id, clonedNext,
         quest.getChapter().getCharacter(this.speaker.getName()),
         this.messages, this.audioMessages,
         this.location.clone().setExWorld(chapter.getWorld()),
-        this.character != null ? quest.getChapter().getCharacter(this.character.getName())
-            : null,
+        this.character != null ? quest.getChapter().getCharacter(this.character.getName()) : null,
         this.radius, this.yaw, this.pitch);
   }
 
   @Override
   public void start() {
     super.start();
-    this.reader.forEach(u -> u.sendPacket(
-        ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(), this.yaw)));
-    this.reader.forEach(
-        u -> u.sendPacket(ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(),
-            this.yaw >= 0 ? this.yaw + 44f : this.yaw - 44f, this.pitch, true)));
+    this.reader.forEach(u -> u.sendPacket(ClientboundRotateHeadPacketBuilder.of(this.speaker.getEntity(), this.yaw)));
+    this.reader.forEach(u -> u.sendPacket(new ClientboundMoveEntityPacketBuilder(this.speaker.getEntity())
+        .setRot(this.yaw >= 0 ? this.yaw + 44f : this.yaw - 44f, this.pitch, true)
+        .build()));
+
   }
 
   private boolean isAudio() {
@@ -160,11 +152,14 @@ public class TalkAction extends RadiusAction implements ChannelListener {
   public void trigger(TriggerEvent.Type type, StoryUser user) {
     if (this.partner == null) {
       this.partner = user;
-      this.messageIndex = 0;
+      if (this.isAudio()) {
+        this.messageIt = this.audioMessages.listIterator();
+      } else {
+        this.messageIt = this.messages.listIterator();
+      }
       this.nextMessage(user);
 
-      Server.getChannel()
-          .addListener(this, () -> Collections.singleton(this.partner.getUniqueId()));
+      Server.getChannel().addListener(this, () -> Collections.singleton(this.partner.getUniqueId()));
     }
   }
 
@@ -185,36 +180,25 @@ public class TalkAction extends RadiusAction implements ChannelListener {
 
     user.resetTitle();
 
+    if (!this.messageIt.hasNext() && this.reader.containsUser(user)) {
+      this.startNext();
+      return;
+    }
+
+    this.currentMessage = this.messageIt.next();
+
     if (!this.isAudio()) {
-      if (this.messageIndex >= this.messages.size() && this.reader.containsUser(user)) {
-        this.startNext();
-        return;
-      }
-
-      Tuple<Speaker, Supplier<String>> messageBySpeaker = this.messages.get(
-          this.messageIndex);
-      this.messageIndex++;
-
-      if (messageBySpeaker.getA().equals(Speaker.CHARACTER)) {
-        this.sendMessage(user, messageBySpeaker.getB().get());
+      if (this.currentMessage.getA().equals(Speaker.CHARACTER)) {
+        this.sendMessage(user, this.currentMessage.getB().get());
       } else {
-        this.sendSelfMessage(user, messageBySpeaker.getB().get());
+        this.sendSelfMessage(user, this.currentMessage.getB().get());
       }
     } else {
-      if (this.messageIndex >= this.audioMessages.size() && this.reader.containsUser(user)) {
-        this.startNext();
-        return;
-      }
-
-      Tuple<Speaker, Supplier<String>> messageBySpeaker = this.audioMessages.get(
-          this.messageIndex);
-      this.messageIndex++;
-
-      if (messageBySpeaker.getA().equals(Speaker.AUDIO)) {
+      if (this.currentMessage.getA().equals(Speaker.AUDIO)) {
         Server.getChannel().sendMessage(new ChannelUserMessage<>(user.getUniqueId(),
-            MessageType.User.STORY_PLAY_AUDIO, messageBySpeaker.getB().get()));
+            MessageType.User.STORY_PLAY_AUDIO, this.currentMessage.getB().get()));
       } else {
-        this.sendSelfMessage(user, messageBySpeaker.getB().get());
+        this.sendSelfMessage(user, this.currentMessage.getB().get());
       }
     }
   }
@@ -235,25 +219,25 @@ public class TalkAction extends RadiusAction implements ChannelListener {
     if (this.character.isRotateable()) {
       Server.runTaskTimerAsynchrony((time) -> {
         if (time % 2 == 0) {
-          user.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(),
+          user.sendPacket(ClientboundRotateHeadPacketBuilder.of(this.speaker.getEntity(),
               this.yaw - random.nextInt(10) + 8));
-          user.sendPacket(
-              ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(), this.yaw,
-                  this.pitch + random.nextInt(5) + 3, true));
+          user.sendPacket(new ClientboundMoveEntityPacketBuilder(this.speaker.getEntity())
+              .setRot(this.yaw, this.pitch + random.nextInt(5) + 3, true)
+              .build());
         } else {
-          user.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(),
+          user.sendPacket(ClientboundRotateHeadPacketBuilder.of(this.speaker.getEntity(),
               this.yaw - random.nextInt(10) + 8));
-          user.sendPacket(
-              ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(), this.yaw,
-                  this.pitch - random.nextInt(5) - 3, true));
+          user.sendPacket(new ClientboundMoveEntityPacketBuilder(this.speaker.getEntity())
+              .setRot(this.yaw, this.pitch - random.nextInt(5) - 3, true)
+              .build());
         }
 
         if (time == 0) {
-          user.sendPacket(ExPacketPlayOutEntityHeadRotation.wrap(this.speaker.getEntity(),
+          user.sendPacket(ClientboundRotateHeadPacketBuilder.of(this.speaker.getEntity(),
               this.yaw));
-          user.sendPacket(
-              ExPacketPlayOutEntityLook.wrap(this.speaker.getEntity(), this.yaw,
-                  this.pitch, true));
+          user.sendPacket(new ClientboundMoveEntityPacketBuilder(this.speaker.getEntity())
+              .setRot(this.yaw, this.pitch, true)
+              .build());
         }
 
       }, 8, true, 0, 7, GameStory.getPlugin());
@@ -306,8 +290,7 @@ public class TalkAction extends RadiusAction implements ChannelListener {
     }
 
     if (this.reader.getTalkType().equals(TalkType.AUDIO)) {
-      if (this.messageIndex > 0 && this.audioMessages.get(this.messageIndex - 1).getA()
-          .equals(Speaker.AUDIO)) {
+      if (this.currentMessage != null && this.currentMessage.getA().equals(Speaker.AUDIO)) {
         return;
       }
     }
@@ -337,21 +320,19 @@ public class TalkAction extends RadiusAction implements ChannelListener {
 
   @ChannelHandler(type = {ListenerType.USER_STORY_END_AUDIO})
   public void onStoryMessage(ChannelUserMessage<String> msg) {
-    if (this.messageIndex > 0 && msg.getValue()
-        .equals(this.audioMessages.get(this.messageIndex--).getB().get())) {
+    if (this.currentMessage != null && msg.getValue().equals(this.currentMessage.getB().get())) {
       this.nextMessage(this.partner);
     }
   }
 
   @Override
   public void despawnEntities() {
-
     if (this.display != null) {
       Server.getEntityManager().unregisterEntity(this.display);
       this.display = null;
     }
 
-    this.reader.forEach(UserPlayerDelegation::resetTitle);
+    this.reader.forEach(User::resetTitle);
   }
 
   @Override
@@ -361,7 +342,7 @@ public class TalkAction extends RadiusAction implements ChannelListener {
     return names;
   }
 
-  private enum Speaker {
+  public enum Speaker {
     PLAYER,
     CHARACTER,
     AUDIO

@@ -10,9 +10,10 @@ import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.basic.bukkit.util.world.entity.PacketPlayer;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
-import de.timesnake.library.entities.entity.bukkit.ExPlayer;
+import de.timesnake.library.entities.entity.PlayerBuilder;
+import net.minecraft.world.entity.player.Player;
 
-public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
+public class StoryCharacterPlayer extends StoryCharacter<Player> {
 
   public static final String NAME = "player";
 
@@ -33,9 +34,11 @@ public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
     super(name, displayName, location);
     this.skinValue = skinValue;
     this.skinSignature = skinSignature;
-    this.entity = new ExPlayer(this.location.getWorld(), this.displayName);
-    this.entity.setPosition(this.location.getX(), this.location.getY(), this.location.getZ());
-    this.entity.setTextures(this.skinValue, this.skinSignature);
+    this.entity = PlayerBuilder.ofName(name, skinValue, skinSignature)
+        .applyOnEntity(e -> {
+          e.setPos(this.getLocation().getX(), this.getLocation().getY(), this.getLocation().getZ());
+        })
+        .build();
   }
 
   public StoryCharacterPlayer(String name, Toml character) {
@@ -46,7 +49,7 @@ public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
   }
 
   @Override
-  public StoryCharacter<ExPlayer> clone(StoryReader reader, StoryChapter chapter) {
+  public StoryCharacter<Player> clone(StoryReader reader, StoryChapter chapter) {
     StoryCharacterPlayer character = new StoryCharacterPlayer(this.name, this.displayName,
         this.location.clone().setExWorld(chapter.getWorld()), this.skinValue, this.skinSignature);
     character.reader = reader;
@@ -66,9 +69,7 @@ public class StoryCharacterPlayer extends StoryCharacter<ExPlayer> {
 
     this.spawned = true;
 
-    this.packetPlayer = new PacketPlayer(this.entity,
-        new ExLocation(Server.getWorld(this.entity.getWorld()),
-            this.entity.getLocation()));
+    this.packetPlayer = new PacketPlayer(this.entity, this.getLocation().clone());
 
     Server.getEntityManager().registerEntity(packetPlayer, this.reader.getUsers());
   }

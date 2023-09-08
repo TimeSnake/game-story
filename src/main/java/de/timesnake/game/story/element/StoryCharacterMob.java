@@ -13,22 +13,18 @@ import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.library.entities.EntityManager;
-import de.timesnake.library.entities.entity.bukkit.ExPillager;
-import de.timesnake.library.entities.entity.bukkit.ExVillager;
-import de.timesnake.library.entities.entity.bukkit.ExVindicator;
-import de.timesnake.library.entities.entity.bukkit.HumanEntity;
-import de.timesnake.library.entities.entity.extension.Mob;
-import de.timesnake.library.entities.pathfinder.ExPathfinderGoal;
-import de.timesnake.library.entities.pathfinder.ExPathfinderGoalLookAtPlayer;
-import de.timesnake.library.entities.pathfinder.custom.ExCustomPathfinderGoalLocation;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import de.timesnake.library.entities.entity.PillagerBuilder;
+import de.timesnake.library.entities.entity.VillagerBuilder;
+import de.timesnake.library.entities.entity.VindicatorBuilder;
+import de.timesnake.library.entities.pathfinder.LocationGoal;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
+import net.minecraft.world.entity.player.Player;
 
 public class StoryCharacterMob extends StoryCharacter<Mob> {
 
   private final Type type;
-  protected List<ExPathfinderGoal> walkPathfinders = new ArrayList<>();
 
   public StoryCharacterMob(String name, String displayName, ExLocation location, Type type) {
     super(name, displayName, location);
@@ -45,10 +41,10 @@ public class StoryCharacterMob extends StoryCharacter<Mob> {
       throw new MissingArgumentException("type");
     }
 
-    this.type = Type.valueOf(typeString.toUpperCase());
-    if (this.type == null) {
-      throw new InvalidArgumentTypeException(
-          "Could not load type '" + typeString + "' of character entity");
+    try {
+      this.type = Type.valueOf(typeString.toUpperCase());
+    } catch (IllegalArgumentException e) {
+      throw new InvalidArgumentTypeException("Could not load type '" + typeString + "' of character entity");
     }
   }
 
@@ -64,33 +60,18 @@ public class StoryCharacterMob extends StoryCharacter<Mob> {
   public void spawn() {
     Server.runTaskSynchrony(() -> {
       this.entity.setCustomNameVisible(false);
-      this.entity.setPersistent(true);
+      this.entity.persist = true;
+      this.entity.removeWhenFarAway(0);
       this.entity.setInvulnerable(true);
-      this.entity.setPosition(this.location.getX(), this.location.getY(), this.location.getZ());
-      this.entity.setRotation(this.location.getYaw(), this.location.getPitch());
-      this.entity.setRemoveWhenFarAway(false);
+      this.entity.setPos(this.location.getX(), this.location.getY(), this.location.getZ());
+      this.entity.setRot(this.location.getYaw(), this.location.getPitch());
       EntityManager.spawnEntity(location.getWorld(), this.entity);
     }, GameStory.getPlugin());
   }
 
-  public void setWalkPathfinders(ExPathfinderGoal... walkPathfinders) {
-
-    for (ExPathfinderGoal oldPathfinderGoal : this.walkPathfinders) {
-      this.entity.removePathfinderGoal(oldPathfinderGoal);
-    }
-
-    this.walkPathfinders.clear();
-
-    for (ExPathfinderGoal newPathfinderGoal : walkPathfinders) {
-      this.entity.addPathfinderGoal(newPathfinderGoal.getPriority(), newPathfinderGoal);
-    }
-
-    this.walkPathfinders.addAll(Arrays.asList(walkPathfinders));
-  }
-
   @Override
   public void despawn() {
-    this.entity.remove();
+    this.entity.remove(Entity.RemovalReason.DISCARDED);
   }
 
   @Override
@@ -103,41 +84,31 @@ public class StoryCharacterMob extends StoryCharacter<Mob> {
     VILLAGER() {
       @Override
       public Mob initEntity(ExLocation location) {
-        ExVillager entity = new ExVillager(location.getWorld(), ExVillager.Type.PLAINS, false,
-            false, false);
-
-        entity.addPathfinderGoal(1, new ExPathfinderGoalLookAtPlayer(HumanEntity.class, 8.0f));
-        entity.addPathfinderGoal(1,
-            new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
-                location.getZ(), 1, 16, 0.1));
-
-        return entity;
+        return new VillagerBuilder(location.getExWorld().getHandle(), false, false, false)
+            .addPathfinderGoal(1, e -> new LookAtPlayerGoal(e, Player.class, 8.0f))
+            .addPathfinderGoal(2, e -> new LocationGoal(e, location.getX(), location.getY(), location.getZ(),
+                1, 16, 0.1))
+            .build();
       }
     },
     PILLAGER() {
       @Override
       public Mob initEntity(ExLocation location) {
-        ExPillager entity = new ExPillager(location.getWorld(), false, false);
-
-        entity.addPathfinderGoal(1, new ExPathfinderGoalLookAtPlayer(HumanEntity.class, 8.0f));
-        entity.addPathfinderGoal(1,
-            new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
-                location.getZ(), 1, 16, 0.1));
-
-        return entity;
+        return new PillagerBuilder(location.getExWorld().getHandle(), false, false, false)
+            .addPathfinderGoal(1, e -> new LookAtPlayerGoal(e, Player.class, 8.0F))
+            .addPathfinderGoal(1, e -> new LocationGoal(e, location.getX(), location.getY(), location.getZ(),
+                1, 16, 0.1))
+            .build();
       }
     },
     VINDICATOR() {
       @Override
       public Mob initEntity(ExLocation location) {
-        ExVindicator entity = new ExVindicator(location.getWorld(), false, false);
-
-        entity.addPathfinderGoal(1, new ExPathfinderGoalLookAtPlayer(HumanEntity.class, 8.0f));
-        entity.addPathfinderGoal(1,
-            new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
-                location.getZ(), 1, 16, 0.1));
-
-        return entity;
+        return new VindicatorBuilder(location.getExWorld().getHandle(), false, false, false)
+            .addPathfinderGoal(1, e -> new LookAtPlayerGoal(e, Player.class, 8.0F))
+            .addPathfinderGoal(1, e -> new LocationGoal(e, location.getX(), location.getY(), location.getZ(),
+                1, 16, 0.1))
+            .build();
       }
     };
 

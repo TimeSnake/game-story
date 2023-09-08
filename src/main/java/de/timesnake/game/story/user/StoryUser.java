@@ -15,13 +15,10 @@ import de.timesnake.database.util.Database;
 import de.timesnake.game.story.book.StoryContentBook;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.StoryBook;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
+
+import java.util.*;
 
 public class StoryUser extends User {
 
@@ -54,7 +51,7 @@ public class StoryUser extends User {
 
     tablist.addEntry(this);
 
-    this.setTablist(tablist);
+    // TODO this.setTablist(tablist);
 
     this.progress = new UserProgress(Database.getStory().getUser(this.getUniqueId()));
 

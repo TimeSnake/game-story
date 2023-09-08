@@ -10,9 +10,9 @@ import de.timesnake.game.story.exception.InvalidArgumentTypeException;
 import de.timesnake.game.story.exception.MissingArgumentException;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
-import org.bukkit.entity.LivingEntity;
+import net.minecraft.world.entity.LivingEntity;
 
-public abstract class StoryCharacter<Entity extends de.timesnake.library.entities.entity.extension.LivingEntity> {
+public abstract class StoryCharacter<Entity extends LivingEntity> {
 
   public static StoryCharacter<?> initCharacter(String name, Toml character)
       throws MissingArgumentException, InvalidArgumentTypeException {
