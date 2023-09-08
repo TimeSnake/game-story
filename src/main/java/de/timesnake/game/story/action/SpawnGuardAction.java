@@ -6,6 +6,7 @@ package de.timesnake.game.story.action;
 
 import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.Server;
+import de.timesnake.basic.bukkit.util.user.inventory.ExItemStack;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.event.TriggerEvent;
@@ -20,31 +21,31 @@ import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.library.entities.EntityManager;
-import de.timesnake.library.entities.entity.bukkit.ExPillager;
-import de.timesnake.library.entities.entity.bukkit.ExRavager;
-import de.timesnake.library.entities.entity.bukkit.ExVindicator;
-import de.timesnake.library.entities.entity.bukkit.HumanEntity;
-import de.timesnake.library.entities.entity.extension.Mob;
-import de.timesnake.library.entities.entity.extension.Monster;
-import de.timesnake.library.entities.pathfinder.ExPathfinderGoalCrossbowAttack;
-import de.timesnake.library.entities.pathfinder.ExPathfinderGoalFloat;
-import de.timesnake.library.entities.pathfinder.ExPathfinderGoalHurtByTarget;
-import de.timesnake.library.entities.pathfinder.ExPathfinderGoalLookAtPlayer;
-import de.timesnake.library.entities.pathfinder.ExPathfinderGoalRandomStroll;
-import de.timesnake.library.entities.pathfinder.ExPathfinderGoalRandomStrollLand;
-import de.timesnake.library.entities.pathfinder.custom.ExCustomPathfinderGoalLocation;
-import de.timesnake.library.entities.pathfinder.custom.ExCustomPathfinderGoalMeleeAttackRavager;
-import de.timesnake.library.entities.pathfinder.custom.ExCustomPathfinderGoalMeleeAttackVindicator;
-import de.timesnake.library.entities.pathfinder.custom.ExCustomPathfinderGoalNearestAttackableTarget;
-import de.timesnake.library.entities.wrapper.ExEnumItemSlot;
+import de.timesnake.library.entities.entity.PillagerBuilder;
+import de.timesnake.library.entities.entity.RavagerBuilder;
+import de.timesnake.library.entities.entity.VindicatorBuilder;
+import de.timesnake.library.entities.pathfinder.LocationGoal;
+import de.timesnake.library.entities.pathfinder.RavagerMeleeAttackGoal;
+import de.timesnake.library.entities.pathfinder.VindicatorMeleeAttackGoal;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.goal.FloatGoal;
+import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
+import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
+import net.minecraft.world.entity.ai.goal.RangedCrossbowAttackGoal;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.craftbukkit.v1_20_R1.CraftWorld;
+import org.bukkit.enchantments.Enchantment;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.inventory.ItemStack;
 
 public class SpawnGuardAction extends LocationAction {
 
@@ -55,15 +56,15 @@ public class SpawnGuardAction extends LocationAction {
   private final Set<Mob> guards = new HashSet<>();
 
   protected SpawnGuardAction(int id, StoryAction next, ExLocation location,
-      StoryCharacter<?> character,
-      Supplier<Integer> amount, GuardType type) {
+                             StoryCharacter<?> character,
+                             Supplier<Integer> amount, GuardType type) {
     super(id, next, location, character);
     this.amount = amount;
     this.type = type;
   }
 
   public SpawnGuardAction(StoryBookBuilder bookBuilder, Quest quest, Toml action, int id,
-      List<Integer> diaryPages)
+                          List<Integer> diaryPages)
       throws StoryParseException {
     super(bookBuilder, action, id, diaryPages);
 
@@ -82,7 +83,7 @@ public class SpawnGuardAction extends LocationAction {
 
   @Override
   public StoryAction clone(Quest quest, StoryReader reader, StoryAction clonedNext,
-      StoryChapter chapter) {
+                           StoryChapter chapter) {
     return new SpawnGuardAction(this.id, clonedNext,
         location.clone().setExWorld(chapter.getWorld()),
         this.character != null ? this.character.clone(reader, chapter) : null, this.amount,
@@ -99,11 +100,9 @@ public class SpawnGuardAction extends LocationAction {
     Server.runTaskSynchrony(() -> {
       for (int i = 0; i < this.amount.get(); i++) {
         Mob mob = type.create(this.location, this.reader.getDifficulty());
-        mob.setPersistent(true);
-        mob.setRemoveWhenFarAway(false);
-        mob.setDeathLoot(List.of());
+        mob.persist = true;
         this.guards.add(mob);
-        EntityManager.spawnEntity(mob);
+        EntityManager.spawnEntity(this.location.getWorld(), mob);
       }
     }, GameStory.getPlugin());
   }
@@ -113,94 +112,70 @@ public class SpawnGuardAction extends LocationAction {
     PILLAGER() {
       @Override
       public Mob create(Location location, Difficulty difficulty) {
-        ExPillager pillager = new ExPillager(location.getWorld(), false, false);
-        pillager.setPosition(location.getX(), location.getY(), location.getZ());
-
-        ItemStack crossBow = new ItemStack(Material.CROSSBOW);
-        if (difficulty == Difficulty.HARD) {
-          crossBow.addEnchantment(Enchantment.QUICK_CHARGE, 3);
-        }
-        pillager.setSlot(ExEnumItemSlot.MAIN_HAND, crossBow);
-
-        pillager.addPathfinderGoal(0, new ExPathfinderGoalFloat());
-        pillager.addPathfinderGoal(3, new ExPathfinderGoalCrossbowAttack(1.0, 15.0F));
-        pillager.addPathfinderGoal(7,
-            new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
-                location.getZ(), 0.9, 32, 5));
-        pillager.addPathfinderGoal(8, new ExPathfinderGoalRandomStroll(0.6));
-        pillager.addPathfinderGoal(9,
-            new ExPathfinderGoalLookAtPlayer(HumanEntity.class, 15.0F, 1.0F, true));
-        pillager.addPathfinderGoal(10, new ExPathfinderGoalLookAtPlayer(Mob.class, 15.0F));
-
-        pillager.addPathfinderGoal(1, new ExPathfinderGoalHurtByTarget(Monster.class));
-        pillager.addPathfinderGoal(2,
-            new ExCustomPathfinderGoalNearestAttackableTarget(HumanEntity.class,
-                15.0));
-
-        return pillager;
+        return new PillagerBuilder(((CraftWorld) location.getWorld()).getHandle(), false, false, false)
+            .applyOnEntity(e -> {
+              e.setPos(location.getX(), location.getY(), location.getZ());
+              ExItemStack crossBow = new ExItemStack(Material.CROSSBOW);
+              if (difficulty == Difficulty.HARD) {
+                crossBow.addEnchantment(Enchantment.QUICK_CHARGE, 3);
+              }
+              e.setItemSlot(EquipmentSlot.MAINHAND, crossBow.getHandle());
+            })
+            .addPathfinderGoal(0, e -> new FloatGoal(e))
+            .addPathfinderGoal(3, e -> new RangedCrossbowAttackGoal<>(e, 1.0, 15.0F))
+            .addPathfinderGoal(7, e -> new LocationGoal(e, location.getX(), location.getY(),
+                location.getZ(), 0.9, 32, 5))
+            .addPathfinderGoal(8, e -> new RandomStrollGoal(e, 0.6))
+            .addPathfinderGoal(9, e -> new LookAtPlayerGoal(e, Mob.class, 15.0F))
+            .addTargetGoal(1, e -> new HurtByTargetGoal(e, Monster.class))
+            .addTargetGoal(2, e -> new NearestAttackableTargetGoal<>(e, Player.class, true))
+            .build();
       }
     },
 
     VINDICATOR() {
       @Override
       public Mob create(Location location, Difficulty difficulty) {
-        ExVindicator vindicator = new ExVindicator(location.getWorld(), false, false);
-        vindicator.setPosition(location.getX(), location.getY(), location.getZ());
-
-        vindicator.setSlot(ExEnumItemSlot.MAIN_HAND, new ItemStack(Material.IRON_AXE));
-
-        vindicator.addPathfinderGoal(0, new ExPathfinderGoalFloat());
-        switch (difficulty) {
-          case EASY ->
-              vindicator.addPathfinderGoal(3, new ExCustomPathfinderGoalMeleeAttackVindicator(1));
-          case NORMAL ->
-              vindicator.addPathfinderGoal(3, new ExCustomPathfinderGoalMeleeAttackVindicator(1.1));
-          case HARD ->
-              vindicator.addPathfinderGoal(3, new ExCustomPathfinderGoalMeleeAttackVindicator(1.2));
-        }
-        vindicator.addPathfinderGoal(7,
-            new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
-                location.getZ(), 0.9, 32, 5));
-        vindicator.addPathfinderGoal(8, new ExPathfinderGoalRandomStroll(0.6));
-        vindicator.addPathfinderGoal(9,
-            new ExPathfinderGoalLookAtPlayer(HumanEntity.class, 3.0F, 1.0F));
-        vindicator.addPathfinderGoal(10, new ExPathfinderGoalLookAtPlayer(Mob.class, 8.0F));
-
-        vindicator.addPathfinderGoal(1, new ExPathfinderGoalHurtByTarget(Monster.class));
-        vindicator.addPathfinderGoal(2,
-            new ExCustomPathfinderGoalNearestAttackableTarget(HumanEntity.class,
-                10.0));
-
-        return vindicator;
+        return new VindicatorBuilder(((CraftWorld) location.getWorld()).getHandle(), false, false, false)
+            .applyOnEntity(e -> {
+              e.setPos(location.getX(), location.getY(), location.getZ());
+              e.setItemSlot(EquipmentSlot.MAINHAND, new ExItemStack(Material.IRON_AXE).getHandle());
+            })
+            .addPathfinderGoal(0, e -> new FloatGoal(e))
+            .addPathfinderGoal(3, e -> switch (difficulty) {
+              case EASY -> new VindicatorMeleeAttackGoal(e, 1.1);
+              case NORMAL -> new VindicatorMeleeAttackGoal(e, 1.2);
+              case HARD -> new VindicatorMeleeAttackGoal(e, 1.3);
+            })
+            .addPathfinderGoal(7, e -> new LocationGoal(e, location.getX(), location.getY(),
+                location.getZ(), 0.9, 32, 5))
+            .addPathfinderGoal(8, e -> new RandomStrollGoal(e, 0.6))
+            .addPathfinderGoal(9, e -> new LookAtPlayerGoal(e, Player.class, 8.0F))
+            .addTargetGoal(1, e -> new HurtByTargetGoal(e, Monster.class))
+            .addTargetGoal(2, e -> new NearestAttackableTargetGoal<>(e, Player.class, true))
+            .build();
       }
     },
 
     RAVAGER() {
       @Override
       public Mob create(Location location, Difficulty difficulty) {
-        ExRavager vindicator = new ExRavager(location.getWorld(), false, false);
-        vindicator.setPosition(location.getX(), location.getY(), location.getZ());
 
-        vindicator.addPathfinderGoal(0, new ExPathfinderGoalFloat());
+        return new RavagerBuilder(((CraftWorld) location.getWorld()).getHandle(), false, false, false)
+            .applyOnEntity(e -> e.setPos(location.getX(), location.getY(), location.getZ()))
+            .addPathfinderGoal(0, e -> new FloatGoal(e))
+            .addPathfinderGoal(3, e -> switch (difficulty) {
+              case HARD -> new RavagerMeleeAttackGoal(e, 1.1);
+              default -> new RavagerMeleeAttackGoal(e, 1.2);
+            })
+            .addPathfinderGoal(7, e -> new LocationGoal(e, location.getX(), location.getY(),
+                location.getZ(), 0.9, 32, 5))
+            .addPathfinderGoal(8, e -> new RandomStrollGoal(e, 0.4))
+            .addPathfinderGoal(9, e -> new LookAtPlayerGoal(e, Player.class, 8.0F))
+            .addTargetGoal(1, e -> new HurtByTargetGoal(e, Monster.class))
+            .addTargetGoal(2, e -> new NearestAttackableTargetGoal<>(e, Player.class, true))
 
-        if (difficulty == Difficulty.HARD) {
-          vindicator.addPathfinderGoal(3, new ExCustomPathfinderGoalMeleeAttackRavager(1.1));
-        } else {
-          vindicator.addPathfinderGoal(3, new ExCustomPathfinderGoalMeleeAttackRavager(1));
-        }
-        vindicator.addPathfinderGoal(7,
-            new ExCustomPathfinderGoalLocation(location.getX(), location.getY(),
-                location.getZ(), 0.9, 32, 5));
-        vindicator.addPathfinderGoal(8, new ExPathfinderGoalRandomStrollLand(0.4));
-        vindicator.addPathfinderGoal(9, new ExPathfinderGoalLookAtPlayer(HumanEntity.class, 6.0F));
-        vindicator.addPathfinderGoal(10, new ExPathfinderGoalLookAtPlayer(Mob.class, 8.0F));
-
-        vindicator.addPathfinderGoal(1, new ExPathfinderGoalHurtByTarget(Monster.class));
-        vindicator.addPathfinderGoal(2,
-            new ExCustomPathfinderGoalNearestAttackableTarget(HumanEntity.class,
-                10.0));
-
-        return vindicator;
+            .build();
       }
     };
 
