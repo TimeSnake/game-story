@@ -7,12 +7,7 @@ package de.timesnake.game.story.user;
 import de.timesnake.basic.bukkit.core.user.UserPlayerDelegation;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.user.User;
-import de.timesnake.basic.bukkit.util.user.inventory.ExInventory;
-import de.timesnake.basic.bukkit.util.user.inventory.ExItemStack;
-import de.timesnake.basic.bukkit.util.user.inventory.UserInventoryClickEvent;
-import de.timesnake.basic.bukkit.util.user.inventory.UserInventoryClickListener;
-import de.timesnake.basic.bukkit.util.user.inventory.UserInventoryInteractEvent;
-import de.timesnake.basic.bukkit.util.user.inventory.UserInventoryInteractListener;
+import de.timesnake.basic.bukkit.util.user.inventory.*;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
 import de.timesnake.channel.util.message.ChannelUserMessage;
 import de.timesnake.channel.util.message.MessageType;
@@ -25,16 +20,10 @@ import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBook;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.library.basic.util.Loggers;
+import de.timesnake.library.basic.util.Tuple;
 import de.timesnake.library.chat.ExTextColor;
 import de.timesnake.library.extension.util.chat.Chat;
 import de.timesnake.library.extension.util.player.UserSet;
-import java.time.Duration;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -44,6 +33,10 @@ import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.jetbrains.annotations.NotNull;
+
+import java.time.Duration;
+import java.util.*;
+import java.util.function.Predicate;
 
 public class StoryReader implements Iterable<StoryUser> {
 
@@ -64,13 +57,12 @@ public class StoryReader implements Iterable<StoryUser> {
 
   private boolean performedPreChecks = false;
 
-  public StoryReader(StoryUser host, Collection<StoryUser> users, int bookId,
-      String chapterName) {
+  public StoryReader(StoryUser host, Collection<StoryUser> users, String bookId, String chapterId) {
     this.host = host;
     this.users = new UserSet<>(users);
 
     this.book = StoryServer.getBook(bookId);
-    this.chapter = this.book.getChapter(chapterName).clone(this);
+    this.chapter = this.book.getChapter(chapterId).clone(this);
 
     this.startInventory = new StartInventory();
     this.host.openInventory(this.startInventory.getInventory());
@@ -112,9 +104,7 @@ public class StoryReader implements Iterable<StoryUser> {
   public void removeUser(StoryUser user) {
     this.users.remove(user);
     user.setReaderGroup(null);
-    Server.getChannel().sendMessage(
-        new ChannelUserMessage<>(user.getUniqueId(), MessageType.User.STORY_END,
-            Server.getChannel().getHost().getPort()));
+    Server.getChannel().sendMessage(new ChannelUserMessage<>(user.getUniqueId(), MessageType.User.STORY_END));
 
     if (this.getUsers().isEmpty()) {
       this.destroy();
@@ -126,9 +116,7 @@ public class StoryReader implements Iterable<StoryUser> {
   public void clearUsers() {
     for (StoryUser user : this) {
       user.setReaderGroup(null);
-      Server.getChannel().sendMessage(
-          new ChannelUserMessage<>(user.getUniqueId(), MessageType.User.STORY_END,
-              Server.getChannel().getHost().getPort()));
+      Server.getChannel().sendMessage(new ChannelUserMessage<>(user.getUniqueId(), MessageType.User.STORY_END));
     }
 
     this.users.clear();
@@ -144,9 +132,7 @@ public class StoryReader implements Iterable<StoryUser> {
   public void onCompletedQuest(Quest quest) {
     quest.end();
     Loggers.GAME.info(Chat.listToString(this.users.stream()
-        .map(UserPlayerDelegation::getName).toList()) + " completed '" + quest.getName()
-        + "'");
-
+        .map(UserPlayerDelegation::getName).toList()) + " completed '" + quest.getName() + "'");
     if (!quest.equals(this.quest)) {
       quest.nextQuest();
       return;
@@ -166,9 +152,8 @@ public class StoryReader implements Iterable<StoryUser> {
   }
 
   private void onCompletedChapter() {
-    this.forEach(
-        u -> u.showTitle(Component.empty(), Component.text(this.chapter.getEndMessage()),
-            Duration.ofSeconds(3)));
+    this.forEach(u -> u.showTitle(Component.empty(), Component.text(this.chapter.getEndMessage()),
+        Duration.ofSeconds(3)));
 
     // TODO save progress
 
@@ -196,7 +181,7 @@ public class StoryReader implements Iterable<StoryUser> {
     }
 
     String savedQuestName = this.host.getProgress()
-        .getQuest(this.book.getId(), this.chapter.getName());
+        .getQuest(this.book.getId(), this.chapter.getId());
     if (savedQuestName != null) {
       this.quest = this.chapter.getQuest(savedQuestName);
     } else {
@@ -245,26 +230,17 @@ public class StoryReader implements Iterable<StoryUser> {
 
     if (this.talkType == TalkType.AUDIO) {
       this.forEach(u -> u.sendPluginMessage(Plugin.STORY,
-          Component.text("Login to our website and start the audio check now: ",
-                  ExTextColor.PERSONAL)
-              .append(Component.text("https://timesnake.de/story", ExTextColor.VALUE,
-                      TextDecoration.UNDERLINED)
-                  .hoverEvent(
-                      HoverEvent.showText(Component.text("Click to copy")))
-                  .clickEvent(ClickEvent.openUrl(
-                      "https://timesnake.de/story/interface/?story="
-                          + book.getId())))));
-      this.forEach(
-          u -> Server.getChannel().sendMessage(new ChannelUserMessage<>(u.getUniqueId(),
-              MessageType.User.STORY_START,
-              Server.getChannel().getHost().getPort())));
+          Component.text("Login to our website and start the audio check now: ", ExTextColor.PERSONAL)
+              .append(Component.text("https://timesnake.de/story/" + book.getId(), ExTextColor.VALUE, TextDecoration.UNDERLINED)
+                  .hoverEvent(HoverEvent.showText(Component.text("Click to copy")))
+                  .clickEvent(ClickEvent.openUrl("https://timesnake.de/story/" + book.getId())))));
+      this.forEach(u -> Server.getChannel().sendMessage(new ChannelUserMessage<>(u.getUniqueId(),
+          MessageType.User.STORY_START, new Tuple<>(this.book.getId(), this.chapter.getId()))));
       checksPerformed = true;
     }
 
     this.host.setItem(8, this.startInventory.start);
-    this.host.sendPluginMessage(Plugin.STORY,
-        Component.text("Click on the start item if you are ready",
-            ExTextColor.WARNING));
+    this.host.sendPluginMessage(Plugin.STORY, Component.text("Click on the start item if you are ready", ExTextColor.WARNING));
 
     this.performedPreChecks = true;
     return checksPerformed;
@@ -316,12 +292,10 @@ public class StoryReader implements Iterable<StoryUser> {
 
     if (respawnsLeft >= 0) {
       this.forEach(u -> u.showTitle(Component.empty(),
-          Component.text(respawnsLeft + " respawns left", ExTextColor.WARNING),
-          Duration.ofSeconds(3)));
+          Component.text(respawnsLeft + " respawns left", ExTextColor.WARNING), Duration.ofSeconds(3)));
     } else {
       this.forEach(u -> u.showTitle(Component.empty(),
-          Component.text("Game Over", ExTextColor.WARNING),
-          Duration.ofSeconds(3)));
+          Component.text("Game Over", ExTextColor.WARNING), Duration.ofSeconds(3)));
 
       Server.runTaskLaterSynchrony(() -> {
         this.forEach(StoryUser::joinStoryHub);
@@ -334,32 +308,25 @@ public class StoryReader implements Iterable<StoryUser> {
   public class StartInventory implements InventoryHolder, UserInventoryClickListener,
       UserInventoryInteractListener {
 
-    private static final ExItemStack TALK_TYPE = new ExItemStack(
-        Material.COMPASS).setDisplayName("§9Talk Type")
-        .setSlot(9).setMoveable(false).setDropable(false).immutable();
-    private static final ExItemStack DIFFICULTY = new ExItemStack(
-        Material.COMPASS).setDisplayName("§9Difficulty")
-        .setSlot(27).setMoveable(false).setDropable(false).immutable();
+    private static final ExItemStack TALK_TYPE = new ExItemStack(Material.COMPASS)
+        .setDisplayName("§9Talk Type").setSlot(9).setMoveable(false).setDropable(false).immutable();
+    private static final ExItemStack DIFFICULTY = new ExItemStack(Material.COMPASS)
+        .setDisplayName("§9Difficulty").setSlot(27).setMoveable(false).setDropable(false).immutable();
 
-    private final ExItemStack talkTypeText = new ExItemStack(Material.PAPER).setDisplayName(
-            "§fText")
-        .setSlot(10).setMoveable(false).setDropable(false).enchant();
-    private final ExItemStack talkTypeAudio = new ExItemStack(
-        Material.GOAT_HORN).setDisplayName("§fAudio")
-        .setSlot(11).setMoveable(false).setDropable(false);
+    private final ExItemStack talkTypeText = new ExItemStack(Material.PAPER)
+        .setDisplayName("§fText").setSlot(10).setMoveable(false).setDropable(false).enchant();
+    private final ExItemStack talkTypeAudio = new ExItemStack(Material.GOAT_HORN)
+        .setDisplayName("§fAudio").setSlot(11).setMoveable(false).setDropable(false);
 
-    private final ExItemStack difficultyEasy = new ExItemStack(
-        Material.GREEN_DYE).setDisplayName("§fEasy")
-        .setSlot(28).setMoveable(false).setDropable(false);
-    private final ExItemStack difficultyNormal = new ExItemStack(
-        Material.YELLOW_DYE).setDisplayName("§fNormal")
-        .setSlot(29).setMoveable(false).setDropable(false).enchant();
-    private final ExItemStack difficultyHard = new ExItemStack(Material.RED_DYE).setDisplayName(
-            "§fHard")
-        .setSlot(30).setMoveable(false).setDropable(false);
+    private final ExItemStack difficultyEasy = new ExItemStack(Material.GREEN_DYE)
+        .setDisplayName("§fEasy").setSlot(28).setMoveable(false).setDropable(false);
+    private final ExItemStack difficultyNormal = new ExItemStack(Material.YELLOW_DYE)
+        .setDisplayName("§fNormal").setSlot(29).setMoveable(false).setDropable(false).enchant();
+    private final ExItemStack difficultyHard = new ExItemStack(Material.RED_DYE)
+        .setDisplayName("§fHard").setSlot(30).setMoveable(false).setDropable(false);
 
-    private final ExItemStack start = new ExItemStack(Material.CLOCK).setDisplayName("§cStart")
-        .setSlot(53).setMoveable(false).setDropable(false);
+    private final ExItemStack start = new ExItemStack(Material.CLOCK)
+        .setDisplayName("§cStart").setSlot(53).setMoveable(false).setDropable(false);
 
     private final ExInventory inventory;
 

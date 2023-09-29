@@ -16,8 +16,9 @@ import de.timesnake.library.basic.util.Loggers;
 import de.timesnake.library.chat.ExTextColor;
 import de.timesnake.library.extension.util.cmd.Arguments;
 import de.timesnake.library.extension.util.cmd.ExCommand;
-import java.util.List;
 import net.kyori.adventure.text.Component;
+
+import java.util.List;
 
 public class StoryCmd implements CommandListener {
 
@@ -69,11 +70,7 @@ public class StoryCmd implements CommandListener {
 
              */
     } else {
-      if (!args.get(0).isInt(true)) {
-        return;
-      }
-
-      Integer bookId = args.get(0).toInt();
+      String bookId = args.getString(0);
       String chapterName = args.getString(1);
 
       if (!user.getBoughtChapters(bookId).contains(chapterName)) {
@@ -138,10 +135,5 @@ public class StoryCmd implements CommandListener {
       }
     }
     return List.of();
-  }
-
-  @Override
-  public void loadCodes(de.timesnake.library.extension.util.chat.Plugin plugin) {
-
   }
 }

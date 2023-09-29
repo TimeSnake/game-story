@@ -7,13 +7,14 @@ package de.timesnake.game.story.server;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
 import de.timesnake.game.story.listener.EventManager;
 import de.timesnake.game.story.structure.StoryBook;
+
 import java.util.Collection;
 
 public class StoryServer {
 
   public static final int PART_PRICE = 200;
 
-  public static StoryBook getBook(Integer id) {
+  public static StoryBook getBook(String id) {
     return server.getBook(id);
   }
 

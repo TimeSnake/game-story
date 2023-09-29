@@ -12,24 +12,17 @@ import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.library.basic.util.Loggers;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.Stack;
 import org.bukkit.GameRule;
 import org.bukkit.Material;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.*;
+
 public class StoryChapter implements Iterable<Quest> {
 
-  private final String name;
+  private final String id;
+  private final String title;
 
-  private final String displayName;
   private final String endMessage;
   private final Quest firstQuest;
   private final LinkedHashMap<String, StoryCharacter<?>> characterByName = new LinkedHashMap<>();
@@ -41,13 +34,11 @@ public class StoryChapter implements Iterable<Quest> {
   private String next;
   private StoryBook book;
 
-  public StoryChapter(String name, String displayName, String endMessage, Diary diary,
-      Quest firstQuest,
-      List<Integer> playerSizes, Map<Difficulty, Integer> maxDeathsByDifficulty,
-      String worldName,
-      Set<StoryCharacter<?>> characters) {
-    this.name = name;
-    this.displayName = displayName;
+  public StoryChapter(String id, String title, String endMessage, Diary diary, Quest firstQuest,
+                      List<Integer> playerSizes, Map<Difficulty, Integer> maxDeathsByDifficulty, String worldName,
+                      Set<StoryCharacter<?>> characters) {
+    this.id = id;
+    this.title = title;
     this.endMessage = endMessage;
     this.diary = diary;
     this.firstQuest = firstQuest;
@@ -57,8 +48,7 @@ public class StoryChapter implements Iterable<Quest> {
     this.world = Server.getWorld(worldName);
 
     if (this.world == null) {
-      Loggers.GAME.warning(
-          "World '" + worldName + "' for part '" + this.name + "' not exists");
+      Loggers.GAME.warning("World '" + worldName + "' for part '" + this.id + "' not exists");
       return;
     }
 
@@ -84,8 +74,7 @@ public class StoryChapter implements Iterable<Quest> {
     this.world.restrict(Restriction.DROP_PICK_ITEM, false);
     this.world.restrict(Restriction.PLACE_IN_BLOCK, false);
     this.world.restrict(Restriction.CAKE_EAT, true);
-    this.world.restrict(Restriction.OPEN_INVENTORIES,
-        List.of(Material.DISPENSER, Material.DROPPER, Material.HOPPER));
+    this.world.restrict(Restriction.OPEN_INVENTORIES, List.of(Material.DISPENSER, Material.DROPPER, Material.HOPPER));
     this.world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
     this.world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
     this.world.setGameRule(GameRule.RANDOM_TICK_SPEED, 0);
@@ -93,12 +82,12 @@ public class StoryChapter implements Iterable<Quest> {
 
   }
 
-  private StoryChapter(StoryReader reader, String name, String displayName, String endMessage,
-      Diary diary, Quest firstQuest, List<Integer> playerSizes,
-      Map<Difficulty, Integer> maxDeathsByDifficulty, ExWorld world,
-      LinkedHashMap<String, StoryCharacter<?>> characterByName) {
-    this.name = name;
-    this.displayName = displayName;
+  private StoryChapter(StoryReader reader, String id, String title, String endMessage,
+                       Diary diary, Quest firstQuest, List<Integer> playerSizes,
+                       Map<Difficulty, Integer> maxDeathsByDifficulty, ExWorld world,
+                       LinkedHashMap<String, StoryCharacter<?>> characterByName) {
+    this.id = id;
+    this.title = title;
     this.endMessage = endMessage;
     this.world = world;
     this.diary = diary.clone(reader);
@@ -114,20 +103,18 @@ public class StoryChapter implements Iterable<Quest> {
   }
 
   public StoryChapter clone(StoryReader reader) {
-    return new StoryChapter(reader, this.name, this.displayName, this.endMessage, this.diary,
-        this.firstQuest,
+    return new StoryChapter(reader, this.id, this.title, this.endMessage, this.diary, this.firstQuest,
         this.playerSizes, this.maxDeathsByDifficulty,
-        Server.getWorldManager()
-            .cloneWorld(this.world.getName() + "_" + reader.getId(), this.world),
+        Server.getWorldManager().cloneWorld(this.world.getName() + "_" + reader.getId(), this.world),
         this.characterByName);
   }
 
-  public String getName() {
-    return name;
+  public String getId() {
+    return id;
   }
 
-  public String getDisplayName() {
-    return displayName;
+  public String getTitle() {
+    return title;
   }
 
   public String getEndMessage() {

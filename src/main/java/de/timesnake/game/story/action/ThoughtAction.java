@@ -8,18 +8,18 @@ import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.core.user.UserPlayerDelegation;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.game.story.event.TriggerEvent;
-import de.timesnake.game.story.exception.MissingArgumentException;
 import de.timesnake.game.story.listener.StoryEvent;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
+import net.kyori.adventure.text.Component;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
+
 import java.time.Duration;
 import java.util.List;
 import java.util.function.Supplier;
-import net.kyori.adventure.text.Component;
-import org.bukkit.event.player.PlayerToggleSneakEvent;
 
 public class ThoughtAction extends TriggeredAction {
 
@@ -35,15 +35,11 @@ public class ThoughtAction extends TriggeredAction {
     this.messages = messages;
   }
 
-  public ThoughtAction(Quest quest, Toml action, int id, List<Integer> diaryPages)
-      throws MissingArgumentException {
+  public ThoughtAction(Quest quest, Toml action, int id, List<Integer> diaryPages) {
     super(id, diaryPages);
 
     this.messages = action.getList(MESSAGES).stream().map(m -> quest.parseString(((String) m)))
         .toList();
-    if (this.messages == null) {
-      throw new MissingArgumentException("messages");
-    }
   }
 
   @Override
