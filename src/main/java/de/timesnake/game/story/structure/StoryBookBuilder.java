@@ -6,60 +6,30 @@ package de.timesnake.game.story.structure;
 
 import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.file.ExToml;
-import de.timesnake.game.story.action.BlockBreakAction;
-import de.timesnake.game.story.action.BlockInteractAction;
-import de.timesnake.game.story.action.ClearInventoryAction;
-import de.timesnake.game.story.action.DelayAction;
-import de.timesnake.game.story.action.ItemCollectAction;
-import de.timesnake.game.story.action.ItemGiveAction;
-import de.timesnake.game.story.action.ItemLootAction;
-import de.timesnake.game.story.action.SpawnGuardAction;
-import de.timesnake.game.story.action.StoryAction;
-import de.timesnake.game.story.action.TalkAction;
-import de.timesnake.game.story.action.ThoughtAction;
-import de.timesnake.game.story.action.TriggerAction;
-import de.timesnake.game.story.action.TriggeredAction;
-import de.timesnake.game.story.action.WeatherAction;
+import de.timesnake.game.story.action.*;
 import de.timesnake.game.story.book.Diary;
 import de.timesnake.game.story.element.CharacterFile;
 import de.timesnake.game.story.element.ItemFile;
 import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.element.StoryItem;
-import de.timesnake.game.story.event.AreaEvent;
-import de.timesnake.game.story.event.ChatEvent;
-import de.timesnake.game.story.event.DelayEvent;
-import de.timesnake.game.story.event.DropItemAtEvent;
-import de.timesnake.game.story.event.DropItemEvent;
-import de.timesnake.game.story.event.SleepEvent;
-import de.timesnake.game.story.exception.CharacterNotFoundException;
-import de.timesnake.game.story.exception.InvalidArgumentTypeException;
-import de.timesnake.game.story.exception.InvalidQuestException;
-import de.timesnake.game.story.exception.ItemNotFoundException;
-import de.timesnake.game.story.exception.MissingArgumentException;
-import de.timesnake.game.story.exception.StoryParseException;
+import de.timesnake.game.story.event.*;
+import de.timesnake.game.story.exception.*;
 import de.timesnake.library.basic.util.Loggers;
+
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class StoryBookBuilder {
 
   private static final String NAME = "name";
   private static final String END_MESSAGE = "end_message";
-  private final int id;
+  private final String id;
   private final Path folder;
   private final ExToml bookToml;
   private final Map<String, StoryCharacter<?>> characterByName = new HashMap<>();
   private final Map<String, StoryItem> itemByName = new HashMap<>();
 
-  public StoryBookBuilder(int id, Path folder) {
+  public StoryBookBuilder(String id, Path folder) {
     this.id = id;
     this.folder = folder;
     this.bookToml = new ExToml(folder.resolve("book.toml").toFile());
@@ -322,7 +292,7 @@ public class StoryBookBuilder {
 
       if (previousChapter != null) {
         previousChapter.setNext(chapterName);
-        currentChapter.setPrevious(previousChapter.getName());
+        currentChapter.setPrevious(previousChapter.getId());
       }
 
       chapterByName.put(chapterName, currentChapter);
@@ -340,7 +310,7 @@ public class StoryBookBuilder {
       LinkedList<String> lines = new LinkedList<>();
       this.print(lines, chapter.getFirstQuest(), "", false, new HashSet<>());
       for (String line : lines) {
-        Loggers.GAME.info(chapter.getName() + ": " + line);
+        Loggers.GAME.info(chapter.getId() + ": " + line);
       }
     }
   }

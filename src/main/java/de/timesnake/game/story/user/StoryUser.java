@@ -23,7 +23,7 @@ import java.util.*;
 public class StoryUser extends User {
 
   private final UserProgress progress;
-  private final Map<Integer, StoryContentBook> contentBookByStoryId = new HashMap<>();
+  private final Map<String, StoryContentBook> contentBookByStoryId = new HashMap<>();
   private final List<StoryUser> selectedUsers = new LinkedList<>();
   private final List<StoryUser> joinedUsers = new LinkedList<>();
 
@@ -32,7 +32,7 @@ public class StoryUser extends User {
   private boolean playing = false;
   private boolean spectator = false;
 
-  private Integer selectedBookId;
+  private String selectedBookId;
   private String selectedChapterName;
 
   public StoryUser(Player player) {
@@ -125,13 +125,13 @@ public class StoryUser extends User {
     this.spectator = spectator;
   }
 
-  public Set<String> getBoughtChapters(Integer bookId) {
+  public Set<String> getBoughtChapters(String bookId) {
     return this.progress.getBoughtChaptersByBook().get(bookId);
   }
 
-  public void buyChapter(int bookId, String chapterName) {
+  public void buyChapter(String bookId, String chapterId) {
     this.removeCoins(StoryServer.PART_PRICE, true);
-    this.progress.buyChapter(bookId, chapterName);
+    this.progress.buyChapter(bookId, chapterId);
   }
 
   public ExLocation getStoryRespawnLocation() {
@@ -146,18 +146,18 @@ public class StoryUser extends User {
     return selectedUsers;
   }
 
-  public void prepareStoryChapter(int bookId, String chapterName) {
+  public void prepareStoryChapter(String bookId, String chapterId) {
     List<StoryUser> users = new LinkedList<>(this.joinedUsers);
     users.add(this);
 
     this.selectedUsers.clear();
     this.joinedUsers.clear();
 
-    StoryReader readerGroup = new StoryReader(this, users, bookId, chapterName);
+    StoryReader readerGroup = new StoryReader(this, users, bookId, chapterId);
     users.forEach(u -> u.setReaderGroup(readerGroup));
 
     this.selectedBookId = bookId;
-    this.selectedChapterName = chapterName;
+    this.selectedChapterName = chapterId;
   }
 
   public UserProgress getProgress() {

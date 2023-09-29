@@ -8,26 +8,26 @@ import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.element.StoryItem;
 import de.timesnake.game.story.exception.CharacterNotFoundException;
 import de.timesnake.game.story.exception.ItemNotFoundException;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.jetbrains.annotations.NotNull;
 
 public class StoryBook implements Iterable<StoryChapter> {
 
-  private final int id;
-
-  private final String name;
+  private final String id;
+  private final String title;
 
   private final LinkedHashMap<String, StoryChapter> chapterByName;
   private final Map<String, StoryCharacter<?>> characterByName;
   private final Map<String, StoryItem> itemByName;
 
-  public StoryBook(int id, String name, LinkedHashMap<String, StoryChapter> chapterByName,
-      Map<String, StoryCharacter<?>> characterByName, Map<String, StoryItem> itemByName) {
+  public StoryBook(String id, String title, LinkedHashMap<String, StoryChapter> chapterByName,
+                   Map<String, StoryCharacter<?>> characterByName, Map<String, StoryItem> itemByName) {
     this.id = id;
-    this.name = name;
+    this.title = title;
     this.chapterByName = chapterByName;
     this.characterByName = characterByName;
     this.itemByName = itemByName;
@@ -49,12 +49,12 @@ public class StoryBook implements Iterable<StoryChapter> {
     return this.chapterByName.get(this.chapterByName.get(name).getNext());
   }
 
-  public Integer getId() {
+  public String getId() {
     return this.id;
   }
 
-  public String getName() {
-    return name;
+  public String getTitle() {
+    return title;
   }
 
   public Collection<StoryChapter> getChapters() {

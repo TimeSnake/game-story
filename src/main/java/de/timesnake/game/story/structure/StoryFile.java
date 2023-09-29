@@ -5,6 +5,7 @@
 package de.timesnake.game.story.structure;
 
 import de.timesnake.basic.bukkit.util.file.ExToml;
+
 import java.io.File;
 import java.util.List;
 
@@ -18,7 +19,7 @@ public class StoryFile {
     this.file = new ExToml(file);
   }
 
-  public List<Long> getBookIds() {
+  public List<String> getBookIds() {
     return this.file.getList(BOOKS);
   }
 }

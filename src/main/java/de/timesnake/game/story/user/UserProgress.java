@@ -8,33 +8,30 @@ import de.timesnake.database.util.story.DbStoryUser;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.StoryBook;
 import de.timesnake.game.story.structure.StoryChapter;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class UserProgress {
 
   public static final String FINISHED_QUEST_NAME = "FINISHED";
 
   private final DbStoryUser database;
-  private final Map<Integer, Set<String>> boughtChaptersByBook = new HashMap<>();
-  private final Map<Integer, Map<String, String>> questByChapterByBook = new HashMap<>();
+  private final Map<String, Set<String>> boughtChaptersByBook = new HashMap<>();
+  private final Map<String, Map<String, String>> questByChapterByBook = new HashMap<>();
 
   public UserProgress(DbStoryUser database) {
     this.database = database;
 
-    for (Integer bookId : StoryServer.getBooks().stream().map(StoryBook::getId).toList()) {
-      this.boughtChaptersByBook.put(bookId,
-          database.getBoughtChapters(bookId).stream().map(String::valueOf)
-              .collect(Collectors.toSet()));
+    for (String bookId : StoryServer.getBooks().stream().map(StoryBook::getId).toList()) {
+      this.boughtChaptersByBook.put(bookId, database.getBoughtChapters(bookId));
     }
 
-    for (Integer bookId : database.getChapterIds()) {
-
+    for (String bookId : database.getBookIds()) {
       HashMap<String, String> questByChapter = new HashMap<>();
-      for (String chapterName : database.getChapterIds(bookId)) {
+      for (String chapterName : database.getBookIds(bookId)) {
         String quest = database.getQuestName(bookId, chapterName);
         questByChapter.put(chapterName, quest);
       }
@@ -44,52 +41,52 @@ public class UserProgress {
 
   }
 
-  public Map<Integer, Set<String>> getBoughtChaptersByBook() {
+  public Map<String, Set<String>> getBoughtChaptersByBook() {
     return boughtChaptersByBook;
   }
 
-  public Map<Integer, Map<String, String>> getQuestByChapterByBook() {
+  public Map<String, Map<String, String>> getQuestByChapterByBook() {
     return questByChapterByBook;
   }
 
-  public void buyChapter(int bookId, String chapterName) {
-    this.boughtChaptersByBook.computeIfAbsent(bookId, i -> new HashSet<>()).add(chapterName);
-    this.database.addBoughtChapter(bookId, chapterName);
+  public void buyChapter(String bookId, String chapterId) {
+    this.boughtChaptersByBook.computeIfAbsent(bookId, i -> new HashSet<>()).add(chapterId);
+    this.database.addBoughtChapter(bookId, chapterId);
   }
 
-  public String getQuest(Integer bookId, String chapterName) {
+  public String getQuest(String bookId, String chapterId) {
     Map<String, String> currentQuestsByChapter = this.questByChapterByBook.get(bookId);
     if (currentQuestsByChapter != null) {
-      return currentQuestsByChapter.get(chapterName);
+      return currentQuestsByChapter.get(chapterId);
     }
     return null;
   }
 
-  public void saveQuest(int bookId, String chapterName, String questName) {
+  public void saveQuest(String bookId, String chapterId, String questName) {
     this.questByChapterByBook.computeIfAbsent(bookId, c -> new HashMap<>())
-        .put(chapterName, questName);
+        .put(chapterId, questName);
   }
 
-  public void saveChapter(int bookId, String chapterName) {
+  public void saveChapter(String bookId, String chapterId) {
     this.questByChapterByBook.computeIfAbsent(bookId, c -> new HashMap<>())
-        .put(chapterName, FINISHED_QUEST_NAME);
+        .put(chapterId, FINISHED_QUEST_NAME);
   }
 
-  public boolean canPlayChapter(int bookId, String chapterName) {
+  public boolean canPlayChapter(String bookId, String chapterId) {
     StoryBook book = StoryServer.getBook(bookId);
     if (book != null) {
       // first chapter can always be played
-      if (book.getFirstChapter().getName().equals(chapterName)) {
+      if (book.getFirstChapter().getId().equals(chapterId)) {
         return true;
       }
 
-      StoryChapter chapter = book.getChapter(chapterName);
+      StoryChapter chapter = book.getChapter(chapterId);
 
       if (chapter != null) {
         Map<String, String> currentQuestByChapter = this.questByChapterByBook.get(bookId);
 
         if (currentQuestByChapter != null) {
-          String currentQuest = currentQuestByChapter.get(chapterName);
+          String currentQuest = currentQuestByChapter.get(chapterId);
 
           // user already started this chapter
           if (currentQuest != null) {
@@ -98,31 +95,31 @@ public class UserProgress {
         }
 
         // check if previous is finished
-        return this.hasFinishedPreviousChapter(bookId, chapterName);
+        return this.hasFinishedPreviousChapter(bookId, chapterId);
       }
     }
     return false;
   }
 
-  public boolean hasFinishedPreviousChapter(int book, String chapterName) {
-    StoryChapter previousChapter = StoryServer.getBook(book).getPreviousChapter(chapterName);
+  public boolean hasFinishedPreviousChapter(String book, String chapterId) {
+    StoryChapter previousChapter = StoryServer.getBook(book).getPreviousChapter(chapterId);
 
     // no previous chapter exists
     if (previousChapter == null) {
       return true;
     } else {
-      return this.hasFinishedChapter(book, previousChapter.getName());
+      return this.hasFinishedChapter(book, previousChapter.getId());
     }
   }
 
-  public boolean hasFinishedChapter(int bookId, String chapterName) {
+  public boolean hasFinishedChapter(String bookId, String chapterId) {
     StoryBook book = StoryServer.getBook(bookId);
     if (book != null) {
-      StoryChapter chapter = book.getChapter(chapterName);
+      StoryChapter chapter = book.getChapter(chapterId);
       if (chapter != null) {
         Map<String, String> currentQuestByChapter = this.questByChapterByBook.get(bookId);
         if (currentQuestByChapter != null) {
-          String currentQuest = currentQuestByChapter.get(chapterName);
+          String currentQuest = currentQuestByChapter.get(chapterId);
           if (currentQuest != null) {
             return currentQuest.equals(FINISHED_QUEST_NAME);
           }

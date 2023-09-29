@@ -15,14 +15,15 @@ import de.timesnake.game.story.structure.StoryFile;
 import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.game.story.user.UserManager;
 import de.timesnake.library.basic.util.Loggers;
+import org.bukkit.GameRule;
+import org.bukkit.entity.Player;
+import org.bukkit.event.Listener;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import org.bukkit.GameRule;
-import org.bukkit.entity.Player;
-import org.bukkit.event.Listener;
 
 public class StoryServerManager extends ServerManager implements Listener {
 
@@ -30,7 +31,7 @@ public class StoryServerManager extends ServerManager implements Listener {
     return (StoryServerManager) ServerManager.getInstance();
   }
 
-  private final Map<Integer, StoryBook> bookById = new HashMap<>();
+  private final Map<String, StoryBook> bookById = new HashMap<>();
 
   private EventManager eventManager;
   private UserManager userManager;
@@ -62,11 +63,11 @@ public class StoryServerManager extends ServerManager implements Listener {
     this.eventManager = new EventManager();
 
     // load chapters from file
-    for (Long id : this.file.getBookIds()) {
-      StoryBook book = new StoryBookBuilder(id.intValue(),
-          Path.of("plugins", "game-story", String.valueOf(id))).parseToBook();
+    for (String id : this.file.getBookIds()) {
+      StoryBook book = new StoryBookBuilder(id, Path.of("plugins", "game-story",
+          String.valueOf(id))).parseToBook();
 
-      this.bookById.put(id.intValue(), book);
+      this.bookById.put(id, book);
 
       Loggers.GAME.info("Loaded story book '" + id + "'");
     }
@@ -79,7 +80,7 @@ public class StoryServerManager extends ServerManager implements Listener {
     return new StoryUser(player);
   }
 
-  public StoryBook getBook(Integer id) {
+  public StoryBook getBook(String id) {
     return this.bookById.get(id);
   }
 
