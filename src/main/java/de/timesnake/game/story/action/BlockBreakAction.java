@@ -18,10 +18,11 @@ import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
-import java.awt.Polygon;
+import org.bukkit.Material;
+
+import java.awt.*;
 import java.util.LinkedList;
 import java.util.List;
-import org.bukkit.Material;
 
 public class BlockBreakAction extends StoryAction {
 
@@ -117,7 +118,7 @@ public class BlockBreakAction extends StoryAction {
     e.setDropItems(true);
   }
 
-  private interface BreakArea {
+  public interface BreakArea {
 
     boolean contains(ExLocation location);
 

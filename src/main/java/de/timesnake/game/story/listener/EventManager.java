@@ -10,17 +10,19 @@ import de.timesnake.basic.bukkit.util.user.event.UserBlockBreakEvent;
 import de.timesnake.basic.bukkit.util.user.event.UserDropItemEvent;
 import de.timesnake.basic.bukkit.util.user.event.UserMoveEvent;
 import de.timesnake.game.story.main.GameStory;
+import de.timesnake.library.basic.util.Loggers;
+import org.bukkit.event.Event;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerBedEnterEvent;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.bukkit.event.Event;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerBedEnterEvent;
-import org.bukkit.event.player.PlayerToggleSneakEvent;
 
 public class EventManager implements Listener {
 
@@ -36,8 +38,9 @@ public class EventManager implements Listener {
         .forEach(method -> {
           Class<?>[] parameters = method.getParameterTypes();
           if (parameters.length == 1) {
-            this.methodByEventByListener.computeIfAbsent(listener, e -> new HashMap<>())
-                .put((Class<? extends Event>) parameters[0], method);
+            this.methodByEventByListener.computeIfAbsent(listener, e -> new HashMap<>()).put((Class<? extends Event>) parameters[0], method);
+          } else {
+            Loggers.GAME.warning("Failed to add story event method '" + method.getName() + "' in class '" + clazz.getName() + "'");
           }
         });
   }
@@ -82,7 +85,8 @@ public class EventManager implements Listener {
       if (method != null) {
         try {
           v.get(event.getClass()).invoke(k, event);
-        } catch (IllegalAccessException | InvocationTargetException ignored) {
+        } catch (IllegalAccessException | InvocationTargetException e) {
+          Loggers.GAME.warning("Failed to invoke story event method '" + method.getName() + "' in class '" + k.getClass().getName() + "': " + e.getMessage());
         }
       }
     });

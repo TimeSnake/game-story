@@ -56,10 +56,9 @@ public class AreaEvent<Action extends TriggeredAction> extends LocationEvent<Act
 
   @StoryEvent
   public void onUserMove(AsyncUserMoveEvent e) {
-    if (this.action.getReader() == null || (
-        !this.action.getReader().containsUser(((StoryUser) e.getUser()))
-            && !this.action.getReader().containsUser((StoryUser) e.getUser()))
-        || !this.action.isActive()) {
+    if (!this.action.getReader().containsUser(((StoryUser) e.getUser())) && !this.action.getReader().containsUser((StoryUser) e.getUser())) {
+      return;
+    } else if (this.action.getReader() == null || !this.action.isActive()) {
       return;
     }
 
