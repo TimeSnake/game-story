@@ -4,7 +4,7 @@ plugins {
 }
 
 group = project.group
-version = '1.3'
+version = '1.4'
 archivesBaseName = 'game-story'
 var projectId = 17
 
