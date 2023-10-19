@@ -5,8 +5,8 @@
 package de.timesnake.game.story.structure;
 
 import com.moandjiezana.toml.Toml;
-import de.timesnake.basic.bukkit.core.user.UserPlayerDelegation;
 import de.timesnake.basic.bukkit.util.Server;
+import de.timesnake.basic.bukkit.util.user.User;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.action.StoryAction;
 import de.timesnake.game.story.exception.InvalidArgumentTypeException;
@@ -14,21 +14,15 @@ import de.timesnake.game.story.exception.MissingArgumentException;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.library.basic.util.Loggers;
-import de.timesnake.library.extension.util.chat.Chat;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public abstract sealed class Quest implements Iterable<StoryAction> permits MainQuest,
     OptionalQuest {
@@ -66,8 +60,7 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
     this.lastActionId = lastActionId;
   }
 
-  public Quest(StoryBookBuilder bookBuilder, Toml quest, String name)
-      throws InvalidArgumentTypeException {
+  public Quest(StoryBookBuilder bookBuilder, Toml quest, String name) throws InvalidArgumentTypeException {
     this.name = name;
     this.startLocation = ExLocation.fromList(quest.getList(START_LOCATION));
     this.varSupplier = new HashMap<>();
@@ -76,8 +69,7 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
       for (Map.Entry<String, Object> entry : quest.getTable("var").entrySet()) {
         Supplier<?> supplier = this.parseVar(entry.getValue());
         if (supplier == null) {
-          throw new InvalidArgumentTypeException(
-              "Could not parse value of variable '" + entry.getKey() + "'");
+          throw new InvalidArgumentTypeException("Could not parse value of variable '" + entry.getKey() + "'");
         }
         this.varSupplier.put(entry.getKey(), supplier);
       }
@@ -89,19 +81,15 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
     this.firstAction.setQuest(this);
   }
 
-  public abstract Quest clone(StoryChapter chapter, StoryReader reader,
-      Map<String, Quest> visited);
+  public abstract Quest clone(StoryChapter chapter, StoryReader reader, Map<String, Quest> visited);
 
-  protected void cloneSkipQuests(StoryChapter chapter, StoryReader reader, Quest cloned,
-      Map<String, Quest> visited) {
+  protected void cloneSkipQuests(StoryChapter chapter, StoryReader reader, Quest cloned, Map<String, Quest> visited) {
     for (Quest quest : this.questsToSkipAtStart) {
-      visited.putIfAbsent(quest.getName(), quest.clone(chapter, reader, visited));
-      cloned.questsToSkipAtStart.add(visited.get(quest.getName()));
+      cloned.questsToSkipAtStart.add(quest.clone(chapter, reader, visited));
     }
 
     for (Quest quest : this.questsToSkipAtEnd) {
-      visited.putIfAbsent(quest.getName(), quest.clone(chapter, reader, visited));
-      cloned.questsToSkipAtEnd.add(visited.get(quest.getName()));
+      cloned.questsToSkipAtEnd.add(quest.clone(chapter, reader, visited));
     }
   }
 
@@ -125,6 +113,9 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
       return;
     }
 
+    Loggers.GAME.info(this.reader.getUsers().stream().map(User::getName).collect(Collectors.joining(", "))
+        + " enabled quest '" + this.name + "'");
+
     for (Quest quest : this.questsToSkipAtStart) {
       quest.skip();
     }
@@ -134,39 +125,29 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
 
       this.reader.forEach(u -> {
         u.addPotionEffect(PotionEffectType.BLINDNESS, 20 * 5, 1);
-        u.lockLocation(true);
+        u.lockLocation();
       });
 
       Server.runTaskTimerSynchrony((t) -> {
-
         for (int angle = 0; angle < 360; angle += 10) {
           double x = (Math.sin(angle)) * 0.7;
           double z = (Math.cos(angle)) * 0.7;
 
-          Particle.DustOptions dust = new Particle.DustOptions(Color.fromRGB(102, 0, 102),
-              1.2f);
-          this.startLocation.getWorld()
-              .spawnParticle(Particle.REDSTONE, this.startLocation.getX() + x,
-                  this.startLocation.getY(), this.startLocation.getZ() + z, 8, 0,
-                  1.5, 0, 5, dust);
+          Particle.DustOptions dust = new Particle.DustOptions(Color.fromRGB(102, 0, 102), 1.2f);
+          this.startLocation.getWorld().spawnParticle(Particle.REDSTONE,
+              this.startLocation.getX() + x, this.startLocation.getY(), this.startLocation.getZ() + z,
+              8, 0, 1.5, 0, 5, dust);
         }
-
       }, 5, true, 0, 10, GameStory.getPlugin());
 
-      Server.runTaskLaterSynchrony(() -> {
-        this.reader.forEach(u -> u.lockLocation(false));
-      }, 20 * 2, GameStory.getPlugin());
+      Server.runTaskLaterSynchrony(() -> this.reader.forEach(User::unlockLocation), 20 * 2, GameStory.getPlugin());
     }
 
     if (spawnEntities) {
       Server.runTaskLaterSynchrony(() -> {
-        Loggers.GAME.info(Chat.listToString(this.reader.getUsers().stream()
-            .map(UserPlayerDelegation::getName).toList()) + " enabled quest '"
-            + this.name + "'");
         int delay = 0;
         for (StoryAction action : this) {
-          Server.runTaskLaterSynchrony(action::spawnEntities, delay,
-              GameStory.getPlugin());
+          Server.runTaskLaterSynchrony(action::spawnEntities, delay, GameStory.getPlugin());
           delay += 10;
         }
 
@@ -176,11 +157,22 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
 
   }
 
-  public void end() {
-    for (Quest quest : this.questsToSkipAtEnd) {
-      quest.skip();
-    }
+  public void finish() {
+    this.questsToSkipAtEnd.forEach(Quest::skip);
     Server.runTaskLaterSynchrony(this::clearEntities, 10 * 20, GameStory.getPlugin());
+
+    Loggers.GAME.info(this.reader.getUsers().stream().map(User::getName).collect(Collectors.joining(", "))
+        + " completed '" + this.getName() + "'");
+
+    this.reader.onCompletedQuest(this);
+  }
+
+  public void skip() {
+    this.skip = true;
+    this.forEach(StoryAction::stop);
+
+    Loggers.GAME.info(this.reader.getUsers().stream().map(User::getName).collect(Collectors.joining(", "))
+        + " skipped '" + this.getName() + "'");
   }
 
   public abstract Quest nextQuest();
@@ -192,7 +184,7 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
   }
 
   @Override
-  public Iterator<StoryAction> iterator() {
+  public @NotNull Iterator<StoryAction> iterator() {
     return new StoryAction.ActionIterator(this.firstAction);
   }
 
@@ -273,14 +265,14 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
       return () -> value;
     }
 
-    String[] splitByVars = value.split("\\$");
+    String[] splitByVars = value.split("\\$\\{");
     List<Object> result = new LinkedList<>();
     result.add(splitByVars[0]);
     for (int i = 1; i < splitByVars.length; i++) {
-      String[] splitByBlank = splitByVars[i].split(" ", 2);
+      String[] splitByBlank = splitByVars[i].split("}", 2);
       result.add(this.getVars().get(splitByBlank[0]));
       if (splitByBlank.length >= 2) {
-        result.add(" " + splitByBlank[1]);
+        result.add(splitByBlank[1]);
       }
     }
     return () -> {
@@ -315,17 +307,6 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
   public abstract void addNextQuest(Quest quest);
 
   public abstract List<? extends Quest> getNextQuests();
-
-  public void skip() {
-    this.skip = true;
-    for (StoryAction action : this) {
-      action.stop();
-    }
-
-    Loggers.GAME.info(Chat.listToString(this.reader.getUsers().stream()
-        .map(UserPlayerDelegation::getName).toList()) + " skipped '" + this.getName()
-        + "'");
-  }
 
   public void addQuestsToSkipAtStart(Quest quest) {
     this.questsToSkipAtStart.add(quest);

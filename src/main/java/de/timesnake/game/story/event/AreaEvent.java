@@ -76,8 +76,7 @@ public class AreaEvent<Action extends TriggeredAction> extends LocationEvent<Act
   @Override
   protected AreaEvent<Action> clone(Quest section, StoryReader reader, StoryChapter chapter) {
     return new AreaEvent<>(this.location.clone().setExWorld(chapter.getWorld()),
-        this.character != null ?
-            section.getChapter().getCharacter(this.character.getName()) : null, this.radius);
+        this.character != null ? section.getChapter().getCharacter(this.character.getName()) : null, this.radius);
   }
 
   @Override

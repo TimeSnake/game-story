@@ -98,8 +98,7 @@ public class StoryChapter implements Iterable<Quest> {
       this.characterByName.put(character.getName(), character.clone(reader, this));
     }
 
-    HashMap<String, Quest> clonedQuests = new HashMap<>();
-    this.firstQuest = firstQuest.clone(this, reader, clonedQuests);
+    this.firstQuest = firstQuest.clone(this, reader, new HashMap<>());
   }
 
   public StoryChapter clone(StoryReader reader) {

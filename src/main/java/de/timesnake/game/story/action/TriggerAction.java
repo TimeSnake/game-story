@@ -10,6 +10,7 @@ import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
+
 import java.util.List;
 
 public class TriggerAction extends TriggeredAction {
@@ -25,8 +26,7 @@ public class TriggerAction extends TriggeredAction {
   }
 
   @Override
-  public StoryAction clone(Quest quest, StoryReader reader, StoryAction clonedNext,
-      StoryChapter chapter) {
+  public StoryAction clone(Quest quest, StoryReader reader, StoryAction clonedNext, StoryChapter chapter) {
     return new TriggerAction(this.id, clonedNext);
   }
 

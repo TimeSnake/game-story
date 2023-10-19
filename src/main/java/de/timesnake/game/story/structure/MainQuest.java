@@ -11,11 +11,8 @@ import de.timesnake.game.story.action.StoryAction;
 import de.timesnake.game.story.exception.InvalidArgumentTypeException;
 import de.timesnake.game.story.exception.InvalidQuestException;
 import de.timesnake.game.story.user.StoryReader;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -38,23 +35,21 @@ public non-sealed class MainQuest extends Quest {
 
   @Override
   public MainQuest clone(StoryChapter chapter, StoryReader reader, Map<String, Quest> visited) {
+    if (visited.containsKey(this.getName())) {
+      return (MainQuest) visited.get(this.getName());
+    }
+
     MainQuest cloned = new MainQuest(chapter, this.name, reader, this.startLocation,
         this.varSupplier, this.firstAction, this.lastActionId);
 
     visited.put(this.getName(), cloned);
 
     for (MainQuest quest : this.nextMainQuestByName.values()) {
-      MainQuest next =
-          visited.containsKey(quest.getName()) ? (MainQuest) visited.get(quest.getName())
-              : quest.clone(chapter, reader, visited);
-      cloned.nextMainQuestByName.put(quest.getName(), next);
+      cloned.nextMainQuestByName.put(quest.getName(), quest.clone(chapter, reader, visited));
     }
 
     for (OptionalQuest quest : this.nextOptionalQuestByName.values()) {
-      OptionalQuest next =
-          visited.containsKey(quest.getName()) ? (OptionalQuest) visited.get(quest.getName())
-              : quest.clone(chapter, reader, visited);
-      cloned.nextOptionalQuestByName.put(quest.getName(), next);
+      cloned.nextOptionalQuestByName.put(quest.getName(), quest.clone(chapter, reader, visited));
     }
 
     this.cloneSkipQuests(chapter, reader, cloned, visited);
@@ -82,7 +77,7 @@ public non-sealed class MainQuest extends Quest {
   public MainQuest nextQuest() {
     this.finished = true;
 
-    if (this.nextMainQuestByName.size() == 0) {
+    if (this.nextMainQuestByName.isEmpty()) {
       return null;
     }
 
@@ -103,8 +98,7 @@ public non-sealed class MainQuest extends Quest {
 
   @Override
   public Quest lastQuest() {
-    return this.nextMainQuestByName.size() == 0 ? this
-        : this.nextMainQuestByName.values().iterator().next();
+    return this.nextMainQuestByName.isEmpty() ? this : this.nextMainQuestByName.values().iterator().next();
   }
 
   @Override

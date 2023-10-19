@@ -8,10 +8,7 @@ import com.moandjiezana.toml.Toml;
 import de.timesnake.basic.bukkit.util.file.ExToml;
 import de.timesnake.game.story.action.*;
 import de.timesnake.game.story.book.Diary;
-import de.timesnake.game.story.element.CharacterFile;
-import de.timesnake.game.story.element.ItemFile;
-import de.timesnake.game.story.element.StoryCharacter;
-import de.timesnake.game.story.element.StoryItem;
+import de.timesnake.game.story.element.*;
 import de.timesnake.game.story.event.*;
 import de.timesnake.game.story.exception.*;
 import de.timesnake.library.basic.util.Loggers;
@@ -28,6 +25,7 @@ public class StoryBookBuilder {
   private final ExToml bookToml;
   private final Map<String, StoryCharacter<?>> characterByName = new HashMap<>();
   private final Map<String, StoryItem> itemByName = new HashMap<>();
+  private final Set<AmbientSound> ambientSounds = new HashSet<>();
 
   public StoryBookBuilder(String id, Path folder) {
     this.id = id;
@@ -54,15 +52,13 @@ public class StoryBookBuilder {
 
       if (character != null) {
         if (characterByName.containsKey(characterName)) {
-          Loggers.GAME.warning("Duplicate character name '" +
-              characterName + "'");
+          Loggers.GAME.warning("Duplicate character name '" + characterName + "'");
           continue;
         }
         characterByName.put(characterName, character);
         Loggers.GAME.info("Loaded character " + characterName);
       } else {
-        Loggers.GAME.warning("Could not load type of character '" +
-            characterName + "'");
+        Loggers.GAME.warning("Could not load type of character '" + characterName + "'");
       }
 
     }
@@ -85,24 +81,34 @@ public class StoryBookBuilder {
     StoryChapter currentChapter = null;
 
     for (String chapterName : chapterNames) {
-      ExToml chapter = new ExToml(
-          this.folder.resolve("chapter_" + chapterName + ".toml").toFile());
+      ExToml chapter = new ExToml(this.folder.resolve("chapter_" + chapterName + ".toml").toFile());
 
       String chapterDisplayName = chapter.getString(NAME);
       String chapterEndMessage = chapter.getString(END_MESSAGE);
       List<Long> playerSizes = chapter.getList("players");
       if (playerSizes == null) {
-        Loggers.GAME.warning("Book " + this.id + " Chapter " + chapterName
-            + ": Missing argument 'players'");
+        Loggers.GAME.warning("Book " + this.id + " Chapter " + chapterName + ": Missing argument 'players'");
         playerSizes = List.of(1L);
       }
 
+      // max deaths
       Map<Difficulty, Integer> maxDeathsByDifficulty = new HashMap<>();
 
       for (Difficulty difficulty : Difficulty.values()) {
         Long maxDeaths = chapter.getLong(difficulty.name().toLowerCase() + ".max_deaths");
-        maxDeathsByDifficulty.put(difficulty,
-            maxDeaths != null ? maxDeaths.intValue() : null);
+        maxDeathsByDifficulty.put(difficulty, maxDeaths != null ? maxDeaths.intValue() : null);
+      }
+
+      // ambient sounds
+      Toml ambientSoundEntries = chapter.getTable("ambient_sounds");
+      if (ambientSoundEntries != null) {
+        for (String name : ambientSoundEntries.toMap().keySet()) {
+          try {
+            this.ambientSounds.add(new AmbientSound(ambientSoundEntries.getTable(name), name));
+          } catch (MissingArgumentException | InvalidArgumentTypeException e) {
+            Loggers.GAME.warning("Ambient Sound " + e.getMessage());
+          }
+        }
       }
 
       String worldName = chapter.getString("world");
@@ -139,8 +145,7 @@ public class StoryBookBuilder {
 
         String typeName = quest.getString("type");
         if (typeName == null) {
-          Loggers.GAME.warning(
-              "Book " + this.id + " Chapter " + chapterName + " Quest " + questName
+          Loggers.GAME.warning("Book " + this.id + " Chapter " + chapterName + " Quest " + questName
                   + ": Missing type argument");
         }
         Quest.Type type = Quest.Type.valueOf(typeName.toUpperCase());
@@ -154,8 +159,7 @@ public class StoryBookBuilder {
             currentQuest = new OptionalQuest(this, quest, questName);
           }
         } catch (StoryParseException e) {
-          Loggers.GAME.warning("Book " + this.id +
-              " Chapter " + chapterName + " Quest " + questName + ": "
+          Loggers.GAME.warning("Book " + this.id + " Chapter " + chapterName + " Quest " + questName + ": "
               + e.getMessage());
           continue;
         }
@@ -172,8 +176,7 @@ public class StoryBookBuilder {
           try {
             current = this.getActionFromFile(currentQuest, action, actionId);
           } catch (StoryParseException e) {
-            Loggers.GAME.warning("Book " + this.id +
-                " Chapter " + chapterName + " Quest " + questName +
+            Loggers.GAME.warning("Book " + this.id + " Chapter " + chapterName + " Quest " + questName +
                 " Action " + actionId + ": " + e.getMessage());
             continue;
           }
@@ -227,10 +230,8 @@ public class StoryBookBuilder {
             try {
               quest.addNextQuest(loadedQuestByName.get(nextQuestName));
             } catch (InvalidQuestException e) {
-              Loggers.GAME.warning(
-                  "Book " + this.id + " Chapter " + chapterName + " Quest "
-                      + quest.getName() + ": Invalid type at quest '"
-                      + nextQuestName + "'");
+              Loggers.GAME.warning("Book " + this.id + " Chapter " + chapterName + " Quest "
+                  + quest.getName() + ": Invalid type at quest '" + nextQuestName + "'");
             }
           }
         }
@@ -244,10 +245,8 @@ public class StoryBookBuilder {
             if (toSkip != null) {
               quest.addQuestsToSkipAtStart(toSkip);
             } else {
-              Loggers.GAME.warning(
-                  "Book " + this.id + " Chapter " + chapterName + " Quest "
-                      + quest.getName() + ": Unknown quest to skip at start '"
-                      + toSkipName + "'");
+              Loggers.GAME.warning("Book " + this.id + " Chapter " + chapterName + " Quest " + quest.getName()
+                  + ": Unknown quest to skip at start '" + toSkipName + "'");
             }
           }
         }
@@ -261,10 +260,8 @@ public class StoryBookBuilder {
             if (toSkip != null) {
               quest.addQuestsToSkipAtEnd(toSkip);
             } else {
-              Loggers.GAME.warning(
-                  "Book " + this.id + " Chapter " + chapterName + " Quest "
-                      + quest.getName() + ": Unknown quest to skip at end '"
-                      + toSkipName + "'");
+              Loggers.GAME.warning("Book " + this.id + " Chapter " + chapterName + " Quest " + quest.getName()
+                  + ": Unknown quest to skip at end '" + toSkipName + "'");
             }
           }
         }
@@ -277,17 +274,14 @@ public class StoryBookBuilder {
         if (character != null) {
           characters.add(character);
         } else {
-          Loggers.GAME.warning("Book " + this.id + " Chapter " + chapterName
-              + ": Could not find character '" + name + "'");
+          Loggers.GAME.warning("Book " + this.id + " Chapter " + chapterName + ": Could not find character '" + name + "'");
         }
       }
 
       StoryChapter previousChapter = currentChapter;
 
-      currentChapter = new StoryChapter(chapterName, chapterDisplayName, chapterEndMessage,
-          diary,
-          loadedQuestByName.get(startQuest),
-          playerSizes.stream().map(Long::intValue).toList(),
+      currentChapter = new StoryChapter(chapterName, chapterDisplayName, chapterEndMessage, diary,
+          loadedQuestByName.get(startQuest), playerSizes.stream().map(Long::intValue).toList(),
           maxDeathsByDifficulty, worldName, characters);
 
       if (previousChapter != null) {
@@ -298,8 +292,7 @@ public class StoryBookBuilder {
       chapterByName.put(chapterName, currentChapter);
     }
 
-    StoryBook book = new StoryBook(this.id, bookName, chapterByName, characterByName,
-        itemByName);
+    StoryBook book = new StoryBook(this.id, bookName, chapterByName, characterByName, itemByName, ambientSounds);
     this.printBookTree(book);
     return book;
   }

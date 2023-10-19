@@ -5,29 +5,28 @@
 package de.timesnake.game.story.action;
 
 import com.moandjiezana.toml.Toml;
+import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.element.StoryItem;
 import de.timesnake.game.story.event.AreaEvent;
 import de.timesnake.game.story.event.TriggerEvent;
-import de.timesnake.game.story.exception.InvalidArgumentTypeException;
-import de.timesnake.game.story.exception.ItemNotFoundException;
-import de.timesnake.game.story.exception.MissingArgumentException;
-import de.timesnake.game.story.exception.StoryGamePlayException;
-import de.timesnake.game.story.exception.StoryParseException;
+import de.timesnake.game.story.exception.*;
+import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
-import java.util.stream.Collectors;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
 
 public class ItemLootAction extends LocationAction {
 
@@ -83,10 +82,6 @@ public class ItemLootAction extends LocationAction {
       this.order = Order.RANDOM;
     }
 
-    if (this.order == null) {
-      throw new InvalidArgumentTypeException("Invalid item order '" + orderString + "'");
-    }
-
     this.triggerEvent = new AreaEvent<>(this, bookBuilder, action, RADIUS);
   }
 
@@ -106,34 +101,40 @@ public class ItemLootAction extends LocationAction {
       return;
     }
 
-    if (this.location.getBlock().getState() instanceof InventoryHolder) {
-      Inventory inv = ((InventoryHolder) this.location.getBlock().getState()).getInventory();
-
-      switch (this.order) {
-        case ORDERED -> {
-          inv.addItem(this.storyItems.stream().map(StoryItem::getItem).toArray(ItemStack[]::new));
-          inv.addItem(this.items.toArray(ItemStack[]::new));
-        }
-        case RANDOM -> {
-          Random random = new Random();
-          int slot = random.nextInt(inv.getSize());
-          for (StoryItem item : this.storyItems) {
-            while (inv.getItem(slot) != null) {
-              slot = random.nextInt(inv.getSize());
-            }
-            inv.setItem(slot, item.getItem());
-          }
-          for (ItemStack item : this.items) {
-            while (inv.getItem(slot) != null) {
-              slot = random.nextInt(inv.getSize());
-            }
-            inv.setItem(slot, item);
-          }
-        }
-      }
-    } else {
-      throw new StoryGamePlayException("Could not set loot item, block has no inventory");
+    if (!type.equals(TriggerEvent.Type.AREA)) {
+      return;
     }
+
+    Server.runTaskSynchrony(() -> {
+      if (this.location.getBlock().getState() instanceof InventoryHolder) {
+        Inventory inv = ((InventoryHolder) this.location.getBlock().getState()).getInventory();
+        switch (this.order) {
+          case ORDERED -> {
+            inv.addItem(this.storyItems.stream().map(StoryItem::getItem).toArray(ItemStack[]::new));
+            inv.addItem(this.items.toArray(ItemStack[]::new));
+          }
+          case RANDOM -> {
+            Random random = new Random();
+            int slot = random.nextInt(inv.getSize());
+            for (StoryItem item : this.storyItems) {
+              while (inv.getItem(slot) != null) {
+                slot = random.nextInt(inv.getSize());
+              }
+              inv.setItem(slot, item.getItem());
+            }
+            for (ItemStack item : this.items) {
+              while (inv.getItem(slot) != null) {
+                slot = random.nextInt(inv.getSize());
+              }
+              inv.setItem(slot, item);
+            }
+          }
+        }
+      } else {
+        throw new StoryGamePlayException("Could not set loot item, block has no inventory");
+      }
+    }, GameStory.getPlugin());
+
     this.startNext();
   }
 
