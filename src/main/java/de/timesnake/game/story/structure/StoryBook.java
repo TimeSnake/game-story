@@ -4,16 +4,14 @@
 
 package de.timesnake.game.story.structure;
 
+import de.timesnake.game.story.element.AmbientSound;
 import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.element.StoryItem;
 import de.timesnake.game.story.exception.CharacterNotFoundException;
 import de.timesnake.game.story.exception.ItemNotFoundException;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class StoryBook implements Iterable<StoryChapter> {
 
@@ -23,14 +21,17 @@ public class StoryBook implements Iterable<StoryChapter> {
   private final LinkedHashMap<String, StoryChapter> chapterByName;
   private final Map<String, StoryCharacter<?>> characterByName;
   private final Map<String, StoryItem> itemByName;
+  private final Set<AmbientSound> ambientSounds;
 
   public StoryBook(String id, String title, LinkedHashMap<String, StoryChapter> chapterByName,
-                   Map<String, StoryCharacter<?>> characterByName, Map<String, StoryItem> itemByName) {
+                   Map<String, StoryCharacter<?>> characterByName, Map<String, StoryItem> itemByName,
+                   Set<AmbientSound> ambientSounds) {
     this.id = id;
     this.title = title;
     this.chapterByName = chapterByName;
     this.characterByName = characterByName;
     this.itemByName = itemByName;
+    this.ambientSounds = ambientSounds;
 
     for (StoryChapter chapter : this.chapterByName.values()) {
       chapter.setBook(this);

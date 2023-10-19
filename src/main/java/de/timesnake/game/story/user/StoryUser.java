@@ -32,9 +32,6 @@ public class StoryUser extends User {
   private boolean playing = false;
   private boolean spectator = false;
 
-  private String selectedBookId;
-  private String selectedChapterName;
-
   public StoryUser(Player player) {
     super(player);
 
@@ -130,7 +127,7 @@ public class StoryUser extends User {
   }
 
   public void buyChapter(String bookId, String chapterId) {
-    this.removeCoins(StoryServer.PART_PRICE, true);
+    // TODO this.removeCoins(StoryServer.PART_PRICE, true);
     this.progress.buyChapter(bookId, chapterId);
   }
 
@@ -156,8 +153,6 @@ public class StoryUser extends User {
     StoryReader readerGroup = new StoryReader(this, users, bookId, chapterId);
     users.forEach(u -> u.setReaderGroup(readerGroup));
 
-    this.selectedBookId = bookId;
-    this.selectedChapterName = chapterId;
   }
 
   public UserProgress getProgress() {

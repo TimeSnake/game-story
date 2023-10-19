@@ -14,6 +14,7 @@ import de.timesnake.channel.util.listener.ChannelListener;
 import de.timesnake.channel.util.listener.ListenerType;
 import de.timesnake.channel.util.message.ChannelUserMessage;
 import de.timesnake.channel.util.message.MessageType;
+import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.element.TalkType;
 import de.timesnake.game.story.event.TriggerEvent;
@@ -41,6 +42,7 @@ import java.util.function.Supplier;
 public class TalkAction extends RadiusAction implements ChannelListener {
 
   public static final String NAME = "talk";
+  private static final int MAX_ERROR_COUNT = 3;
 
   private final LinkedList<Tuple<Speaker, Supplier<String>>> messages;
   private final LinkedList<Tuple<Speaker, Supplier<String>>> audioMessages;
@@ -53,6 +55,8 @@ public class TalkAction extends RadiusAction implements ChannelListener {
   private Iterator<Tuple<Speaker, Supplier<String>>> messageIt;
   private Tuple<Speaker, Supplier<String>> currentMessage;
   private HoloDisplay display;
+
+  private int errorCount = 0;
 
 
   public TalkAction(int id, StoryAction next, StoryCharacter<?> speaker,
@@ -115,8 +119,8 @@ public class TalkAction extends RadiusAction implements ChannelListener {
           audioText = audioText.replaceFirst(AUDIO + ":", "").trim();
           this.audioMessages.add(new Tuple<>(Speaker.AUDIO, quest.parseString(audioText)));
         } else if (audioText.startsWith(MESSAGE_PLAYER + ":")) {
-          audioText = audioText.replaceFirst(MESSAGE_CHARACTER + ":", "").trim();
-          this.audioMessages.add(new Tuple<>(Speaker.CHARACTER, quest.parseString(audioText)));
+          audioText = audioText.replaceFirst(MESSAGE_PLAYER + ":", "").trim();
+          this.audioMessages.add(new Tuple<>(Speaker.PLAYER, quest.parseString(audioText)));
         }
       }
     }
@@ -170,7 +174,7 @@ public class TalkAction extends RadiusAction implements ChannelListener {
       Server.getEntityManager().unregisterEntity(this.display);
     }
     this.partner = null;
-    Server.getChannel().removeListener(this);
+    // Server.getChannel().removeListener(this);
   }
 
   private void nextMessage(StoryUser user) {
@@ -180,7 +184,11 @@ public class TalkAction extends RadiusAction implements ChannelListener {
 
     user.resetTitle();
 
-    if (!this.messageIt.hasNext() && this.reader.containsUser(user)) {
+    if (!this.reader.containsUser(user)) {
+      return;
+    }
+
+    if (!this.messageIt.hasNext()) {
       this.startNext();
       return;
     }
@@ -196,7 +204,7 @@ public class TalkAction extends RadiusAction implements ChannelListener {
     } else {
       if (this.currentMessage.getA().equals(Speaker.AUDIO)) {
         Server.getChannel().sendMessage(new ChannelUserMessage<>(user.getUniqueId(),
-            MessageType.User.STORY_PLAY_AUDIO, this.currentMessage.getB().get()));
+            MessageType.User.STORY_AUDIO_PLAY, this.currentMessage.getB().get()));
       } else {
         this.sendSelfMessage(user, this.currentMessage.getB().get());
       }
@@ -318,10 +326,26 @@ public class TalkAction extends RadiusAction implements ChannelListener {
     }
   }
 
-  @ChannelHandler(type = {ListenerType.USER_STORY_END_AUDIO})
+  @ChannelHandler(type = {ListenerType.USER_STORY_AUDIO_END, ListenerType.USER_STORY_AUDIO_FAIL})
   public void onStoryMessage(ChannelUserMessage<String> msg) {
-    if (this.currentMessage != null && msg.getValue().equals(this.currentMessage.getB().get())) {
-      this.nextMessage(this.partner);
+    if (this.currentMessage != null && this.currentMessage.getB().get().equals(msg.getValue())) {
+      Loggers.GAME.info(this.partner.getName() + " next audio, after " + msg.getValue());
+      if (msg.getMessageType().equals(MessageType.User.STORY_AUDIO_END)) {
+        this.errorCount = 0;
+        this.nextMessage(this.partner);
+      } else if (msg.getMessageType().equals(MessageType.User.STORY_AUDIO_FAIL)) {
+        if (this.errorCount >= MAX_ERROR_COUNT) {
+          this.partner.sendPluginTDMessage(Plugin.STORY, "§wError while loading audio, please connect an admin");
+          this.nextMessage(this.partner);
+          return;
+        }
+
+        this.partner.sendPluginTDMessage(Plugin.STORY, "§wLoading ...");
+        Server.getChannel().sendMessage(new ChannelUserMessage<>(this.partner.getUniqueId(),
+            MessageType.User.STORY_AUDIO_PLAY, this.currentMessage.getB().get()));
+
+        this.errorCount++;
+      }
     }
   }
 

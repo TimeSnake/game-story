@@ -4,7 +4,6 @@
 
 package de.timesnake.game.story.user;
 
-import de.timesnake.basic.bukkit.core.user.UserPlayerDelegation;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.user.User;
 import de.timesnake.basic.bukkit.util.user.inventory.*;
@@ -19,10 +18,8 @@ import de.timesnake.game.story.structure.Difficulty;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBook;
 import de.timesnake.game.story.structure.StoryChapter;
-import de.timesnake.library.basic.util.Loggers;
 import de.timesnake.library.basic.util.Tuple;
 import de.timesnake.library.chat.ExTextColor;
-import de.timesnake.library.extension.util.chat.Chat;
 import de.timesnake.library.extension.util.player.UserSet;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -130,9 +127,6 @@ public class StoryReader implements Iterable<StoryUser> {
   }
 
   public void onCompletedQuest(Quest quest) {
-    quest.end();
-    Loggers.GAME.info(Chat.listToString(this.users.stream()
-        .map(UserPlayerDelegation::getName).toList()) + " completed '" + quest.getName() + "'");
     if (!quest.equals(this.quest)) {
       quest.nextQuest();
       return;
@@ -231,9 +225,9 @@ public class StoryReader implements Iterable<StoryUser> {
     if (this.talkType == TalkType.AUDIO) {
       this.forEach(u -> u.sendPluginMessage(Plugin.STORY,
           Component.text("Login to our website and start the audio check now: ", ExTextColor.PERSONAL)
-              .append(Component.text("https://timesnake.de/story/" + book.getId(), ExTextColor.VALUE, TextDecoration.UNDERLINED)
+              .append(Component.text("https://timesnake.de/story/" + book.getId() + "/" + chapter.getId(), ExTextColor.VALUE, TextDecoration.UNDERLINED)
                   .hoverEvent(HoverEvent.showText(Component.text("Click to copy")))
-                  .clickEvent(ClickEvent.openUrl("https://timesnake.de/story/" + book.getId())))));
+                  .clickEvent(ClickEvent.openUrl("https://timesnake.de/story/" + book.getId() + "/" + chapter.getId())))));
       this.forEach(u -> Server.getChannel().sendMessage(new ChannelUserMessage<>(u.getUniqueId(),
           MessageType.User.STORY_START, new Tuple<>(this.book.getId(), this.chapter.getId()))));
       checksPerformed = true;

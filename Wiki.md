@@ -59,6 +59,11 @@ messages = [
     "c: <text>", # <-- spoken text by the character
     "p: <text>" # <-- spoken text by the player
 ]
+audio = [
+    "c: <fileName>", # <-- name of audio file
+    "p: <text>" # <-- soken text by the player
+]
+
 # optional
 location = [<x>,<y>,<z>] # <-- text location, if should not be above player
 character_look_direction = [<yaw>,<pitch>]

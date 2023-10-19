@@ -10,11 +10,8 @@ import de.timesnake.game.story.action.StoryAction;
 import de.timesnake.game.story.exception.InvalidArgumentTypeException;
 import de.timesnake.game.story.exception.InvalidQuestException;
 import de.timesnake.game.story.user.StoryReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -35,16 +32,17 @@ public non-sealed class OptionalQuest extends Quest {
 
   @Override
   public OptionalQuest clone(StoryChapter chapter, StoryReader reader, Map<String, Quest> visited) {
+    if (visited.containsKey(this.getName())) {
+      return (OptionalQuest) visited.get(this.getName());
+    }
+
     OptionalQuest cloned = new OptionalQuest(chapter, this.name, reader, this.startLocation,
         this.varSupplier, this.firstAction, this.lastActionId);
 
     visited.put(this.getName(), cloned);
 
     for (OptionalQuest quest : this.nextQuestByName.values()) {
-      OptionalQuest next =
-          visited.containsKey(quest.getName()) ? (OptionalQuest) visited.get(quest.getName())
-              : quest.clone(chapter, reader, visited);
-      cloned.nextQuestByName.put(quest.getName(), next);
+      cloned.nextQuestByName.put(quest.getName(), quest.clone(chapter, reader, visited));
     }
 
     this.cloneSkipQuests(chapter, reader, cloned, visited);
@@ -73,8 +71,7 @@ public non-sealed class OptionalQuest extends Quest {
 
   @Override
   public Quest lastQuest() {
-    return this.nextQuestByName.size() == 0 ? this
-        : this.nextQuestByName.values().iterator().next();
+    return this.nextQuestByName.isEmpty() ? this : this.nextQuestByName.values().iterator().next();
   }
 
   @Override

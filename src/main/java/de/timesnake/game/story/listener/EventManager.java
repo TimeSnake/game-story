@@ -84,9 +84,11 @@ public class EventManager implements Listener {
       Method method = v.get(event.getClass());
       if (method != null) {
         try {
+          method.setAccessible(true);
           v.get(event.getClass()).invoke(k, event);
         } catch (IllegalAccessException | InvocationTargetException e) {
-          Loggers.GAME.warning("Failed to invoke story event method '" + method.getName() + "' in class '" + k.getClass().getName() + "': " + e.getMessage());
+          Loggers.GAME.warning("Failed to invoke story event method '" + method.getName() + "' in class '" +
+              k.getClass().getName() + "': " + e.getClass().getSimpleName() + ": " + e.getCause().getMessage());
         }
       }
     });

@@ -4,11 +4,14 @@
 
 package de.timesnake.game.story.action;
 
+import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.game.story.listener.StoryEventListener;
+import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -97,11 +100,14 @@ public abstract class StoryAction implements Iterator<StoryAction>, StoryEventLi
 
   public void startNext() {
     this.stop();
-    if (this.hasNext()) {
-      this.next.start();
-    } else {
-      this.reader.onCompletedQuest(this.quest);
-    }
+    Server.runTaskSynchrony(() -> {
+      if (this.hasNext()) {
+        this.next.start();
+      } else {
+        this.quest.finish();
+      }
+    }, GameStory.getPlugin());
+
   }
 
   public List<Integer> getDiaryPages() {
