@@ -59,6 +59,7 @@ public class StoryServerManager extends ServerManager implements Listener {
     this.baseWorld.restrict(ExWorld.Restriction.NO_PLAYER_DAMAGE, true);
     this.baseWorld.setGameRule(GameRule.DO_MOB_SPAWNING, false);
     this.baseWorld.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
+    this.baseWorld.setGameRule(GameRule.DISABLE_RAIDS, true);
 
     this.eventManager = new EventManager();
 

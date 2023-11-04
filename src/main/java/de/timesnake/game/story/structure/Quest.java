@@ -107,10 +107,9 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
     this.forEachNext(q -> q.chapter = chapter, new HashSet<>());
   }
 
-  public void start(boolean teleport, boolean spawnEntities) {
+  public boolean start(boolean teleport, boolean spawnEntities) {
     if (this.skip) {
-      this.nextQuest();
-      return;
+      return false;
     }
 
     Loggers.GAME.info(this.reader.getUsers().stream().map(User::getName).collect(Collectors.joining(", "))
@@ -155,10 +154,12 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
       }, 20, GameStory.getPlugin());
     }
 
+    return true;
   }
 
   public void finish() {
     this.questsToSkipAtEnd.forEach(Quest::skip);
+
     Server.runTaskLaterSynchrony(this::clearEntities, 10 * 20, GameStory.getPlugin());
 
     Loggers.GAME.info(this.reader.getUsers().stream().map(User::getName).collect(Collectors.joining(", "))
@@ -175,7 +176,7 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
         + " skipped '" + this.getName() + "'");
   }
 
-  public abstract Quest nextQuest();
+  public abstract Collection<OptionalQuest> startNextOptionals();
 
   public abstract Quest lastQuest();
 

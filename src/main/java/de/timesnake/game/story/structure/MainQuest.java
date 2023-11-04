@@ -21,8 +21,6 @@ public non-sealed class MainQuest extends Quest {
   protected final Map<String, MainQuest> nextMainQuestByName = new HashMap<>();
   protected final Map<String, OptionalQuest> nextOptionalQuestByName = new HashMap<>();
 
-  protected boolean finished = false;
-
   public MainQuest(StoryChapter chapter, String name, StoryReader reader, ExLocation startLocation,
       Map<String, Supplier<?>> varSupplier, StoryAction firstAction, int lastActionId) {
     super(chapter, name, reader, startLocation, varSupplier, firstAction, lastActionId);
@@ -73,16 +71,9 @@ public non-sealed class MainQuest extends Quest {
     }
   }
 
-  @Override
-  public MainQuest nextQuest() {
-    this.finished = true;
-
+  public MainQuest getNextQuest() {
     if (this.nextMainQuestByName.isEmpty()) {
       return null;
-    }
-
-    for (OptionalQuest optionalQuest : this.nextOptionalQuestByName.values()) {
-      optionalQuest.start(false, true);
     }
 
     if (this.nextMainQuestByName.size() == 1) {
@@ -94,6 +85,13 @@ public non-sealed class MainQuest extends Quest {
         return null;
       }
     }
+  }
+
+  public Collection<OptionalQuest> startNextOptionals() {
+    for (OptionalQuest optionalQuest : this.nextOptionalQuestByName.values()) {
+      optionalQuest.start(false, true);
+    }
+    return this.nextOptionalQuestByName.values();
   }
 
   @Override
@@ -116,13 +114,6 @@ public non-sealed class MainQuest extends Quest {
   public List<? extends Quest> getNextQuests() {
     return Streams.concat(this.nextMainQuestByName.values().stream(),
         this.nextOptionalQuestByName.values().stream()).toList();
-  }
-
-  @Override
-  public void start(boolean teleport, boolean spawnEntities) {
-    if (!this.finished) {
-      super.start(teleport, spawnEntities);
-    }
   }
 
   public Collection<MainQuest> getNextMainQuests() {
