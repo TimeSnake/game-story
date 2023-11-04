@@ -14,10 +14,7 @@ import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.element.TalkType;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.server.StoryServer;
-import de.timesnake.game.story.structure.Difficulty;
-import de.timesnake.game.story.structure.Quest;
-import de.timesnake.game.story.structure.StoryBook;
-import de.timesnake.game.story.structure.StoryChapter;
+import de.timesnake.game.story.structure.*;
 import de.timesnake.library.basic.util.Tuple;
 import de.timesnake.library.chat.ExTextColor;
 import de.timesnake.library.extension.util.player.UserSet;
@@ -49,7 +46,7 @@ public class StoryReader implements Iterable<StoryUser> {
 
   private StoryBook book;
   private StoryChapter chapter;
-  private Quest quest;
+  private MainQuest quest;
   private int deaths = 0;
 
   private boolean performedPreChecks = false;
@@ -127,22 +124,23 @@ public class StoryReader implements Iterable<StoryUser> {
   }
 
   public void onCompletedQuest(Quest quest) {
-    if (!quest.equals(this.quest)) {
-      quest.nextQuest();
+    quest.startNextOptionals();
+
+    if (!this.quest.equals(quest)) {
       return;
     }
 
-    Quest next = this.quest.nextQuest();
-    if (next == null) {
-      this.onCompletedChapter();
-      return;
-    }
-
-    this.quest = next;
+    MainQuest next;
+    do {
+      next = this.quest.getNextQuest();
+      if (next == null) {
+        this.onCompletedChapter();
+        return;
+      }
+      this.quest = next;
+    } while (!this.quest.start(false, true));
 
     this.saveProgress();
-
-    this.quest.start(false, true);
   }
 
   private void onCompletedChapter() {
@@ -177,14 +175,13 @@ public class StoryReader implements Iterable<StoryUser> {
     String savedQuestName = this.host.getProgress()
         .getQuest(this.book.getId(), this.chapter.getId());
     if (savedQuestName != null) {
-      this.quest = this.chapter.getQuest(savedQuestName);
+      this.quest = (MainQuest) this.chapter.getQuest(savedQuestName);
     } else {
-      this.quest = this.chapter.getFirstQuest();
+      this.quest = (MainQuest) this.chapter.getFirstQuest();
     }
 
     // TODO update progress
-
-    this.quest = this.chapter.getFirstQuest();
+    this.quest = (MainQuest) this.chapter.getFirstQuest();
 
     // TODO update progress
 

@@ -41,6 +41,10 @@ import java.util.function.Supplier;
 
 public class TalkAction extends RadiusAction implements ChannelListener {
 
+  public static final String MESSAGE_PLAYER = "p";
+  public static final String MESSAGE_CHARACTER = "c";
+  public static final String AUDIO = "a";
+
   public static final String NAME = "talk";
   private static final int MAX_ERROR_COUNT = 3;
 
@@ -62,8 +66,7 @@ public class TalkAction extends RadiusAction implements ChannelListener {
   public TalkAction(int id, StoryAction next, StoryCharacter<?> speaker,
                     LinkedList<Tuple<Speaker, Supplier<String>>> messages,
                     LinkedList<Tuple<Speaker, Supplier<String>>> audioMessages,
-                    ExLocation location, StoryCharacter<?> character, Double radius, float yaw,
-                    float pitch) {
+                    ExLocation location, StoryCharacter<?> character, Double radius, float yaw, float pitch) {
     super(id, next, location, character, radius);
     this.messages = messages;
     this.audioMessages = audioMessages;
@@ -328,6 +331,10 @@ public class TalkAction extends RadiusAction implements ChannelListener {
 
   @ChannelHandler(type = {ListenerType.USER_STORY_AUDIO_END, ListenerType.USER_STORY_AUDIO_FAIL})
   public void onStoryMessage(ChannelUserMessage<String> msg) {
+    if (!this.isActive()) {
+      return;
+    }
+
     if (this.currentMessage != null && this.currentMessage.getB().get().equals(msg.getValue())) {
       Loggers.GAME.info(this.partner.getName() + " next audio, after " + msg.getValue());
       if (msg.getMessageType().equals(MessageType.User.STORY_AUDIO_END)) {

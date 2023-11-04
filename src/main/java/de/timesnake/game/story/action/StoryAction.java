@@ -5,26 +5,25 @@
 package de.timesnake.game.story.action;
 
 import de.timesnake.basic.bukkit.util.Server;
+import de.timesnake.basic.bukkit.util.user.User;
 import de.timesnake.game.story.listener.StoryEventListener;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
+import de.timesnake.library.basic.util.Loggers;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public abstract class StoryAction implements Iterator<StoryAction>, StoryEventListener {
 
   public static final String CHARACTER = "character";
   public static final String MESSAGES = "messages";
-
-  public static final String MESSAGE_PLAYER = "p";
-  public static final String MESSAGE_CHARACTER = "c";
-  public static final String AUDIO = "a";
 
   public static final String CHARACTER_LOOK_DIRECTION = "character_look_direction";
 
@@ -76,6 +75,8 @@ public abstract class StoryAction implements Iterator<StoryAction>, StoryEventLi
 
   public void start() {
     this.active = true;
+    Loggers.GAME.info(this.reader.getUsers().stream().map(User::getName).collect(Collectors.joining(", "))
+        + " stated action '" + this.id + "' in quest '" + this.quest.getName() + "'");
     StoryServer.getEventManager().registerListeners(this);
   }
 
@@ -91,6 +92,10 @@ public abstract class StoryAction implements Iterator<StoryAction>, StoryEventLi
 
   public void stop() {
     this.active = false;
+
+    Loggers.GAME.info(this.reader.getUsers().stream().map(User::getName).collect(Collectors.joining(", "))
+        + " finished action '" + this.id + "' in quest '" + this.quest.getName() + "'");
+
     StoryServer.getEventManager().unregisterListeners(this);
 
     if (this.diaryPages != null) {

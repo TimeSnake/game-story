@@ -62,11 +62,11 @@ public non-sealed class OptionalQuest extends Quest {
   }
 
   @Override
-  public Quest nextQuest() {
+  public Collection<OptionalQuest> startNextOptionals() {
     for (OptionalQuest optionalQuest : this.nextQuestByName.values()) {
       optionalQuest.start(false, true);
     }
-    return null;
+    return this.nextQuestByName.values();
   }
 
   @Override
