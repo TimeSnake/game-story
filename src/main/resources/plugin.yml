@@ -1,5 +1,5 @@
 main: de.timesnake.game.story.main.GameStory
-version: 1.0
+version: 1.4
 name: game-story
 author: Mn
 depend: [ basic-bukkit ]
