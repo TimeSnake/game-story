@@ -38,7 +38,7 @@ public class StoryCharacterPlayer extends StoryCharacter<Player> {
         .applyOnEntity(e -> {
           e.setPos(this.getLocation().getX(), this.getLocation().getY(), this.getLocation().getZ());
         })
-        .build();
+        .build(location.getExWorld().getHandle());
   }
 
   public StoryCharacterPlayer(String name, Toml character) {

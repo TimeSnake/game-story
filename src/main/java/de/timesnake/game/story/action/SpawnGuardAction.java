@@ -112,7 +112,7 @@ public class SpawnGuardAction extends LocationAction {
     PILLAGER() {
       @Override
       public Mob create(Location location, Difficulty difficulty) {
-        return new PillagerBuilder(((CraftWorld) location.getWorld()).getHandle(), false, false, false)
+        return new PillagerBuilder()
             .applyOnEntity(e -> {
               e.setPos(location.getX(), location.getY(), location.getZ());
               ExItemStack crossBow = new ExItemStack(Material.CROSSBOW);
@@ -129,14 +129,14 @@ public class SpawnGuardAction extends LocationAction {
             .addPathfinderGoal(9, e -> new LookAtPlayerGoal(e, Mob.class, 15.0F))
             .addTargetGoal(1, e -> new HurtByTargetGoal(e, Monster.class))
             .addTargetGoal(2, e -> new NearestAttackableTargetGoal<>(e, Player.class, true))
-            .build();
+            .build(((CraftWorld) location.getWorld()).getHandle());
       }
     },
 
     VINDICATOR() {
       @Override
       public Mob create(Location location, Difficulty difficulty) {
-        return new VindicatorBuilder(((CraftWorld) location.getWorld()).getHandle(), false, false, false)
+        return new VindicatorBuilder()
             .applyOnEntity(e -> {
               e.setPos(location.getX(), location.getY(), location.getZ());
               e.setItemSlot(EquipmentSlot.MAINHAND, new ExItemStack(Material.IRON_AXE).getHandle());
@@ -153,7 +153,7 @@ public class SpawnGuardAction extends LocationAction {
             .addPathfinderGoal(9, e -> new LookAtPlayerGoal(e, Player.class, 8.0F))
             .addTargetGoal(1, e -> new HurtByTargetGoal(e, Monster.class))
             .addTargetGoal(2, e -> new NearestAttackableTargetGoal<>(e, Player.class, true))
-            .build();
+            .build(((CraftWorld) location.getWorld()).getHandle());
       }
     },
 
@@ -161,7 +161,7 @@ public class SpawnGuardAction extends LocationAction {
       @Override
       public Mob create(Location location, Difficulty difficulty) {
 
-        return new RavagerBuilder(((CraftWorld) location.getWorld()).getHandle(), false, false, false)
+        return new RavagerBuilder()
             .applyOnEntity(e -> e.setPos(location.getX(), location.getY(), location.getZ()))
             .addPathfinderGoal(0, e -> new FloatGoal(e))
             .addPathfinderGoal(3, e -> switch (difficulty) {
@@ -174,8 +174,7 @@ public class SpawnGuardAction extends LocationAction {
             .addPathfinderGoal(9, e -> new LookAtPlayerGoal(e, Player.class, 8.0F))
             .addTargetGoal(1, e -> new HurtByTargetGoal(e, Monster.class))
             .addTargetGoal(2, e -> new NearestAttackableTargetGoal<>(e, Player.class, true))
-
-            .build();
+            .build(((CraftWorld) location.getWorld()).getHandle());
       }
     };
 

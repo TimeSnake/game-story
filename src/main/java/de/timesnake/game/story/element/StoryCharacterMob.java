@@ -84,31 +84,31 @@ public class StoryCharacterMob extends StoryCharacter<Mob> {
     VILLAGER() {
       @Override
       public Mob initEntity(ExLocation location) {
-        return new VillagerBuilder(location.getExWorld().getHandle(), false, false, false)
+        return new VillagerBuilder()
             .addPathfinderGoal(1, e -> new LookAtPlayerGoal(e, Player.class, 8.0f))
             .addPathfinderGoal(2, e -> new LocationGoal(e, location.getX(), location.getY(), location.getZ(),
                 1, 16, 0.1))
-            .build();
+            .build(location.getExWorld().getHandle());
       }
     },
     PILLAGER() {
       @Override
       public Mob initEntity(ExLocation location) {
-        return new PillagerBuilder(location.getExWorld().getHandle(), false, false, false)
+        return new PillagerBuilder()
             .addPathfinderGoal(1, e -> new LookAtPlayerGoal(e, Player.class, 8.0F))
             .addPathfinderGoal(1, e -> new LocationGoal(e, location.getX(), location.getY(), location.getZ(),
                 1, 16, 0.1))
-            .build();
+            .build(location.getExWorld().getHandle());
       }
     },
     VINDICATOR() {
       @Override
       public Mob initEntity(ExLocation location) {
-        return new VindicatorBuilder(location.getExWorld().getHandle(), false, false, false)
+        return new VindicatorBuilder()
             .addPathfinderGoal(1, e -> new LookAtPlayerGoal(e, Player.class, 8.0F))
             .addPathfinderGoal(1, e -> new LocationGoal(e, location.getX(), location.getY(), location.getZ(),
                 1, 16, 0.1))
-            .build();
+            .build(location.getExWorld().getHandle());
       }
     };
 
