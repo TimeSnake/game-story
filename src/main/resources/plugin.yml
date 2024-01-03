@@ -1,7 +1,7 @@
 main: de.timesnake.game.story.main.GameStory
 version: 1.4
 name: game-story
-author: Mn
+author: timesnake
 depend: [ basic-bukkit ]
 api-version: 1.13
 

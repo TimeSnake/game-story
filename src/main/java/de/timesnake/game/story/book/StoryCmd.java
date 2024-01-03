@@ -4,26 +4,24 @@
 
 package de.timesnake.game.story.book;
 
-import de.timesnake.basic.bukkit.util.Server;
-import de.timesnake.basic.bukkit.util.chat.Argument;
-import de.timesnake.basic.bukkit.util.chat.CommandListener;
-import de.timesnake.basic.bukkit.util.chat.Sender;
+import de.timesnake.basic.bukkit.util.chat.cmd.Argument;
+import de.timesnake.basic.bukkit.util.chat.cmd.CommandListener;
+import de.timesnake.basic.bukkit.util.chat.cmd.Completion;
+import de.timesnake.basic.bukkit.util.chat.cmd.Sender;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.StoryBook;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.library.basic.util.Loggers;
 import de.timesnake.library.chat.ExTextColor;
-import de.timesnake.library.extension.util.cmd.Arguments;
-import de.timesnake.library.extension.util.cmd.ExCommand;
+import de.timesnake.library.commands.PluginCommand;
+import de.timesnake.library.commands.simple.Arguments;
 import net.kyori.adventure.text.Component;
-
-import java.util.List;
 
 public class StoryCmd implements CommandListener {
 
   @Override
-  public void onCommand(Sender sender, ExCommand<Sender, Argument> cmd,
+  public void onCommand(Sender sender, PluginCommand cmd,
       Arguments<Argument> args) {
 
     if (!sender.isPlayer(true)) {
@@ -125,15 +123,14 @@ public class StoryCmd implements CommandListener {
   }
 
   @Override
-  public List<String> getTabCompletion(ExCommand<Sender, Argument> cmd,
-      Arguments<Argument> args) {
-    if (args.length() == 1) {
-      return List.of("add", "remove");
-    } else if (args.length() == 2) {
-      if (args.get(0).equalsIgnoreCase("add") || args.get(0).equalsIgnoreCase("remove")) {
-        return Server.getCommandManager().getTabCompleter().getPlayerNames();
-      }
-    }
-    return List.of();
+  public Completion getTabCompletion() {
+    return new Completion()
+        .addArgument(new Completion("add", "remove")
+            .addArgument(Completion.ofPlayerNames()));
+  }
+
+  @Override
+  public String getPermission() {
+    return null;
   }
 }
