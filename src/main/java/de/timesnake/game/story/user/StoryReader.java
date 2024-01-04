@@ -17,7 +17,7 @@ import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.*;
 import de.timesnake.library.basic.util.Tuple;
 import de.timesnake.library.chat.ExTextColor;
-import de.timesnake.library.extension.util.player.UserSet;
+import de.timesnake.library.basic.util.UserSet;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
