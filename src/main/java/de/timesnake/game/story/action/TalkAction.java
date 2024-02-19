@@ -166,7 +166,7 @@ public class TalkAction extends RadiusAction implements ChannelListener {
       }
       this.nextMessage(user);
 
-      Server.getChannel().addListener(this, () -> Collections.singleton(this.partner.getUniqueId()));
+      Server.getChannel().addListener(this, Collections.singleton(this.partner.getUniqueId()));
     }
   }
 
