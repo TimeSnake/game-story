@@ -12,17 +12,20 @@ import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.StoryBook;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryUser;
-import de.timesnake.library.basic.util.Loggers;
 import de.timesnake.library.chat.ExTextColor;
 import de.timesnake.library.commands.PluginCommand;
 import de.timesnake.library.commands.simple.Arguments;
 import net.kyori.adventure.text.Component;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class StoryCmd implements CommandListener {
 
+  private final Logger logger = LogManager.getLogger("story.cmd");
+
   @Override
   public void onCommand(Sender sender, PluginCommand cmd,
-      Arguments<Argument> args) {
+                        Arguments<Argument> args) {
 
     if (!sender.isPlayer(true)) {
       return;
@@ -81,12 +84,11 @@ public class StoryCmd implements CommandListener {
         sender.sendPluginMessage(Component.text("Bought chapter for ", ExTextColor.PERSONAL)
             .append(Component.text(StoryServer.PART_PRICE + " TimeCoins",
                 ExTextColor.VALUE)));
-        Loggers.GAME.info(user.getName() + " bought chapter " + bookId + "." + chapterName);
+        this.logger.info("{} bought chapter {}.{}", user.getName(), bookId, chapterName);
       }
 
       if (!user.getProgress().canPlayChapter(bookId, chapterName)) {
-        sender.sendPluginMessage(
-            Component.text("You can not play this chapter", ExTextColor.WARNING));
+        sender.sendPluginMessage(Component.text("You can not play this chapter", ExTextColor.WARNING));
         return;
       }
 

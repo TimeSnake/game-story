@@ -10,7 +10,8 @@ import de.timesnake.basic.bukkit.util.user.event.UserBlockBreakEvent;
 import de.timesnake.basic.bukkit.util.user.event.UserDropItemEvent;
 import de.timesnake.basic.bukkit.util.user.event.UserMoveEvent;
 import de.timesnake.game.story.main.GameStory;
-import de.timesnake.library.basic.util.Loggers;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -26,6 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class EventManager implements Listener {
 
+  private final Logger logger = LogManager.getLogger("story.event-manager");
+
   private final ConcurrentHashMap<StoryEventListener, Map<Class<? extends Event>, Method>> methodByEventByListener = new ConcurrentHashMap<>();
 
   public EventManager() {
@@ -40,7 +43,7 @@ public class EventManager implements Listener {
           if (parameters.length == 1) {
             this.methodByEventByListener.computeIfAbsent(listener, e -> new HashMap<>()).put((Class<? extends Event>) parameters[0], method);
           } else {
-            Loggers.GAME.warning("Failed to add story event method '" + method.getName() + "' in class '" + clazz.getName() + "'");
+            this.logger.warn("Failed to add story event method '{}' in class '{}'", method.getName(), clazz.getName());
           }
         });
   }
@@ -87,8 +90,8 @@ public class EventManager implements Listener {
           method.setAccessible(true);
           v.get(event.getClass()).invoke(k, event);
         } catch (IllegalAccessException | InvocationTargetException e) {
-          Loggers.GAME.warning("Failed to invoke story event method '" + method.getName() + "' in class '" +
-              k.getClass().getName() + "': " + e.getClass().getSimpleName() + ": " + e.getCause().getMessage());
+          this.logger.warn("Failed to invoke story event method '{}' in class '{}': {}: {}",
+              method.getName(), k.getClass().getName(), e.getClass().getSimpleName(), e.getCause().getMessage());
         }
       }
     });

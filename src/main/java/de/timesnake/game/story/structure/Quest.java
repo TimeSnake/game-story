@@ -13,7 +13,8 @@ import de.timesnake.game.story.exception.InvalidArgumentTypeException;
 import de.timesnake.game.story.exception.MissingArgumentException;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.user.StoryReader;
-import de.timesnake.library.basic.util.Loggers;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.potion.PotionEffectType;
@@ -28,6 +29,8 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
     OptionalQuest {
 
   protected static final String START_LOCATION = "location";
+
+  protected final Logger logger = LogManager.getLogger("story.quest");
 
   protected final String name;
   protected final ExLocation startLocation;
@@ -45,7 +48,7 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
   protected Map<String, Supplier<?>> varSupplier;
 
   public Quest(StoryChapter chapter, String name, StoryReader reader, ExLocation startLocation,
-      Map<String, Supplier<?>> varSupplier, StoryAction firstAction, int lastActionId) {
+               Map<String, Supplier<?>> varSupplier, StoryAction firstAction, int lastActionId) {
     this.chapter = chapter;
     this.name = name;
     this.reader = reader;
@@ -112,8 +115,8 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
       return false;
     }
 
-    Loggers.GAME.info(this.reader.getUsers().stream().map(User::getName).collect(Collectors.joining(", "))
-        + " enabled quest '" + this.name + "'");
+    this.logger.info("{} enabled quest '{}'",
+        this.reader.getUsers().stream().map(User::getName).collect(Collectors.joining(", ")), this.name);
 
     for (Quest quest : this.questsToSkipAtStart) {
       quest.skip();
@@ -162,8 +165,8 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
 
     Server.runTaskLaterSynchrony(this::clearEntities, 10 * 20, GameStory.getPlugin());
 
-    Loggers.GAME.info(this.reader.getUsers().stream().map(User::getName).collect(Collectors.joining(", "))
-        + " completed '" + this.getName() + "'");
+    this.logger.info("{} completed quest '{}'",
+        this.reader.getUsers().stream().map(User::getName).collect(Collectors.joining(", ")), this.name);
 
     this.reader.onCompletedQuest(this);
   }
@@ -172,8 +175,8 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
     this.skip = true;
     this.forEach(StoryAction::stop);
 
-    Loggers.GAME.info(this.reader.getUsers().stream().map(User::getName).collect(Collectors.joining(", "))
-        + " skipped '" + this.getName() + "'");
+    this.logger.info("{} skipped quest '{}'",
+        this.reader.getUsers().stream().map(User::getName).collect(Collectors.joining(", ")), this.name);
   }
 
   public abstract Collection<OptionalQuest> startNextOptionals();
