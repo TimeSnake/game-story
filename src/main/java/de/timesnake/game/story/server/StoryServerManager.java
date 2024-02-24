@@ -14,7 +14,8 @@ import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryFile;
 import de.timesnake.game.story.user.StoryUser;
 import de.timesnake.game.story.user.UserManager;
-import de.timesnake.library.basic.util.Loggers;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bukkit.GameRule;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -30,6 +31,8 @@ public class StoryServerManager extends ServerManager implements Listener {
   public static StoryServerManager getInstance() {
     return (StoryServerManager) ServerManager.getInstance();
   }
+
+  private final Logger logger = LogManager.getLogger("story.server");
 
   private final Map<String, StoryBook> bookById = new HashMap<>();
 
@@ -70,7 +73,7 @@ public class StoryServerManager extends ServerManager implements Listener {
 
       this.bookById.put(id, book);
 
-      Loggers.GAME.info("Loaded story book '" + id + "'");
+      this.logger.info("Loaded story book '{}'", id);
     }
 
     Server.registerListener(this, GameStory.getPlugin());

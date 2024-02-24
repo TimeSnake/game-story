@@ -11,7 +11,8 @@ import de.timesnake.game.story.book.Diary;
 import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.user.StoryReader;
-import de.timesnake.library.basic.util.Loggers;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bukkit.GameRule;
 import org.bukkit.Material;
 import org.jetbrains.annotations.NotNull;
@@ -19,6 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class StoryChapter implements Iterable<Quest> {
+
+  private final Logger logger = LogManager.getLogger("story.chapter");
 
   private final String id;
   private final String title;
@@ -48,7 +51,7 @@ public class StoryChapter implements Iterable<Quest> {
     this.world = Server.getWorld(worldName);
 
     if (this.world == null) {
-      Loggers.GAME.warning("World '" + worldName + "' for part '" + this.id + "' not exists");
+      this.logger.warn("World '{}' for part '{}' not exists", worldName, this.id);
       return;
     }
 

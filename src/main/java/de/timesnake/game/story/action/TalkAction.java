@@ -28,7 +28,6 @@ import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.game.story.user.StoryUser;
-import de.timesnake.library.basic.util.Loggers;
 import de.timesnake.library.basic.util.Tuple;
 import de.timesnake.library.packets.core.packet.out.entity.ClientboundMoveEntityPacketBuilder;
 import de.timesnake.library.packets.core.packet.out.entity.ClientboundRotateHeadPacketBuilder;
@@ -102,7 +101,7 @@ public class TalkAction extends RadiusAction implements ChannelListener {
         messageText = messageText.replaceFirst(MESSAGE_CHARACTER + ":", "").trim();
         this.messages.add(new Tuple<>(Speaker.CHARACTER, quest.parseString(messageText)));
       } else {
-        Loggers.GAME.warning("Unknown speaker in action '" + id + "'");
+        this.logger.warn("Unknown speaker in action '{}'", id);
       }
     }
 
@@ -336,7 +335,7 @@ public class TalkAction extends RadiusAction implements ChannelListener {
     }
 
     if (this.currentMessage != null && this.currentMessage.getB().get().equals(msg.getValue())) {
-      Loggers.GAME.info(this.partner.getName() + " next audio, after " + msg.getValue());
+      this.logger.info("{} next audio, after {}", this.partner.getName(), msg.getValue());
       if (msg.getMessageType().equals(MessageType.User.STORY_AUDIO_END)) {
         this.errorCount = 0;
         this.nextMessage(this.partner);

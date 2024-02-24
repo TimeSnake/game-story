@@ -12,7 +12,8 @@ import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
-import de.timesnake.library.basic.util.Loggers;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -30,6 +31,8 @@ public abstract class StoryAction implements Iterator<StoryAction>, StoryEventLi
   public static final String RADIUS = "radius";
 
   public static final String LOCATION = "location";
+
+  protected final Logger logger = LogManager.getLogger("story.action");
 
   protected final int id;
   protected Quest quest;
@@ -63,7 +66,7 @@ public abstract class StoryAction implements Iterator<StoryAction>, StoryEventLi
   }
 
   public abstract StoryAction clone(Quest quest, StoryReader reader, StoryAction clonedNext,
-      StoryChapter chapter);
+                                    StoryChapter chapter);
 
   public StoryAction getNext() {
     return next;
@@ -75,8 +78,9 @@ public abstract class StoryAction implements Iterator<StoryAction>, StoryEventLi
 
   public void start() {
     this.active = true;
-    Loggers.GAME.info(this.reader.getUsers().stream().map(User::getName).collect(Collectors.joining(", "))
-        + " stated action '" + this.id + "' in quest '" + this.quest.getName() + "'");
+    this.logger.info("{} stated action '{}' in quest '{}'",
+        this.reader.getUsers().stream().map(User::getName).collect(Collectors.joining(", ")),
+        this.id, this.quest.getName());
     StoryServer.getEventManager().registerListeners(this);
   }
 
@@ -93,8 +97,9 @@ public abstract class StoryAction implements Iterator<StoryAction>, StoryEventLi
   public void stop() {
     this.active = false;
 
-    Loggers.GAME.info(this.reader.getUsers().stream().map(User::getName).collect(Collectors.joining(", "))
-        + " finished action '" + this.id + "' in quest '" + this.quest.getName() + "'");
+    this.logger.info("{} finished action '{}' in quest '{}'",
+        this.reader.getUsers().stream().map(User::getName).collect(Collectors.joining(", ")),
+        this.id, this.quest.getName());
 
     StoryServer.getEventManager().unregisterListeners(this);
 
