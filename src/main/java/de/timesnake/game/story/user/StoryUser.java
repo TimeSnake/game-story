@@ -4,12 +4,12 @@
 
 package de.timesnake.game.story.user;
 
+import de.timesnake.basic.bukkit.core.user.scoreboard.tablist.Tablist2;
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.group.DisplayGroup;
 import de.timesnake.basic.bukkit.util.user.User;
 import de.timesnake.basic.bukkit.util.user.scoreboard.ScoreboardManager;
 import de.timesnake.basic.bukkit.util.user.scoreboard.Tablist;
-import de.timesnake.basic.bukkit.util.user.scoreboard.TablistBuilder;
 import de.timesnake.basic.bukkit.util.world.ExLocation;
 import de.timesnake.database.util.Database;
 import de.timesnake.game.story.book.StoryContentBook;
@@ -36,7 +36,7 @@ public class StoryUser extends User {
     super(player);
 
     Tablist tablist = Server.getScoreboardManager()
-        .registerGroupTablist(new TablistBuilder(this.getName())
+        .registerTablist(new Tablist2.Builder(this.getName())
             .groupTypes(DisplayGroup.MAIN_TABLIST_GROUPS)
             .userJoin((e, t) -> {
             })
