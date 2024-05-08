@@ -30,7 +30,7 @@ repositories {
 }
 
 dependencies {
-  implementation "com.moandjiezana.toml:toml4j:0.7.3-SNAPSHOT"
+  compileOnly "com.moandjiezana.toml:toml4j:0.7.3-SNAPSHOT"
 
   compileOnly "de.timesnake:basic-game:1.+"
   compileOnly "de.timesnake:basic-bukkit:3.+"
