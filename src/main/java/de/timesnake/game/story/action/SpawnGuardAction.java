@@ -25,21 +25,16 @@ import de.timesnake.library.entities.entity.PillagerBuilder;
 import de.timesnake.library.entities.entity.RavagerBuilder;
 import de.timesnake.library.entities.entity.VindicatorBuilder;
 import de.timesnake.library.entities.pathfinder.LocationGoal;
-import de.timesnake.library.entities.pathfinder.RavagerMeleeAttackGoal;
-import de.timesnake.library.entities.pathfinder.VindicatorMeleeAttackGoal;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.ai.goal.FloatGoal;
-import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
-import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
-import net.minecraft.world.entity.ai.goal.RangedCrossbowAttackGoal;
+import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.craftbukkit.v1_20_R1.CraftWorld;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.enchantments.Enchantment;
 
 import java.util.HashSet;
@@ -143,9 +138,9 @@ public class SpawnGuardAction extends LocationAction {
             })
             .addPathfinderGoal(0, e -> new FloatGoal(e))
             .addPathfinderGoal(3, e -> switch (difficulty) {
-              case EASY -> new VindicatorMeleeAttackGoal(e, 1.1);
-              case NORMAL -> new VindicatorMeleeAttackGoal(e, 1.2);
-              case HARD -> new VindicatorMeleeAttackGoal(e, 1.3);
+              case EASY -> new MeleeAttackGoal(e, 1.1, false);
+              case NORMAL -> new MeleeAttackGoal(e, 1.2, false);
+              case HARD -> new MeleeAttackGoal(e, 1.3, false);
             })
             .addPathfinderGoal(7, e -> new LocationGoal(e, location.getX(), location.getY(),
                 location.getZ(), 0.9, 32, 5))
@@ -165,8 +160,8 @@ public class SpawnGuardAction extends LocationAction {
             .applyOnEntity(e -> e.setPos(location.getX(), location.getY(), location.getZ()))
             .addPathfinderGoal(0, e -> new FloatGoal(e))
             .addPathfinderGoal(3, e -> switch (difficulty) {
-              case HARD -> new RavagerMeleeAttackGoal(e, 1.1);
-              default -> new RavagerMeleeAttackGoal(e, 1.2);
+              case HARD -> new MeleeAttackGoal(e, 1.1, false);
+              default -> new MeleeAttackGoal(e, 1.2, false);
             })
             .addPathfinderGoal(7, e -> new LocationGoal(e, location.getX(), location.getY(),
                 location.getZ(), 0.9, 32, 5))
