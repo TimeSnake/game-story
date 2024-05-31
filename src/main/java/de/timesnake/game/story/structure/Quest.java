@@ -136,7 +136,7 @@ public abstract sealed class Quest implements Iterable<StoryAction> permits Main
           double z = (Math.cos(angle)) * 0.7;
 
           Particle.DustOptions dust = new Particle.DustOptions(Color.fromRGB(102, 0, 102), 1.2f);
-          this.startLocation.getWorld().spawnParticle(Particle.REDSTONE,
+          this.startLocation.getWorld().spawnParticle(Particle.PORTAL,
               this.startLocation.getX() + x, this.startLocation.getY(), this.startLocation.getZ() + z,
               8, 0, 1.5, 0, 5, dust);
         }
