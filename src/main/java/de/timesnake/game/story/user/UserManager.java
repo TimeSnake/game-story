@@ -6,19 +6,13 @@ package de.timesnake.game.story.user;
 
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.user.User;
-import de.timesnake.basic.bukkit.util.user.event.UserDamageByUserEvent;
-import de.timesnake.basic.bukkit.util.user.event.UserDeathEvent;
-import de.timesnake.basic.bukkit.util.user.event.UserJoinEvent;
-import de.timesnake.basic.bukkit.util.user.event.UserQuitEvent;
-import de.timesnake.basic.bukkit.util.user.event.UserRespawnEvent;
+import de.timesnake.basic.bukkit.util.user.event.*;
 import de.timesnake.basic.bukkit.util.user.inventory.ExItemStack;
 import de.timesnake.basic.bukkit.util.user.inventory.UserInventoryInteractEvent;
 import de.timesnake.basic.bukkit.util.user.inventory.UserInventoryInteractListener;
 import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.library.chat.ExTextColor;
-import java.util.HashSet;
-import java.util.Set;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -31,12 +25,15 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.potion.PotionType;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class UserManager implements Listener, UserInventoryInteractListener {
 
   public static final ExItemStack FOOD = new ExItemStack(Material.COOKED_BEEF,
       "§6Cooked Beef").setDropable(false);
   public static final ExItemStack DRINK =
-      ExItemStack.getPotion(Material.SPLASH_POTION, PotionType.WATER, false, false)
+      ExItemStack.getPotion(Material.SPLASH_POTION, PotionType.WATER)
           .setDisplayName("§6Water Bottle").hideAll().setDropable(false);
   public static final ExItemStack CHECKPOINT =
       new ExItemStack(Material.RED_DYE, "§cTeleport to last checkpoint").setDropable(false)
