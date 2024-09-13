@@ -11,9 +11,9 @@ import de.timesnake.basic.bukkit.util.world.entity.PacketPlayer;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
 import de.timesnake.library.entities.entity.PlayerBuilder;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
 
-public class StoryCharacterPlayer extends StoryCharacter<Player> {
+public class StoryCharacterPlayer extends StoryCharacter<ServerPlayer> {
 
   public static final String NAME = "player";
 
@@ -49,7 +49,7 @@ public class StoryCharacterPlayer extends StoryCharacter<Player> {
   }
 
   @Override
-  public StoryCharacter<Player> clone(StoryReader reader, StoryChapter chapter) {
+  public StoryCharacter<ServerPlayer> clone(StoryReader reader, StoryChapter chapter) {
     StoryCharacterPlayer character = new StoryCharacterPlayer(this.name, this.displayName,
         this.location.clone().setExWorld(chapter.getWorld()), this.skinValue, this.skinSignature);
     character.reader = reader;
