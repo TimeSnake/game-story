@@ -70,15 +70,15 @@ public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Acti
   @Override
   public void onUserChatCommand(UserChatCommandEvent event) {
     if (!this.action.isActive()) {
-      event.removeLisener(false);
+      event.removeListener(false);
       event.setCancelled(false);
       return;
     }
 
-    this.logger.info(Server.getChatManager().getSenderMember(event.getUser()) + event.getMessage());
+    this.logger.info("{}{}", Server.getChatManager().getSenderMember(event.getUser()), event.getMessage());
 
     if (this.codes.stream().anyMatch(c -> c.get().equals(event.getMessage()))) {
-      event.removeLisener(false);
+      event.removeListener(false);
       event.setCancelled(true);
       event.getUser().sendMessage(Server.getChat().getSenderMember(event.getUser()) + "§7" + event.getMessage());
       event.getUser().sendPluginMessage(Plugin.STORY, Component.text("Leider falsch", ExTextColor.WARNING));
@@ -88,7 +88,7 @@ public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Acti
     event.getUser().sendPluginMessage(Plugin.STORY, Component.text("Richtig", ExTextColor.GREEN));
     this.triggerAction((StoryUser) event.getUser());
 
-    event.removeLisener(true);
+    event.removeListener(true);
     event.setCancelled(true);
 
     this.reader.forEach(u -> Server.getUserEventManager().removeUserChatCommand(u, this));
