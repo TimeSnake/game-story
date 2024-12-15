@@ -79,7 +79,10 @@ public class StoryUser extends User {
       u.showUser(this);
     }
 
-    this.setDefault();
+    this.clearInventory();
+    this.resetPlayerProperties();
+    this.unlockAll();
+
     int slot = 0;
     for (StoryContentBook book : this.contentBookByStoryId.values()) {
       this.setItem(slot, book.getItem());
