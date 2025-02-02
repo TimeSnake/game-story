@@ -10,14 +10,13 @@ import de.timesnake.basic.bukkit.util.user.inventory.*;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
 import de.timesnake.channel.util.message.ChannelUserMessage;
 import de.timesnake.channel.util.message.MessageType;
-import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.element.TalkType;
 import de.timesnake.game.story.main.GameStory;
 import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.*;
 import de.timesnake.library.basic.util.Tuple;
-import de.timesnake.library.chat.ExTextColor;
 import de.timesnake.library.basic.util.UserSet;
+import de.timesnake.library.chat.ExTextColor;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -215,14 +214,16 @@ public class StoryReader implements Iterable<StoryUser> {
     boolean checksPerformed = false;
 
     if (chapter.getMaxDeaths(this.difficulty) != null) {
-      this.forEach(u -> u.sendPluginMessage(Plugin.STORY, Component.text("Max. Respawns: " +
-          chapter.getMaxDeaths(this.difficulty), ExTextColor.WARNING)));
+      this.forEach(u -> u.sendPluginMessage(StoryServer.PLUGIN, Component.text("Max. Respawns: " +
+                                                                               chapter.getMaxDeaths(this.difficulty),
+          ExTextColor.WARNING)));
     }
 
     if (this.talkType == TalkType.AUDIO) {
-      this.forEach(u -> u.sendPluginMessage(Plugin.STORY,
+      this.forEach(u -> u.sendPluginMessage(StoryServer.PLUGIN,
           Component.text("Login to our website and start the audio check now: ", ExTextColor.PERSONAL)
-              .append(Component.text("https://timesnake.de/story/" + book.getId() + "/" + chapter.getId(), ExTextColor.VALUE, TextDecoration.UNDERLINED)
+              .append(Component.text("https://timesnake.de/story/" + book.getId() + "/" + chapter.getId(),
+                      ExTextColor.VALUE, TextDecoration.UNDERLINED)
                   .hoverEvent(HoverEvent.showText(Component.text("Click to copy")))
                   .clickEvent(ClickEvent.openUrl("https://timesnake.de/story/" + book.getId() + "/" + chapter.getId())))));
       this.forEach(u -> Server.getChannel().sendMessage(new ChannelUserMessage<>(u.getUniqueId(),
@@ -231,7 +232,8 @@ public class StoryReader implements Iterable<StoryUser> {
     }
 
     this.host.setItem(8, this.startInventory.start);
-    this.host.sendPluginMessage(Plugin.STORY, Component.text("Click on the start item if you are ready", ExTextColor.WARNING));
+    this.host.sendPluginMessage(StoryServer.PLUGIN, Component.text("Click on the start item if you are ready",
+        ExTextColor.WARNING));
 
     this.performedPreChecks = true;
     return checksPerformed;

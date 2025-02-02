@@ -14,7 +14,6 @@ import de.timesnake.channel.util.listener.ChannelListener;
 import de.timesnake.channel.util.listener.ListenerType;
 import de.timesnake.channel.util.message.ChannelUserMessage;
 import de.timesnake.channel.util.message.MessageType;
-import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.element.TalkType;
 import de.timesnake.game.story.event.TriggerEvent;
@@ -23,6 +22,7 @@ import de.timesnake.game.story.exception.StoryParseException;
 import de.timesnake.game.story.exception.UnknownLocationException;
 import de.timesnake.game.story.listener.StoryEvent;
 import de.timesnake.game.story.main.GameStory;
+import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryBookBuilder;
 import de.timesnake.game.story.structure.StoryChapter;
@@ -151,7 +151,7 @@ public class TalkAction extends RadiusAction implements ChannelListener {
 
   private boolean isAudio() {
     return this.reader.getTalkType() == TalkType.AUDIO && this.audioMessages != null
-        && !this.audioMessages.isEmpty();
+           && !this.audioMessages.isEmpty();
   }
 
   @Override
@@ -341,12 +341,12 @@ public class TalkAction extends RadiusAction implements ChannelListener {
         this.nextMessage(this.partner);
       } else if (msg.getMessageType().equals(MessageType.User.STORY_AUDIO_FAIL)) {
         if (this.errorCount >= MAX_ERROR_COUNT) {
-          this.partner.sendPluginTDMessage(Plugin.STORY, "§wError while loading audio, please connect an admin");
+          this.partner.sendPluginTDMessage(StoryServer.PLUGIN, "§wError while loading audio, please connect an admin");
           this.nextMessage(this.partner);
           return;
         }
 
-        this.partner.sendPluginTDMessage(Plugin.STORY, "§wLoading ...");
+        this.partner.sendPluginTDMessage(StoryServer.PLUGIN, "§wLoading ...");
         Server.getChannel().sendMessage(new ChannelUserMessage<>(this.partner.getUniqueId(),
             MessageType.User.STORY_AUDIO_PLAY, this.currentMessage.getB().get()));
 
