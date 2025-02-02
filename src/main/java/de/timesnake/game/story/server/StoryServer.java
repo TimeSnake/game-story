@@ -7,10 +7,13 @@ package de.timesnake.game.story.server;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
 import de.timesnake.game.story.listener.EventManager;
 import de.timesnake.game.story.structure.StoryBook;
+import de.timesnake.library.chat.Plugin;
 
 import java.util.Collection;
 
 public class StoryServer {
+
+  public static final Plugin PLUGIN = new Plugin("Story", "GSY");
 
   public static final int PART_PRICE = 200;
 

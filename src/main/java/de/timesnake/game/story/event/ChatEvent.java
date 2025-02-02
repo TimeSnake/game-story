@@ -9,8 +9,8 @@ import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.user.UserChatCommandListener;
 import de.timesnake.basic.bukkit.util.user.event.UserChatCommandEvent;
 import de.timesnake.game.story.action.TriggeredAction;
-import de.timesnake.game.story.chat.Plugin;
 import de.timesnake.game.story.exception.MissingArgumentException;
+import de.timesnake.game.story.server.StoryServer;
 import de.timesnake.game.story.structure.Quest;
 import de.timesnake.game.story.structure.StoryChapter;
 import de.timesnake.game.story.user.StoryReader;
@@ -81,11 +81,11 @@ public class ChatEvent<Action extends TriggeredAction> extends TriggerEvent<Acti
       event.removeListener(false);
       event.setCancelled(true);
       event.getUser().sendMessage(Server.getChat().getSenderMember(event.getUser()) + "§7" + event.getMessage());
-      event.getUser().sendPluginMessage(Plugin.STORY, Component.text("Leider falsch", ExTextColor.WARNING));
+      event.getUser().sendPluginMessage(StoryServer.PLUGIN, Component.text("Leider falsch", ExTextColor.WARNING));
       return;
     }
 
-    event.getUser().sendPluginMessage(Plugin.STORY, Component.text("Richtig", ExTextColor.GREEN));
+    event.getUser().sendPluginMessage(StoryServer.PLUGIN, Component.text("Richtig", ExTextColor.GREEN));
     this.triggerAction((StoryUser) event.getUser());
 
     event.removeListener(true);
