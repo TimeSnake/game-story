@@ -6,7 +6,7 @@ package de.timesnake.game.story.structure;
 
 import de.timesnake.basic.bukkit.util.Server;
 import de.timesnake.basic.bukkit.util.world.ExWorld;
-import de.timesnake.basic.bukkit.util.world.ExWorld.Restriction;
+import de.timesnake.basic.bukkit.util.world.ExWorldOption;
 import de.timesnake.game.story.book.Diary;
 import de.timesnake.game.story.element.StoryCharacter;
 import de.timesnake.game.story.main.GameStory;
@@ -60,24 +60,25 @@ public class StoryChapter implements Iterable<Quest> {
     }
 
     this.world.setPVP(false);
-    this.world.restrict(Restriction.BLOCK_PLACE, true);
-    this.world.restrict(Restriction.BLOCK_BREAK, true);
-    this.world.restrict(Restriction.FLUID_COLLECT, true);
-    this.world.restrict(Restriction.FLUID_PLACE, true);
-    this.world.restrict(Restriction.BLOCK_BURN_UP, true);
-    this.world.restrict(Restriction.BLOCK_IGNITE, true);
-    this.world.restrict(Restriction.TNT_PRIME, true);
-    this.world.restrict(Restriction.FLINT_AND_STEEL, false);
-    this.world.restrict(Restriction.LIGHT_UP_INTERACTION, false);
-    this.world.restrict(Restriction.FIRE_SPREAD_SPEED, 0f);
-    this.world.restrict(Restriction.ENTITY_EXPLODE, true);
-    this.world.restrict(Restriction.ENTITY_BLOCK_BREAK, true);
-    this.world.restrict(Restriction.ITEM_FRAME_ROTATE, false);
+    this.world.setOption(ExWorldOption.ALLOW_BLOCK_PLACE, false);
+    this.world.setOption(ExWorldOption.ALLOW_BLOCK_BREAK, false);
+    this.world.setOption(ExWorldOption.ALLOW_FLUID_COLLECT, false);
+    this.world.setOption(ExWorldOption.ALLOW_FLUID_PLACE, false);
+    this.world.setOption(ExWorldOption.BLOCK_BURN_UP, false);
+    this.world.setOption(ExWorldOption.ALLOW_BLOCK_IGNITE, false);
+    this.world.setOption(ExWorldOption.ALLOW_TNT_PRIME, false);
+    this.world.setOption(ExWorldOption.ALLOW_FLINT_AND_STEEL, true);
+    this.world.setOption(ExWorldOption.ALLOW_LIGHT_UP_INTERACTION, true);
+    this.world.setOption(ExWorldOption.FIRE_SPREAD_SPEED, 0f);
+    this.world.setOption(ExWorldOption.ENABLE_ENTITY_EXPLOSION, false);
+    this.world.setOption(ExWorldOption.ALLOW_ENTITY_BLOCK_BREAK, false);
+    this.world.setOption(ExWorldOption.ALLOW_ITEM_FRAME_ROTATE, true);
+    this.world.setOption(ExWorldOption.ALLOW_DROP_PICK_ITEM, true);
+    this.world.setOption(ExWorldOption.ALLOW_PLACE_IN_BLOCK, true);
+    this.world.setOption(ExWorldOption.ALLOW_CAKE_EAT, false);
+    this.world.setOption(ExWorldOption.FORBIDDEN_BLOCK_INVENTORIES, List.of(Material.DISPENSER, Material.DROPPER,
+        Material.HOPPER));
     this.world.setExceptService(true);
-    this.world.restrict(Restriction.DROP_PICK_ITEM, false);
-    this.world.restrict(Restriction.PLACE_IN_BLOCK, false);
-    this.world.restrict(Restriction.CAKE_EAT, true);
-    this.world.restrict(Restriction.OPEN_INVENTORIES, List.of(Material.DISPENSER, Material.DROPPER, Material.HOPPER));
     this.world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
     this.world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
     this.world.setGameRule(GameRule.RANDOM_TICK_SPEED, 0);
