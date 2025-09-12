@@ -67,7 +67,7 @@ public class StoryChapter implements Iterable<Quest> {
     this.world.setOption(ExWorldOption.BLOCK_BURN_UP, false);
     this.world.setOption(ExWorldOption.ALLOW_BLOCK_IGNITE, false);
     this.world.setOption(ExWorldOption.ALLOW_TNT_PRIME, false);
-    this.world.setOption(ExWorldOption.ALLOW_FLINT_AND_STEEL, true);
+    this.world.setOption(ExWorldOption.ALLOW_FLINT_AND_STEEL_AND_FIRE_CHARGE, true);
     this.world.setOption(ExWorldOption.ALLOW_LIGHT_UP_INTERACTION, true);
     this.world.setOption(ExWorldOption.FIRE_SPREAD_SPEED, 0f);
     this.world.setOption(ExWorldOption.ENABLE_ENTITY_EXPLOSION, false);
